@@ -28,23 +28,27 @@
   gap: 4px;
 }
 
-.sidebarNav span {
+.navItem {
   color: #667281;
   font-size: 14px;
   padding: 12px 16px;
   border-radius: 8px;
+  text-decoration: none;
 }
 
-.sidebarNav span:hover {
+.navItem:hover {
   background: #f0f4f8;
 }
 
-.sidebarNav .active {
+.navItem.active {
   background: #e2edf9;
   color: #074574;
 }
 
 .primaryButton {
+  display: block;
+  text-align: center;
+  text-decoration: none;
   border: 0;
   border-radius: 8px;
   background: #074574;

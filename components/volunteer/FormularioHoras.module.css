@@ -1,0 +1,208 @@
+.formPage {
+  width: 100%;
+}
+
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.pageHeader h1 {
+  color: #26384b;
+  font-size: 28px;
+  margin: 0 0 4px;
+}
+
+.pageHeader p {
+  color: #667281;
+  margin: 0;
+}
+
+.formCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 32px;
+  display: grid;
+  gap: 24px;
+}
+
+.fieldsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  color: #26384b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field input,
+.field textarea {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #f8f9ff;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #26384b;
+  font-family: inherit;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: 2px solid #074574;
+  outline-offset: 1px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.dropzone {
+  border: 2px dashed #c3cedb;
+  border-radius: 12px;
+  background: #f8f9ff;
+  padding: 40px 24px;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.dropzoneActive {
+  border-color: #074574;
+  background: #eaf2fc;
+}
+
+.dropzoneIcon {
+  font-size: 28px;
+  color: #074574;
+}
+
+.dropzone strong {
+  color: #074574;
+  font-size: 15px;
+}
+
+.dropzone span {
+  color: #667281;
+  font-size: 12px;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.fileList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.fileList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f4f6f9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #26384b;
+}
+
+.fileList button {
+  border: 0;
+  background: transparent;
+  color: #667281;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+}
+
+.primaryButton {
+  border: 0;
+  border-radius: 8px;
+  background: #074574;
+  color: white;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  background: #063b65;
+}
+
+.secondaryButton {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: white;
+  color: #26384b;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: #f4f6f9;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.infoCard {
+  background: #eaf2fc;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+}
+
+.infoIcon {
+  color: #074574;
+  font-size: 18px;
+}
+
+.infoCard h3 {
+  color: #26384b;
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.infoCard p {
+  color: #667281;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .fieldsRow,
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formCard {
+    padding: 24px;
+  }
+}

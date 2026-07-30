@@ -1,6 +1,33 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
+  const isFormularioHoras = pathname === "/formulario-horas";
+
+  const navItems = [
+    {
+      label: "▦　Panel",
+      href: "/principal",
+    },
+    {
+      label: "◴　Historial",
+      href: "/historial",
+    },
+    {
+      label: "◉　Panel de Administración",
+      href: "/administracion",
+    },
+    {
+      label: "▥　Reportes",
+      href: "/reportes",
+    },
+  ];
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.sidebarBrand}>
@@ -9,29 +36,31 @@ export default function Sidebar() {
       </div>
 
       <nav className={styles.sidebarNav}>
-        <span className={styles.active}>
-          ▦　Panel
-        </span>
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
 
-        <span>
-          ◴　Historial
-        </span>
-
-        <span>
-          ◉　Panel de Administración
-        </span>
-
-        <span>
-          ▥　Reportes
-        </span>
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`${styles.navItem} ${
+                isActive ? styles.active : ""
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
-      <button
-        type="button"
-        className={styles.primaryButton}
-      >
-        ＋ Registrar Horas
-      </button>
+      {!isFormularioHoras && (
+        <Link
+          href="/formulario-horas"
+          className={styles.primaryButton}
+        >
+          ＋ Registrar Horas
+        </Link>
+      )}
 
       <div className={styles.sidebarBottom}>
         <span>⚙　Configuración</span>
