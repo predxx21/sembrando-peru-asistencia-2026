@@ -28,10 +28,6 @@ const activities = [
 ];
 
 export default function VolunteerDashboard() {
-  /*
-   * Estadísticas calculadas a partir de las actividades.
-   */
-
   const totalHours = activities.reduce(
     (total, activity) => total + activity.hours,
     0
@@ -46,188 +42,152 @@ export default function VolunteerDashboard() {
     .reduce((total, activity) => total + activity.hours, 0);
 
   return (
-    <main className={styles.portal}>
-      {/* Barra superior */}
-      <header className={styles.topbar}>
-        <strong>VolunteerTrack</strong>
+    <div className={styles.dashboard}>
+      {/* Bienvenida */}
+      <header className={styles.welcome}>
+        <div>
+          <h1>Bienvenido de nuevo, Alex</h1>
 
-        <div>♧　?　●</div>
-      </header>
-
-      {/* Menú lateral */}
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarBrand}>
-          <strong>Portal del Voluntario</strong>
-          <span>Sistema de Gestión</span>
+          <p>
+            Aquí tienes un resumen de tus contribuciones de
+            voluntariado este mes.
+          </p>
         </div>
-
-        <nav className={styles.sidebarNav}>
-          <span className={styles.active}>▦　Panel</span>
-          <span>◴　Historial</span>
-          <span>◉　Panel de Administración</span>
-          <span>▥　Reportes</span>
-        </nav>
 
         <button
           type="button"
           className={styles.primaryButton}
         >
-          ＋ Registrar Horas
+          ⊕ Registrar Horas
         </button>
+      </header>
 
-        <div className={styles.sidebarBottom}>
-          <span>⚙　Configuración</span>
-          <span>⇥　Cerrar Sesión</span>
-        </div>
-      </aside>
-
-      {/* Contenido principal */}
-      <section className={styles.content}>
-        {/* Bienvenida */}
-        <header className={styles.welcome}>
-          <div>
-            <h1>Bienvenido de nuevo, Alex</h1>
-
-            <p>
-              Aquí tienes un resumen de tus contribuciones de
-              voluntariado este mes.
-            </p>
+      {/* Estadísticas */}
+      <section className={styles.stats}>
+        <article className={styles.statCard}>
+          <div className={styles.statCardHead}>
+            <span>Total de horas</span>
+            <b>◷</b>
           </div>
 
-          <button
-            type="button"
-            className={styles.primaryButton}
-          >
-            ⊕ Registrar Horas
-          </button>
-        </header>
+          <h2>{totalHours.toFixed(1)}</h2>
 
-        {/* Estadísticas */}
-        <section className={styles.stats}>
-          <article className={styles.statCard}>
-            <div className={styles.statCardHead}>
-              <span>Total de horas</span>
-              <b>◷</b>
-            </div>
+          <p>Total registrado desde el ingreso</p>
+        </article>
 
-            <h2>{totalHours.toFixed(1)}</h2>
-
-            <p>Total registrado desde el ingreso</p>
-          </article>
-
-          <article className={styles.statCard}>
-            <div className={styles.statCardHead}>
-              <span>Aprobadas</span>
-              <b>✿</b>
-            </div>
-
-            <h2>{approvedHours.toFixed(1)}</h2>
-
-            <p>Horas de voluntariado verificadas</p>
-          </article>
-
-          <article className={styles.statCard}>
-            <div className={styles.statCardHead}>
-              <span>Pendientes</span>
-              <b>⌛</b>
-            </div>
-
-            <h2>{pendingHours.toFixed(1)}</h2>
-
-            <p>Esperando revisión del coordinador</p>
-          </article>
-        </section>
-
-        {/* Actividades y guía */}
-        <section className={styles.portalGrid}>
-          <div>
-            <div className={styles.sectionTitle}>
-              <h2>Actividad Reciente</h2>
-              <span>Ver Todo ›</span>
-            </div>
-
-            <div className={styles.tableCard}>
-              {/* Encabezado */}
-              <div
-                className={`${styles.activityRow} ${styles.activityRowHead}`}
-              >
-                <span>Fecha</span>
-                <span>Tipo de actividad</span>
-                <span>Horas</span>
-                <span>Estado</span>
-                <span>Acción</span>
-              </div>
-
-              {/* Actividades */}
-              {activities.map((activity) => (
-                <div
-                  className={styles.activityRow}
-                  key={activity.id}
-                >
-                  <span>{activity.date}</span>
-
-                  <span>
-                    <strong>{activity.title}</strong>
-                    <small>{activity.type}</small>
-                  </span>
-
-                  <span>
-                    {activity.hours.toFixed(1)} hrs
-                  </span>
-
-                  <span>
-                    <i
-                      className={`${styles.badge} ${
-                        activity.status === "Aprobado"
-                          ? styles.badgeSuccess
-                          : styles.badgePending
-                      }`}
-                    >
-                      {activity.status}
-                    </i>
-                  </span>
-
-                  <span>◉</span>
-                </div>
-              ))}
-            </div>
+        <article className={styles.statCard}>
+          <div className={styles.statCardHead}>
+            <span>Aprobadas</span>
+            <b>✿</b>
           </div>
 
-          {/* Guía de evidencia */}
-          <aside className={styles.evidenceColumn}>
-            <h2>Guía de Evidencia</h2>
+          <h2>{approvedHours.toFixed(1)}</h2>
 
-            <article className={styles.guideCard}>
-              <div className={styles.guideCardImage} />
+          <p>Horas de voluntariado verificadas</p>
+        </article>
 
-              <div className={styles.guideCardBody}>
-                <h3>Consejo de Registro</h3>
+        <article className={styles.statCard}>
+          <div className={styles.statCardHead}>
+            <span>Pendientes</span>
+            <b>⌛</b>
+          </div>
 
-                <p>
-                  Adjunta siempre una foto de tu planilla o una
-                  firma de tu supervisor para una aprobación más
-                  rápida.
-                </p>
+          <h2>{pendingHours.toFixed(1)}</h2>
 
-                <button type="button">
-                  Saber más
-                </button>
-              </div>
-            </article>
-
-            <article className={styles.tagsCard}>
-              <span>Etiquetas de actividad</span>
-
-              <div>
-                <i>Trabajo de Campo</i>
-                <i>Administración</i>
-                <i>Mentoría</i>
-                <i>Evento</i>
-              </div>
-            </article>
-          </aside>
-        </section>
+          <p>Esperando revisión del coordinador</p>
+        </article>
       </section>
-    </main>
+
+      {/* Actividades y guía */}
+      <section className={styles.portalGrid}>
+        <div>
+          <div className={styles.sectionTitle}>
+            <h2>Actividad Reciente</h2>
+
+            <span>Ver Todo ›</span>
+          </div>
+
+          <div className={styles.tableCard}>
+            {/* Encabezado */}
+            <div
+              className={`${styles.activityRow} ${styles.activityRowHead}`}
+            >
+              <span>Fecha</span>
+              <span>Tipo de actividad</span>
+              <span>Horas</span>
+              <span>Estado</span>
+              <span>Acción</span>
+            </div>
+
+            {/* Actividades */}
+            {activities.map((activity) => (
+              <div
+                className={styles.activityRow}
+                key={activity.id}
+              >
+                <span>{activity.date}</span>
+
+                <span>
+                  <strong>{activity.title}</strong>
+                  <small>{activity.type}</small>
+                </span>
+
+                <span>
+                  {activity.hours.toFixed(1)} hrs
+                </span>
+
+                <span>
+                  <i
+                    className={`${styles.badge} ${
+                      activity.status === "Aprobado"
+                        ? styles.badgeSuccess
+                        : styles.badgePending
+                    }`}
+                  >
+                    {activity.status}
+                  </i>
+                </span>
+
+                <span>◉</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Guía de evidencia */}
+        <aside className={styles.evidenceColumn}>
+          <h2>Guía de Evidencia</h2>
+
+          <article className={styles.guideCard}>
+            <div className={styles.guideCardImage} />
+
+            <div className={styles.guideCardBody}>
+              <h3>Consejo de Registro</h3>
+
+              <p>
+                Adjunta siempre una foto de tu planilla o una
+                firma de tu supervisor para una aprobación más
+                rápida.
+              </p>
+
+              <button type="button">
+                Saber más
+              </button>
+            </div>
+          </article>
+
+          <article className={styles.tagsCard}>
+            <span>Etiquetas de actividad</span>
+
+            <div>
+              <i>Trabajo de Campo</i>
+              <i>Administración</i>
+              <i>Mentoría</i>
+              <i>Evento</i>
+            </div>
+          </article>
+        </aside>
+      </section>
+    </div>
   );
 }
