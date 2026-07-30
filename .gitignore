@@ -1,0 +1,7 @@
+# Dependencies and generated Next.js output
+node_modules/
+.next/
+
+# Local configuration and logs
+.env*.local
+npm-debug.log*
