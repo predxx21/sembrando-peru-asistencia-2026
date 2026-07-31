@@ -56,7 +56,7 @@
 
 .field input:focus,
 .field textarea:focus {
-  outline: 2px solid #074574;
+  outline: 2px solid #197343;
   outline-offset: 1px;
 }
 
@@ -77,17 +77,17 @@
 }
 
 .dropzoneActive {
-  border-color: #074574;
-  background: #eaf2fc;
+  border-color: #197343;
+  background: #e7f4ec;
 }
 
 .dropzoneIcon {
   font-size: 28px;
-  color: #074574;
+  color: #197343;
 }
 
 .dropzone strong {
-  color: #074574;
+  color: #197343;
   font-size: 15px;
 }
 
@@ -135,7 +135,7 @@
 .primaryButton {
   border: 0;
   border-radius: 8px;
-  background: #074574;
+  background: #197343;
   color: white;
   padding: 11px 20px;
   font-size: 14px;
@@ -144,7 +144,7 @@
 }
 
 .primaryButton:hover {
-  background: #063b65;
+  background: #125a33;
 }
 
 .secondaryButton {
@@ -170,7 +170,7 @@
 }
 
 .infoCard {
-  background: #eaf2fc;
+  background: #e7f4ec;
   border: 1px solid #dfe4ea;
   border-radius: 12px;
   padding: 20px;
@@ -179,7 +179,7 @@
 }
 
 .infoIcon {
-  color: #074574;
+  color: #197343;
   font-size: 18px;
 }
 

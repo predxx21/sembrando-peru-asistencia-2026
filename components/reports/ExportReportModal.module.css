@@ -38,7 +38,7 @@
 }
 
 .modal h2 {
-  color: #074574;
+  color: #197343;
   font-size: 24px;
   margin: 0 0 8px;
   padding-right: 32px;
@@ -86,13 +86,13 @@
 }
 
 .formatOptionActive {
-  border-color: #074574;
-  background: #eaf2fc;
+  border-color: #197343;
+  background: #e7f4ec;
 }
 
 .formatIcon {
   font-size: 22px;
-  color: #074574;
+  color: #197343;
 }
 
 .formatOption strong {
@@ -118,7 +118,7 @@
 }
 
 .dateSelect:focus {
-  outline: 2px solid #074574;
+  outline: 2px solid #197343;
   outline-offset: 1px;
 }
 
@@ -145,7 +145,7 @@
 .checkboxOption input {
   width: 18px;
   height: 18px;
-  accent-color: #074574;
+  accent-color: #197343;
   cursor: pointer;
 }
 
@@ -153,7 +153,7 @@
   width: 100%;
   border: 0;
   border-radius: 10px;
-  background: #074574;
+  background: #197343;
   color: white;
   padding: 14px 16px;
   font-size: 15px;
@@ -162,7 +162,7 @@
 }
 
 .generateButton:hover {
-  background: #063b65;
+  background: #125a33;
 }
 
 .backLink {
@@ -171,7 +171,7 @@
   text-align: center;
   border: 0;
   background: transparent;
-  color: #074574;
+  color: #197343;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;

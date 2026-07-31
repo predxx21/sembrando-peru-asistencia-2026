@@ -31,7 +31,7 @@
 .primaryButton {
   border: 0;
   border-radius: 8px;
-  background: #074574;
+  background: #197343;
   color: white;
   padding: 10px 16px;
   font-size: 13px;
@@ -41,7 +41,7 @@
 }
 
 .primaryButton:hover {
-  background: #063b65;
+  background: #125a33;
 }
 
 .secondaryButton {
@@ -92,7 +92,7 @@
 }
 
 .statValueRow h2 {
-  color: #074574;
+  color: #197343;
   font-size: 30px;
   margin: 0;
 }
@@ -178,7 +178,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #074574;
+  background: #197343;
 }
 
 .chartSvg {
@@ -188,13 +188,13 @@
 }
 
 .chartArea {
-  fill: rgba(7, 69, 116, 0.08);
+  fill: rgba(25, 115, 67, 0.08);
   stroke: none;
 }
 
 .chartLine {
   fill: none;
-  stroke: #074574;
+  stroke: #197343;
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -202,7 +202,7 @@
 
 .chartDot {
   fill: white;
-  stroke: #074574;
+  stroke: #197343;
   stroke-width: 2.5;
 }
 
@@ -351,7 +351,7 @@
 
 .tableRowHead {
   border-top: 0;
-  background: #eaf2fc;
+  background: #e7f4ec;
   color: #667281;
   font-size: 11px;
   font-weight: 700;
@@ -377,8 +377,8 @@
 
 .hoursBadge {
   display: inline-block;
-  background: #dce9ff;
-  color: #1a4877;
+  background: #cdeedd;
+  color: #145c34;
   border-radius: 99px;
   font-size: 12px;
   font-style: normal;
@@ -394,7 +394,7 @@
 .detailsButton {
   border: 0;
   background: transparent;
-  color: #074574;
+  color: #197343;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -442,8 +442,8 @@
 }
 
 .pageActive {
-  background: #074574 !important;
-  border-color: #074574 !important;
+  background: #197343 !important;
+  border-color: #197343 !important;
   color: white !important;
 }
 

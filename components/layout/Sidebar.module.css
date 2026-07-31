@@ -14,7 +14,7 @@
 }
 
 .sidebarBrand strong {
-  color: #074574;
+  color: #197343;
   font-size: 20px;
 }
 
@@ -41,8 +41,8 @@
 }
 
 .navItem.active {
-  background: #e2edf9;
-  color: #074574;
+  background: #e7f4ec;
+  color: #197343;
 }
 
 .primaryButton {
@@ -51,7 +51,7 @@
   text-decoration: none;
   border: 0;
   border-radius: 8px;
-  background: #074574;
+  background: #197343;
   color: white;
   padding: 11px 16px;
   font-size: 14px;
@@ -60,7 +60,7 @@
 }
 
 .primaryButton:hover {
-  background: #063b65;
+  background: #125a33;
 }
 
 .sidebarBottom {
