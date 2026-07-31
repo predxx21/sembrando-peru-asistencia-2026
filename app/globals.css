@@ -7,38 +7,49 @@ button, input { font: inherit; }
 .page-shell { width: 100%; min-height: 100vh; }
 .login-card { display: grid; grid-template-columns: 60.5% 39.5%; width: 100%; min-height: 100vh; background: #f8f9ff; }
 .visual-panel { position: relative; overflow: hidden; background: #325446; }
-.image-grid { display: grid; grid-template-columns: 2fr 1fr; height: 100%; gap: 0; }
-.photo-tile { min-height: 173px; background: linear-gradient(90deg, rgba(32,77,55,.12), rgba(246,196,118,.05)), url('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1000&q=80') center/cover; }
-.photo-tile:nth-child(3n+2) { background-position: 66% center; filter: saturate(.9) brightness(.95); }
-.photo-tile:nth-child(3n) { background-position: 25% center; filter: saturate(.85) brightness(1.03); }
-.photo-wash { height: 100%; background: linear-gradient(180deg, rgba(18,40,30,.05), rgba(18,34,24,.15)); }
-.brand-copy { position: absolute; z-index: 2; top: 35px; left: 34px; width: min(440px, calc(100% - 60px)); color: white; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+.visual-collage { position: absolute; inset: 0; display: grid; grid-template-columns: 64% 36%; }
+.forest-image { background: url('/images/bosque-sembrando-peru.jpg') center/cover; }
+.reforestation-image { background: url('/images/reforestacion-sembrando-peru.jpg') 68% center/cover; }
+.collage-shade { position: absolute; inset: 0; background: linear-gradient(130deg, rgba(4, 38, 28, .72) 0%, rgba(6, 53, 34, .34) 45%, rgba(3, 25, 19, .52) 100%); }
+.brand-copy { position: absolute; z-index: 2; top: 30px; left: 34px; width: min(440px, calc(100% - 60px)); color: white; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
 .brand-copy h1 { margin: 0 0 5px; font: 700 clamp(20px, 2vw, 28px)/1.15 Montserrat, sans-serif; letter-spacing: -.8px; }
 .brand-copy p { margin: 0; font-size: 14px; line-height: 1.45; }
-.form-panel { display: flex; flex-direction: column; justify-content: space-between; padding: 75px 21px 51px; background: #f8f9ff; }
+.form-panel { display: flex; flex-direction: column; justify-content: space-between; padding: 58px 21px 51px; background: #f7faf5; }
 .form-content { max-width: 304px; width: 100%; margin: 0 auto; }
-h2 { margin: 0 0 7px; color: #074574; font: 700 21px Montserrat, sans-serif; letter-spacing: -.55px; }
+h2 { margin: 0 0 7px; color: #176c43; font: 700 21px/1.25 Montserrat, sans-serif; letter-spacing: -.55px; }
+.login-brand-logo { display: block; width: 126px; height: auto; margin: 0 auto 15px; padding: 5px; border-radius: 8px; background: #fff; box-shadow: 0 2px 10px rgba(29, 86, 51, .12); }
 header > p { margin: 0 0 24px; font-size: 12px; line-height: 1.45; color: #6b7280; }
 label { display: block; color: #3c4a5d; font-size: 10px; font-weight: 700; margin-bottom: 6px; }
 .input-wrap { position: relative; height: 35px; margin-bottom: 12px; }
 .input-wrap input { width: 100%; height: 100%; padding: 0 34px 0 30px; border: 1px solid #cfd5df; border-radius: 6px; outline: none; color: #334155; font-size: 11px; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.03); }
 .input-wrap input::placeholder { color: #b7bdc8; }
-.input-wrap input:focus { border-color: #0c527f; box-shadow: 0 0 0 3px rgba(12,82,127,.1); }
+.input-wrap input:focus { border-color: #4b982f; box-shadow: 0 0 0 3px rgba(75,152,47,.16); }
 .input-icon { position: absolute; z-index: 1; top: 8px; left: 9px; color: #7f8b99; font-size: 15px; line-height: 17px; }
 .lock { font-size: 16px; transform: rotate(180deg); }
 .password-label { display: flex; justify-content: space-between; align-items: baseline; }
-.password-label a { color: #075080; font-size: 9px; font-weight: 700; text-decoration: none; }
+.password-label a { color: #167347; font-size: 9px; font-weight: 700; text-decoration: none; }
 .eye { position: absolute; right: 7px; top: 6px; border: 0; background: transparent; color: #828c99; cursor: pointer; font-size: 13px; }
 .remember { display: flex; align-items: center; gap: 5px; margin: 3px 0 15px; color: #6b7280; font-size: 10px; font-weight: 500; }
-.remember input { width: 12px; height: 12px; margin: 0; accent-color: #09507f; }
-.primary-button { width: 100%; height: 41px; color: white; background: #034576; border: 1px solid #0a3c63; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
-.primary-button:hover { background: #063b65; }
+.remember input { width: 12px; height: 12px; margin: 0; accent-color: #2e7d32; }
+.primary-button { width: 100%; height: 41px; color: white; background: #197343; border: 1px solid #155f38; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.primary-button:hover { background: #125a33; }
 .message { margin: 9px 0 0; color: #087052; font-size: 10px; text-align: center; }
 .divider { display: flex; align-items: center; gap: 10px; margin: 35px 0; color: #9aa4b2; }.divider span { height: 1px; flex: 1; background: #d9dee6; }.divider b { font-size: 12px; font-weight: 600; }
-.google-button { width: 100%; height: 32px; border: 1px solid #d3d9e2; border-radius: 6px; color: #566273; background: white; font-size: 10px; font-weight: 600; cursor: pointer; }.google-button strong { margin-right: 9px; color: #4285f4; font-size: 16px; vertical-align: -2px; }
-.register { margin: 32px 0 15px; color: #667281; font-size: 11px; text-align: center; } a { color: #075080; text-decoration: none; font-weight: 700; }
+.google-button { width: 100%; height: 32px; border: 1px solid #d3d9e2; border-radius: 6px; color: #566273; background: white; font-size: 10px; font-weight: 600; cursor: pointer; }.google-button strong { margin-right: 9px; color: #2e7d32; font-size: 16px; vertical-align: -2px; }
+.register { margin: 32px 0 15px; color: #667281; font-size: 11px; text-align: center; } a { color: #176c43; text-decoration: none; font-weight: 700; }
 .access-button { display: block; height: 29px; margin: 0 auto; padding: 0 15px; color: #17886e; background: white; border: 1.5px solid #159178; border-radius: 20px; font-size: 10px; font-weight: 700; cursor: pointer; }.access-button span { font-size: 13px; padding-right: 5px; }
 .request-note { width: 218px; margin: 7px auto 19px; color: #87909d; font-size: 8px; line-height: 1.3; text-align: center; }
 footer { display: flex; justify-content: center; gap: 19px; padding-top: 24px; border-top: 1px solid #e6e9ef; } footer a { color: #818a98; font-size: 9px; font-weight: 500; }
-@media (max-width: 720px) { .login-card { grid-template-columns: 1fr; min-height: 100vh; } .visual-panel { min-height: 220px; } .image-grid { grid-template-columns: repeat(4,1fr); } .photo-tile { min-height: 110px; } .brand-copy { top: 28px; left: 25px; } .form-panel { min-height: 620px; padding: 43px 23px 25px; } }
 
+@media (max-width: 720px) { .login-card { grid-template-columns: 1fr; min-height: 100vh; } .visual-panel { min-height: 280px; } .visual-collage { grid-template-columns: 1fr 1fr; } .brand-copy { top: 24px; left: 25px; } .brand-copy h1 { max-width: 280px; } .form-panel { min-height: 620px; padding: 43px 23px 25px; } .login-brand-logo { width: 110px; } }
+
+/* Registro */
+.register-page { display: flex; flex-direction: column; min-height: 100vh; color: #25342b; background: radial-gradient(circle at 8% 76%, rgba(120, 196, 114, .18), transparent 25%), radial-gradient(circle at 95% 12%, rgba(173, 217, 132, .2), transparent 24%), #f6faf4; }
+.register-navbar { display: flex; align-items: center; justify-content: space-between; min-height: 64px; padding: 9px clamp(22px, 6vw, 92px); border-bottom: 1px solid #dce8dc; background: rgba(255,255,255,.94); }
+.nav-brand { display: flex; align-items: center; gap: 9px; color: #176c43; font: 700 16px Montserrat, sans-serif; }.nav-brand img { width: 38px; height: 38px; padding: 2px; border-radius: 50%; background: #fff; object-fit: contain; }.register-navbar p { margin: 0; font-size: 11px; color: #637166; }.register-navbar p a { margin-left: 7px; }
+.register-content { display: grid; flex: 1; place-items: center; padding: 32px 20px; }.register-card { width: min(100%, 420px); padding: 23px 28px 25px; border: 1px solid #d5e3d3; border-radius: 10px; background: rgba(255,255,255,.96); box-shadow: 0 15px 34px rgba(31, 85, 45, .1); }.register-logo { display: block; width: 82px; margin: 0 auto 10px; padding: 3px; border-radius: 7px; background: #fff; }.register-card h1 { margin: 0; color: #176c43; text-align: center; font: 700 23px Montserrat, sans-serif; }.register-subtitle { max-width: 270px; margin: 8px auto 16px; color: #68786e; font-size: 10px; line-height: 1.45; text-align: center; }
+.register-google { width: 100%; height: 35px; border: 1px solid #b9d4be; border-radius: 6px; background: #fff; color: #405749; font-size: 10px; font-weight: 600; cursor: pointer; }.register-google strong { margin-right: 8px; color: #2e7d32; font-size: 15px; }.register-divider { display: flex; align-items: center; gap: 9px; margin: 18px 0; color: #78907b; }.register-divider span { flex: 1; height: 1px; background: #dce7dc; }.register-divider b { font-size: 9px; font-weight: 600; text-transform: uppercase; }
+.register-card fieldset { margin: 0 0 14px; padding: 0; border: 0; }.register-card legend, .register-card label { color: #3b5142; font-size: 9px; font-weight: 700; }.register-card legend { margin-bottom: 6px; }.profile-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }.profile-option { height: 38px; border: 1px solid #b9d4be; border-radius: 5px; background: #fff; color: #405749; font-size: 9px; cursor: pointer; }.profile-option span { display: block; font-size: 13px; }.profile-option.active { border-color: #1e7546; color: white; background: #247a49; }
+.register-card > label { margin: 11px 0 5px; }.register-card input:not([type="checkbox"]) { width: 100%; height: 35px; padding: 0 10px; border: 1px solid #bdd1bf; border-radius: 5px; outline: none; color: #314237; font-size: 10px; background: #fbfdfb; }.register-card input:focus { border-color: #4b982f; box-shadow: 0 0 0 3px rgba(75, 152, 47, .13); }.password-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 11px; }.password-grid label { margin-bottom: 5px; display: block; }
+.terms { display: flex !important; align-items: flex-start; gap: 6px; margin: 14px 0 !important; font-size: 8px !important; line-height: 1.3; font-weight: 500 !important; }.terms input { width: 12px; height: 12px; margin: 0; accent-color: #2e7d32; }.create-account { width: 100%; height: 37px; border: 0; border-radius: 5px; color: white; background: #197343; font-size: 10px; font-weight: 700; cursor: pointer; }.create-account:hover { background: #125a33; }.register-message { margin: 9px 0 0; color: #197343; font-size: 9px; text-align: center; }.register-footer { padding: 16px; border-top: 1px solid #dce8dc; color: #849388; font-size: 9px; text-align: center; }
+@media (max-width: 520px) { .register-navbar { padding: 9px 16px; }.nav-brand span { font-size: 13px; }.register-navbar p { font-size: 9px; }.register-card { padding: 20px; }.password-grid { grid-template-columns: 1fr; gap: 0; }.password-grid > div + div { margin-top: 11px; } }

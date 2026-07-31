@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import LoginVisual from './LoginVisual';
 
 export default function LoginScreen() {
@@ -26,7 +27,8 @@ export default function LoginScreen() {
         <section className="form-panel" aria-labelledby="welcome-title">
           <div className="form-content">
             <header>
-              <h2 id="welcome-title">Bienvenido de nuevo</h2>
+              <img className="login-brand-logo" src="/images/sembrando-peru-logo.jfif" alt="Logo de Sembrando Perú" />
+              <h2 id="welcome-title">Bienvenido a Sembrando Perú - Asistencia</h2>
               <p>Ingresa tus credenciales para gestionar tus actividades de voluntariado.</p>
             </header>
 
@@ -66,7 +68,7 @@ export default function LoginScreen() {
 
             <div className="divider"><span /><b>o</b><span /></div>
             <button className="google-button" type="button"><strong>G</strong> Continuar con Google</button>
-            <p className="register">¿No tienes una cuenta? <a href="#register">Regístrate aquí</a></p>
+            <p className="register">¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link></p>
             <button className="access-button" type="button"><span>♧</span> Solicitar acceso</button>
             <p className="request-note">Para nuevas organizaciones que desean digitalizar su impacto social.</p>
           </div>
