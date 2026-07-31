@@ -1,0 +1,78 @@
+.sidebar {
+  background: white;
+  border-right: 1px solid #dfe4ea;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.sidebarBrand {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 16px;
+}
+
+.sidebarBrand strong {
+  color: #074574;
+  font-size: 20px;
+}
+
+.sidebarBrand span {
+  color: #667281;
+  font-size: 14px;
+}
+
+.sidebarNav {
+  display: grid;
+  gap: 4px;
+}
+
+.navItem {
+  color: #667281;
+  font-size: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background: #f0f4f8;
+}
+
+.navItem.active {
+  background: #e2edf9;
+  color: #074574;
+}
+
+.primaryButton {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  border: 0;
+  border-radius: 8px;
+  background: #074574;
+  color: white;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  background: #063b65;
+}
+
+.sidebarBottom {
+  border-top: 1px solid #dfe4ea;
+  display: grid;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.sidebarBottom span {
+  color: #667281;
+  font-size: 14px;
+  padding: 12px 16px;
+}
