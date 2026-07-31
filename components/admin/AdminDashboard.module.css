@@ -246,6 +246,8 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .evidenceButton:hover {
