@@ -54,12 +54,6 @@ export default function VolunteerDashboard() {
           </p>
         </div>
 
-        <button
-          type="button"
-          className={styles.primaryButton}
-        >
-          ⊕ Registrar Horas
-        </button>
       </header>
 
       {/* Estadísticas */}

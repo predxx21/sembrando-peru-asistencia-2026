@@ -1,0 +1,325 @@
+/* ===== Página ===== */
+.historyPage {
+  width: 100%;
+  padding: 0 0 24px;
+}
+
+/* ===== Header ===== */
+.pageHeader {
+  margin-bottom: 28px;
+}
+
+.pageHeader h1 {
+  color: #26384b;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.pageHeader p {
+  color: #667281;
+  margin: 0;
+}
+
+/* ===== Estadísticas ===== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.statCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.statLabel {
+  display: block;
+  color: #667281;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.statValue {
+  color: #197343;
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+/* ===== Filtros ===== */
+.filtersBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  padding: 9px 14px;
+  flex: 1 1 260px;
+}
+
+.searchField input {
+  border: 0;
+  outline: 0;
+  font-size: 13px;
+  color: #26384b;
+  background: transparent;
+  width: 100%;
+  font-family: inherit;
+}
+
+.filterSelect {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: white;
+  font-size: 13px;
+  color: #26384b;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+/* ===== Lista de tarjetas ===== */
+.listContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.emptyMessage {
+  text-align: center;
+  color: #667281;
+  padding: 40px 0;
+  font-size: 15px;
+}
+
+/* ===== Tarjeta individual ===== */
+.activityCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: box-shadow 0.15s;
+}
+
+.activityCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.statusPill {
+  display: inline-block;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusApproved {
+  background: #e5f8ee;
+  color: #197343;
+}
+
+.statusPending {
+  background: #fff3d6;
+  color: #a67c27;
+}
+
+.statusRejected {
+  background: #fdecec;
+  color: #d64545;
+}
+
+.activityDate {
+  color: #667281;
+  font-size: 13px;
+}
+
+.activityTitle {
+  color: #26384b;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.activityDescription {
+  color: #4a5a6a;
+  font-size: 14px;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.activityMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.hoursBadge {
+  background: #eef2f6;
+  color: #26384b;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.typeBadge {
+  background: #cdeedd;
+  color: #145c34;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.evidenceButton,
+.detailButton,
+.corregirButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s;
+}
+
+.evidenceButton {
+  background: #197343;
+  color: white;
+}
+.evidenceButton:hover {
+  background: #125a33;
+}
+
+.detailButton {
+  background: #eef2f6;
+  color: #26384b;
+}
+.detailButton:hover {
+  background: #dfe4ea;
+}
+
+.corregirButton {
+  background: #d64545;
+  color: white;
+}
+.corregirButton:hover {
+  background: #b83636;
+}
+
+/* ===== Paginación ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 8px;
+  color: #667281;
+  font-size: 13px;
+}
+
+.pageControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pageControls button {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: white;
+  color: #26384b;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.pageControls button:hover:not(:disabled) {
+  background: #f4f6f9;
+}
+
+.pageControls button:disabled {
+  color: #b7c0cb;
+  cursor: not-allowed;
+}
+
+.pageActive {
+  background: #197343 !important;
+  border-color: #197343 !important;
+  color: white !important;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .filtersBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .searchField {
+    flex: 1 1 auto;
+  }
+  .cardActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cardActions a {
+    text-align: center;
+  }
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .pageControls {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}

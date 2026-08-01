@@ -1,0 +1,173 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import styles from "./HistoryDashboard.module.css";
+
+const statusConfig = {
+  aprobado: { label: "Aprobado", className: "statusApproved" },
+  pendiente: { label: "Pendiente", className: "statusPending" },
+  rechazado: { label: "Rechazado", className: "statusRejected" },
+};
+
+export default function HistoryDashboard({ activities }) {
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
+  // Filtros
+  const filtered = activities.filter((act) => {
+    const matchSearch =
+      act.title.toLowerCase().includes(search.toLowerCase()) ||
+      act.description.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "todos" || act.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  // Paginación
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+  // Estadísticas
+  const totalHours = activities.reduce((sum, a) => sum + a.hours, 0);
+  const approvedHours = activities
+    .filter((a) => a.status === "aprobado")
+    .reduce((sum, a) => sum + a.hours, 0);
+  const pendingCount = activities.filter((a) => a.status === "pendiente").length;
+  const rejectedCount = activities.filter((a) => a.status === "rechazado").length;
+
+  return (
+    <div className={styles.historyPage}>
+      {/* Header */}
+      <header className={styles.pageHeader}>
+        <div>
+          <h1>Mi Historial de Actividades</h1>
+          <p>Revisa todas tus contribuciones a la fundación.</p>
+        </div>
+      </header>
+
+      {/* Stats */}
+      <section className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Total Horas</span>
+          <div className={styles.statValue}>{totalHours}h</div>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Aprobadas</span>
+          <div className={styles.statValue}>{approvedHours}h</div>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Pendientes</span>
+          <div className={styles.statValue}>{pendingCount}</div>
+        </div>
+        <div className={styles.statCard}>
+          <span className={styles.statLabel}>Rechazadas</span>
+          <div className={styles.statValue}>{rejectedCount}</div>
+        </div>
+      </section>
+
+      {/* Filtros */}
+      <div className={styles.filtersBar}>
+        <div className={styles.searchField}>
+          <span>🔍</span>
+          <input
+            type="text"
+            placeholder="Buscar actividad..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <select
+          className={styles.filterSelect}
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="todos">Todos los estados</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+      </div>
+
+      {/* Lista de actividades */}
+      <div className={styles.listContainer}>
+        {currentItems.length === 0 ? (
+          <p className={styles.emptyMessage}>No se encontraron actividades.</p>
+        ) : (
+          currentItems.map((activity) => {
+            const status = statusConfig[activity.status] || statusConfig.pendiente;
+            return (
+              <article key={activity.id} className={styles.activityCard}>
+                <div className={styles.cardHeader}>
+                  <span className={`${styles.statusPill} ${styles[status.className]}`}>
+                    {status.label}
+                  </span>
+                  <span className={styles.activityDate}>{activity.date}</span>
+                </div>
+
+                <h3 className={styles.activityTitle}>{activity.title}</h3>
+                <p className={styles.activityDescription}>{activity.description}</p>
+
+                <div className={styles.activityMeta}>
+                  <span className={styles.hoursBadge}>{activity.hours} hrs</span>
+                  <span className={styles.typeBadge}>{activity.type}</span>
+                </div>
+
+                <div className={styles.cardActions}>
+                  <Link
+                    href={`/historial/${activity.id}`}
+                    className={styles.evidenceButton}
+                  >
+                    Ver Evidencia
+                  </Link>
+                  {activity.status === "rechazado" && (
+                    <Link
+                      href={`/registro-editar/${activity.id}`}
+                      className={styles.corregirButton}
+                    >
+                      Corregir
+                    </Link>
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <span>
+            Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filtered.length)} de {filtered.length} registros
+          </span>
+          <div className={styles.pageControls}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Anterior
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                className={p === currentPage ? styles.pageActive : ""}
+                onClick={() => setCurrentPage(p)}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
