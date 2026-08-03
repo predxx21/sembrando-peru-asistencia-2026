@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import styles from "./HistoryDashboard.module.css";
+import styles from "./ListadoHistorial.module.css";
 
 const statusConfig = {
   aprobado: { label: "Aprobado", className: "statusApproved" },

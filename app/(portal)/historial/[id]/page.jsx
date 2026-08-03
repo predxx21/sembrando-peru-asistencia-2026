@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import EvidenceViewer from "@/components/history/EvidenceViewer";
+import EvidenceViewer from "@/components/history/VerEvidencia";
 import { getActivityById } from "@/components/history/historyData";
 
 export default async function HistorialEvidenciaPage({ params }) {

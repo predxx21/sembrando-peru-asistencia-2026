@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ExportReportModal from "./ExportReportModal";
-import styles from "./ReportsDashboard.module.css";
+import ExportReportModal from "./ExportarReporte";
+import styles from "./Reportes.module.css";
 
 const SUMMARY_STATS = [
   {

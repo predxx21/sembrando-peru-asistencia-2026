@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import styles from "./EvidenceViewer.module.css";
+import styles from "./VerEvidencia.module.css";
 
 const STATUS_CONFIG = {
   pendiente: { label: "Pendiente", className: "statusPending" },

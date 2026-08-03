@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import styles from "./CorrectionForm.module.css";
+import styles from "./CorregirActividad.module.css";
 
 function calculateHours(startTime, endTime) {
   if (!startTime || !endTime) return 0;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./ExportReportModal.module.css";
+import styles from "./ExportarReporte.module.css";
 
 const DATE_RANGE_OPTIONS = [
   "Mes Actual (Octubre 2023)",

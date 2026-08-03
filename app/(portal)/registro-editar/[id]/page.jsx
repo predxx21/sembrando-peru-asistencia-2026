@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import CorrectionForm from "@/components/history/CorrectionForm";
+import CorrectionForm from "@/components/history/CorregirActividad";
 import { getActivityById } from "@/components/history/historyData";
 
 export default async function RegistroEditarPage({ params }) {

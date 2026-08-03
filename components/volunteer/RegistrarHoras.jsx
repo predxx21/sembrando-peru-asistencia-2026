@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import styles from "./FormularioHoras.module.css";
+import styles from "./RegistrarHoras.module.css";
 
 export default function FormularioHoras() {
   const [formData, setFormData] = useState({

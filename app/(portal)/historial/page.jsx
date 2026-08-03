@@ -1,4 +1,4 @@
-import HistoryDashboard from "@/components/history/HistoryDashboard";
+import HistoryDashboard from "@/components/history/ListadoHistorial";
 import { historyActivities } from "@/components/history/historyData";
 
 export default function HistorialPage() {

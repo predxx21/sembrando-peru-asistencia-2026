@@ -1,4 +1,4 @@
-import styles from "./VolunteerDashboard.module.css";
+import styles from "./PanelVoluntario.module.css";
 
 const activities = [
   {
