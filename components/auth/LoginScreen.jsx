@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
-import { supabase } from '@/lib/supabase/client';
+import { loginUser, loginWithGoogle } from '@/lib/auth/login';
 import LoginVisual from './LoginVisual';
 
 export default function LoginScreen() {
@@ -19,18 +19,13 @@ export default function LoginScreen() {
     setIsSubmitting(true);
     setMessage('');
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { hd: 'sembrandoperu.org' },
-      },
-    });
+    const { error } = await loginWithGoogle();
 
     if (error) {
       setMessage(error.message);
       setIsSubmitting(false);
     }
+    // No redirigimos aquí porque la redirección la maneja Supabase OAuth
   }
 
   async function handleSubmit(event) {
@@ -45,13 +40,15 @@ export default function LoginScreen() {
     setMessage('');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await loginUser(email, password);
 
       if (error) {
         setMessage(error.message);
         return;
       }
 
+      // Redirigir según el rol (lo haremos más adelante)
+      // Por ahora, siempre a principal
       router.push('/principal');
     } catch {
       setMessage('No se pudo conectar con Supabase. Inténtalo nuevamente.');
@@ -68,7 +65,11 @@ export default function LoginScreen() {
         <section className="form-panel" aria-labelledby="welcome-title">
           <div className="form-content">
             <header>
-              <img className="login-brand-logo" src="/images/sembrando-peru-logo.jfif" alt="Logo de Sembrando Perú" />
+              <img
+                className="login-brand-logo"
+                src="/images/sembrando-peru-logo.jfif"
+                alt="Logo de Sembrando Perú"
+              />
               <h2 id="welcome-title">Bienvenido a Sembrando Perú - Asistencia</h2>
               <p>Ingresa tus credenciales para gestionar tus actividades de voluntariado.</p>
             </header>
@@ -77,7 +78,16 @@ export default function LoginScreen() {
               <label htmlFor="email">Correo electrónico</label>
               <div className="input-wrap">
                 <span className="input-icon" aria-hidden="true">✉</span>
-                <input id="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} pattern=".+@sembrandoperu\.org" title="Usa un correo @sembrandoperu.org" placeholder="nombre@sembrandoperu.org" required />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  pattern=".+@sembrandoperu\.org"
+                  title="Usa un correo @sembrandoperu.org"
+                  placeholder="nombre@sembrandoperu.org"
+                  required
+                />
               </div>
 
               <div className="password-label">
@@ -86,23 +96,70 @@ export default function LoginScreen() {
               </div>
               <div className="input-wrap">
                 <span className="input-icon lock" aria-hidden="true">♙</span>
-                <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" required />
-                <button className="eye" type="button" aria-label="Mostrar contraseña" onClick={() => setShowPassword(!showPassword)}>◉</button>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  className="eye"
+                  type="button"
+                  aria-label="Mostrar contraseña"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  ◉
+                </button>
               </div>
 
-              <label className="remember"><input type="checkbox" /><span>Recordar sesión</span></label>
-              <button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}</button>
+              <label className="remember">
+                <input type="checkbox" />
+                <span>Recordar sesión</span>
+              </label>
+
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
+              </button>
+
               {message && <p className="message" role="status">{message}</p>}
             </form>
 
-            <div className="divider"><span /><b>o</b><span /></div>
-            <button className="google-button" type="button" onClick={handleGoogleLogin} disabled={isSubmitting}><strong>G</strong> Continuar con Google</button>
-            <p className="register">¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link></p>
-            <button className="access-button" type="button"><span>♧</span> Solicitar acceso</button>
-            <p className="request-note">Para nuevas organizaciones que desean digitalizar su impacto social.</p>
+            <div className="divider">
+              <span /><b>o</b><span />
+            </div>
+
+            <button
+              className="google-button"
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isSubmitting}
+            >
+              <strong>G</strong> Continuar con Google
+            </button>
+
+            <p className="register">
+              ¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link>
+            </p>
+
+            <button className="access-button" type="button">
+              <span>♧</span> Solicitar acceso
+            </button>
+            <p className="request-note">
+              Para nuevas organizaciones que desean digitalizar su impacto social.
+            </p>
           </div>
 
-          <footer><a href="#terms">Términos</a><a href="#privacy">Privacidad</a><a href="#help">Ayuda</a></footer>
+          <footer>
+            <a href="#terms">Términos</a>
+            <a href="#privacy">Privacidad</a>
+            <a href="#help">Ayuda</a>
+          </footer>
         </section>
       </section>
     </main>
