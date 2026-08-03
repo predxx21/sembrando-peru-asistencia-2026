@@ -1,15 +1,10 @@
-import { notFound } from "next/navigation";
-import CorrectionForm from "@/components/history/CorregirActividad";
-import { getActivityById } from "@/components/history/historyData";
+'use client';
 
-export default async function RegistroEditarPage({ params }) {
-  const { id } = await params;
+import { useParams } from 'next/navigation';
+import CorrectionForm from '@/components/history/CorregirActividad';
+import ActivityLoader from '@/components/history/ActivityLoader';
 
-  const activity = getActivityById(id);
-
-  if (!activity) {
-    notFound();
-  }
-
-  return <CorrectionForm activity={activity} />;
+export default function RegistroEditarPage() {
+  const { id } = useParams();
+  return <ActivityLoader id={id}>{(activity) => <CorrectionForm activity={activity} />}</ActivityLoader>;
 }

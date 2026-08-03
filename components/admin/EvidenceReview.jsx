@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { reviewSubmission } from "./adminData";
 import styles from "./EvidenceReview.module.css";
 
 const STATUS_CONFIG = {
@@ -18,15 +19,13 @@ export default function EvidenceReview({ submission }) {
 
   const statusInfo = STATUS_CONFIG[status] ?? STATUS_CONFIG.pendiente;
 
-  function handleApprove() {
-    // TODO: conectar con el backend para aprobar el registro de horas.
-    console.log("Aprobar", submission.id, { note });
+  async function handleApprove() {
+    await reviewSubmission(submission.id, "aprobado", note);
     setStatus("aprobado");
   }
 
-  function handleReject() {
-    // TODO: conectar con el backend para rechazar el registro de horas.
-    console.log("Rechazar", submission.id, { note });
+  async function handleReject() {
+    await reviewSubmission(submission.id, "rechazado", note);
     setStatus("rechazado");
   }
 

@@ -1,15 +1,10 @@
-import { notFound } from "next/navigation";
-import EvidenceViewer from "@/components/history/VerEvidencia";
-import { getActivityById } from "@/components/history/historyData";
+'use client';
 
-export default async function HistorialEvidenciaPage({ params }) {
-  const { id } = await params;
+import { useParams } from 'next/navigation';
+import EvidenceViewer from '@/components/history/VerEvidencia';
+import ActivityLoader from '@/components/history/ActivityLoader';
 
-  const activity = getActivityById(id);
-
-  if (!activity) {
-    notFound();
-  }
-
-  return <EvidenceViewer activity={activity} />;
+export default function HistorialEvidenciaPage() {
+  const { id } = useParams();
+  return <ActivityLoader id={id}>{(activity) => <EvidenceViewer activity={activity} />}</ActivityLoader>;
 }

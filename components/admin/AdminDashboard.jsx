@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { submissions } from "./adminData";
+import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import styles from "./AdminDashboard.module.css";
 
 const summaryStats = [
@@ -64,19 +64,44 @@ const auditLog = [
 ];
 
 export default function AdminDashboard() {
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dataError, setDataError] = useState("");
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  function handleApprove(id) {
-    // TODO: conectar con el backend para aprobar el registro de horas.
-    console.log("Aprobar", id);
+  useEffect(() => {
+    async function loadSubmissions() {
+      try {
+        setSubmissions(await getPendingSubmissions());
+      } catch (error) {
+        setDataError(error.message || "No se pudieron cargar los registros.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSubmissions();
+  }, []);
+
+  async function handleApprove(id) {
+    try {
+      await reviewSubmission(id, "aprobado", "");
+      setSubmissions((current) => current.filter((submission) => submission.id !== id));
+    } catch (error) {
+      setDataError(error.message || "No se pudo aprobar el registro.");
+    }
   }
 
-  function handleReject(id) {
-    // TODO: conectar con el backend para rechazar el registro de horas.
-    console.log("Rechazar", id);
+  async function handleReject(id) {
+    try {
+      await reviewSubmission(id, "rechazado", "");
+      setSubmissions((current) => current.filter((submission) => submission.id !== id));
+    } catch (error) {
+      setDataError(error.message || "No se pudo rechazar el registro.");
+    }
   }
 
   const maxVolume = Math.max(...weeklyVolume.map((d) => d.value));
@@ -149,6 +174,9 @@ export default function AdminDashboard() {
           <span className={styles.actionsHead}>Acciones</span>
         </div>
 
+        {loading && <p>Cargando registros desde Supabase...</p>}
+        {dataError && <p>{dataError}</p>}
+        {!loading && !dataError && submissions.length === 0 && <p>No hay registros pendientes.</p>}
         {submissions.map((item) => (
           <div className={styles.tableRow} key={item.id}>
             <span className={styles.volunteerCell}>

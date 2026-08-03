@@ -1,15 +1,10 @@
-import { notFound } from "next/navigation";
-import EvidenceReview from "@/components/admin/EvidenceReview";
-import { getSubmissionById } from "@/components/admin/adminData";
+'use client';
 
-export default async function EvidenceReviewPage({ params }) {
-  const { id } = await params;
+import { useParams } from 'next/navigation';
+import EvidenceReview from '@/components/admin/EvidenceReview';
+import SubmissionLoader from '@/components/admin/SubmissionLoader';
 
-  const submission = getSubmissionById(id);
-
-  if (!submission) {
-    notFound();
-  }
-
-  return <EvidenceReview submission={submission} />;
+export default function EvidenceReviewPage() {
+  const { id } = useParams();
+  return <SubmissionLoader id={id}>{(submission) => <EvidenceReview submission={submission} />}</SubmissionLoader>;
 }

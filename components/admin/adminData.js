@@ -1,73 +1,73 @@
-// Datos de ejemplo para el panel de administración.
-// TODO: reemplazar por datos reales desde el backend (API/BD).
+import { supabase } from '@/lib/supabaseClient';
 
-export const submissions = [
-  {
-    id: "VL-9032",
-    name: "Jane Doe",
-    initials: "JD",
-    avatarColor: "#2f6fed",
-    date: "24 Oct, 2023",
-    type: "Trabajo de Campo",
-    duration: "4.5 hrs",
-    status: "pendiente",
-    description:
-      "Distribución de kits de higiene y apoyo logístico en el centro comunitario sector sur. Se atendieron a 45 familias damnificadas y se organizó el inventario restante en bodega.",
-    location: "Sector Sur, Centro Comunitario",
-    evidencePhoto: "/images/reforestacion-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_campo_sur.jpg",
-    evidenceFileSize: "2.4 MB",
-  },
-  {
-    id: "VL-8821",
-    name: "Marcus Smith",
-    initials: "MS",
-    avatarColor: "#2f9e6f",
-    date: "23 Oct, 2023",
-    type: "Administrativo",
-    duration: "2.0 hrs",
-    status: "pendiente",
-    description:
-      "Actualización del inventario de herramientas y materiales en el almacén central, previo a la jornada de reforestación de la próxima semana.",
-    location: "Almacén Central, Sede Lima",
-    evidencePhoto: "/images/bosque-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_inventario.jpg",
-    evidenceFileSize: "1.8 MB",
-  },
-  {
-    id: "VL-9104",
-    name: "Aisha Rashid",
-    initials: "AR",
-    avatarColor: "#e08a2c",
-    date: "22 Oct, 2023",
-    type: "Alcance Comunitario",
-    duration: "6.0 hrs",
-    status: "pendiente",
-    description:
-      "Jornada de sensibilización ambiental con familias de la comunidad, incluyendo recorrido por las zonas reforestadas y registro fotográfico del avance.",
-    location: "Zona de Reforestación, Sector Norte",
-    evidencePhoto: "/images/reforestacion-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_alcance_comunitario.jpg",
-    evidenceFileSize: "3.1 MB",
-  },
-  {
-    id: "VL-8440",
-    name: "Kevin Lee",
-    initials: "KL",
-    avatarColor: "#8b7ce0",
-    date: "22 Oct, 2023",
-    type: "Trabajo de Campo",
-    duration: "3.5 hrs",
-    status: "pendiente",
-    description:
-      "Apoyo en la siembra de plantones en la zona designada, junto con el registro fotográfico del estado del terreno antes de iniciar la actividad.",
-    location: "Vivero Comunitario, Sector Este",
-    evidencePhoto: "/images/bosque-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_siembra.jpg",
-    evidenceFileSize: "2.0 MB",
-  },
-];
+function formatDate(date) {
+  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(new Date(`${date}T00:00:00`));
+}
 
-export function getSubmissionById(id) {
-  return submissions.find((submission) => submission.id === id) ?? null;
+function duration(startTime, endTime) {
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  return Math.max(0, (endHour * 60 + endMinute - startHour * 60 - startMinute) / 60);
+}
+
+function initials(name) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function mapSubmission(row) {
+  const name = row.profiles?.full_name || 'Voluntario';
+  const evidencePhoto = row.evidence_path
+    ? supabase.storage.from('activity-evidence').getPublicUrl(row.evidence_path).data.publicUrl
+    : null;
+
+  return {
+    id: row.id,
+    name,
+    initials: initials(name),
+    avatarColor: '#287a49',
+    date: formatDate(row.activity_date),
+    type: row.activity_type,
+    duration: `${duration(row.start_time, row.end_time)} hrs`,
+    status: row.status,
+    description: row.description,
+    location: row.location || 'Sin ubicación registrada',
+    evidencePhoto,
+    evidenceFileName: row.evidence_file_name || 'Sin evidencia adjunta',
+    evidenceFileSize: row.evidence_file_size ? `${(row.evidence_file_size / 1024 / 1024).toFixed(1)} MB` : '',
+    coordinatorComment: row.coordinator_comment || '',
+  };
+}
+
+export async function getPendingSubmissions() {
+  const { data, error } = await supabase
+    .from('activity_registrations')
+    .select('*, profiles(full_name)')
+    .eq('status', 'pendiente')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data.map(mapSubmission);
+}
+
+export async function getSubmissionById(id) {
+  const { data, error } = await supabase
+    .from('activity_registrations')
+    .select('*, profiles(full_name)')
+    .eq('id', id)
+    .single();
+
+  if (error) return null;
+  return mapSubmission(data);
+}
+
+export async function reviewSubmission(id, status, coordinatorComment) {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+
+  const { error } = await supabase
+    .from('activity_registrations')
+    .update({ status, coordinator_comment: coordinatorComment, reviewed_by: userData.user.id, reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
 }

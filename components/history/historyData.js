@@ -1,112 +1,65 @@
-// Datos de ejemplo para el historial del voluntario.
-// TODO: reemplazar por datos reales desde Supabase (filtrados por el usuario en sesión).
+import { supabase } from '@/lib/supabaseClient';
 
-export const historyActivities = [
-  {
-    id: "VL-9032",
-    title: "Taller de Alfabetización Digital",
-    description: "Apoyo técnico a adultos mayores en el centro comunitario.",
-    date: "14 Oct, 2023",
-    isoDate: "2023-10-14",
-    startTime: "09:00",
-    endTime: "13:30",
-    hours: 4.5,
-    type: "Trabajo de Campo",
-    status: "aprobado",
-    evidencePhoto: "/images/reforestacion-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_alfabetizacion.jpg",
-    location: "Centro Comunitario, Sector Sur",
-    coordinatorComment: "",
-    reviewedBy: "Sarah Jenkins",
-  },
-  {
-    id: "VL-8892",
-    title: "Coordinación Logística",
-    description: "Gestión de inventario para la próxima entrega de suministros.",
-    date: "12 Oct, 2023",
-    isoDate: "2023-10-12",
-    startTime: "08:00",
-    endTime: "11:00",
-    hours: 3.0,
-    type: "Administrativo",
-    status: "pendiente",
-    evidencePhoto: "/images/bosque-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_inventario_logistica.jpg",
-    location: "Almacén Central",
-    coordinatorComment: "",
-    reviewedBy: "",
-  },
-  {
-    id: "VL-9101",
-    title: "Brigada de Salud Rural",
-    description: "Asistencia en triaje para comunidad rural.",
-    date: "10 Oct, 2023",
-    isoDate: "2023-10-10",
-    startTime: "07:00",
-    endTime: "15:00",
-    hours: 8.0,
-    type: "Salud",
-    status: "rechazado",
-    evidencePhoto: "/images/reforestacion-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_brigada_salud.jpg",
-    location: "Comunidad Rural, Zona Norte",
-    coordinatorComment:
-      "La evidencia fotográfica no muestra claramente la actividad de triaje realizada. Por favor, suba una nueva imagen donde se aprecie el trabajo con la comunidad y los participantes.",
-    reviewedBy: "Carlos Mendoza",
-  },
-  {
-    id: "VL-8745",
-    title: "Mantenimiento de Huertos",
-    description: "Preparación de suelo y siembra de temporada en el huerto comunitario.",
-    date: "08 Oct, 2023",
-    isoDate: "2023-10-08",
-    startTime: "08:30",
-    endTime: "13:30",
-    hours: 5.0,
-    type: "Medio Ambiente",
-    status: "aprobado",
-    evidencePhoto: "/images/bosque-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_huertos.jpg",
-    location: "Huerto Comunitario, Sector Este",
-    coordinatorComment: "",
-    reviewedBy: "Sarah Jenkins",
-  },
-  {
-    id: "VL-8563",
-    title: "Reforestación Urbana",
-    description: "Siembra de árboles nativos en parques de la ciudad.",
-    date: "05 Oct, 2023",
-    isoDate: "2023-10-05",
-    startTime: "09:00",
-    endTime: "15:30",
-    hours: 6.5,
-    type: "Medio Ambiente",
-    status: "pendiente",
-    evidencePhoto: "/images/reforestacion-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_reforestacion_urbana.jpg",
-    location: "Parque Los Olivos",
-    coordinatorComment: "",
-    reviewedBy: "",
-  },
-  {
-    id: "VL-8210",
-    title: "Campaña de Alimentos",
-    description: "Clasificación y empaque de donaciones para familias vulnerables.",
-    date: "02 Oct, 2023",
-    isoDate: "2023-10-02",
-    startTime: "10:00",
-    endTime: "14:00",
-    hours: 4.0,
-    type: "Alcance Comunitario",
-    status: "aprobado",
-    evidencePhoto: "/images/bosque-sembrando-peru.jpg",
-    evidenceFileName: "evidencia_campana_alimentos.jpg",
-    location: "Banco de Alimentos, Sede Central",
-    coordinatorComment: "",
-    reviewedBy: "Robert Chen",
-  },
-];
+function formatDate(date) {
+  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(new Date(`${date}T00:00:00`));
+}
 
-export function getActivityById(id) {
-  return historyActivities.find((activity) => activity.id === id) ?? null;
+function hours(startTime, endTime) {
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+  return Math.max(0, Math.round(((endHour * 60 + endMinute - startHour * 60 - startMinute) / 60) * 10) / 10);
+}
+
+function mapActivity(row) {
+  const evidencePhoto = row.evidence_path
+    ? supabase.storage.from('activity-evidence').getPublicUrl(row.evidence_path).data.publicUrl
+    : null;
+
+  return {
+    id: row.id,
+    title: row.activity_type,
+    description: row.description,
+    date: formatDate(row.activity_date),
+    isoDate: row.activity_date,
+    startTime: row.start_time.slice(0, 5),
+    endTime: row.end_time.slice(0, 5),
+    hours: hours(row.start_time, row.end_time),
+    type: row.activity_type,
+    status: row.status,
+    evidencePhoto,
+    evidenceFileName: row.evidence_file_name || 'Sin evidencia adjunta',
+    location: row.location || 'Sin ubicación registrada',
+    coordinatorComment: row.coordinator_comment || '',
+    reviewedBy: '',
+  };
+}
+
+export async function getHistoryActivities() {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!userData.user) return [];
+
+  const { data, error } = await supabase
+    .from('activity_registrations')
+    .select('*')
+    .eq('user_id', userData.user.id)
+    .order('activity_date', { ascending: false });
+
+  if (error) throw error;
+  return data.map(mapActivity);
+}
+
+export async function getActivityById(id) {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return null;
+
+  const { data, error } = await supabase
+    .from('activity_registrations')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', userData.user.id)
+    .single();
+
+  if (error) return null;
+  return mapActivity(data);
 }
