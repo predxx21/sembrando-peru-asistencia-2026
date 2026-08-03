@@ -1,4 +1,4 @@
-import VolunteerDashboard from "@/components/volunteer/VolunteerDashboard";
+import VolunteerDashboard from "@/components/volunteer/PanelVoluntario";
 
 export default function PrincipalPage() {
   return <VolunteerDashboard />;

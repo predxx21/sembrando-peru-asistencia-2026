@@ -19,7 +19,7 @@ export default function Sidebar() {
       href: "/historial",
     },
     {
-      label: "◉　Panel de Administración",
+      label: "◉　Administración",
       href: "/administracion",
     },
     {

@@ -1,0 +1,183 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.closeButton {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  border: 0;
+  background: transparent;
+  color: #667281;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #26384b;
+}
+
+.modal h2 {
+  color: #197343;
+  font-size: 24px;
+  margin: 0 0 8px;
+  padding-right: 32px;
+}
+
+.subtitle {
+  color: #667281;
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  display: block;
+  color: #26384b;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.formatGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.formatOption {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border: 1.5px solid #dfe4ea;
+  border-radius: 10px;
+  background: white;
+  padding: 20px 12px;
+  cursor: pointer;
+  color: #26384b;
+  font-size: 14px;
+}
+
+.formatOption:hover {
+  border-color: #b7c6d6;
+}
+
+.formatOptionActive {
+  border-color: #197343;
+  background: #e7f4ec;
+}
+
+.formatIcon {
+  font-size: 22px;
+  color: #197343;
+}
+
+.formatOption strong {
+  font-weight: 600;
+}
+
+.dateSelect {
+  width: 100%;
+  border: 1px solid #dfe4ea;
+  border-radius: 10px;
+  background: #f8f9ff;
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #26384b;
+  font-family: inherit;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #667281 50%),
+    linear-gradient(135deg, #667281 50%, transparent 50%);
+  background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.dateSelect:focus {
+  outline: 2px solid #197343;
+  outline-offset: 1px;
+}
+
+.filtersRow {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: #f8f9ff;
+  border: 1px solid #dfe4ea;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.checkboxOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #26384b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkboxOption input {
+  width: 18px;
+  height: 18px;
+  accent-color: #197343;
+  cursor: pointer;
+}
+
+.generateButton {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: #197343;
+  color: white;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.generateButton:hover {
+  background: #125a33;
+}
+
+.backLink {
+  display: block;
+  width: 100%;
+  text-align: center;
+  border: 0;
+  background: transparent;
+  color: #197343;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}

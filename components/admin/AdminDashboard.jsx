@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { submissions } from "./adminData";
 import styles from "./AdminDashboard.module.css";
 
 const summaryStats = [
@@ -27,53 +29,6 @@ const summaryStats = [
     label: "Voluntarios Activos",
     value: "82",
     detail: "este mes",
-  },
-];
-
-const submissions = [
-  {
-    id: "VL-9032",
-    name: "Jane Doe",
-    initials: "JD",
-    avatarColor: "#2f6fed",
-    date: "24 Oct, 2023",
-    type: "Trabajo de Campo",
-    duration: "4.5 hrs",
-    evidenceIcon: "📎",
-    evidenceName: "timesheet_v2.pdf",
-  },
-  {
-    id: "VL-8821",
-    name: "Marcus Smith",
-    initials: "MS",
-    avatarColor: "#2f9e6f",
-    date: "23 Oct, 2023",
-    type: "Administrativo",
-    duration: "2.0 hrs",
-    evidenceIcon: "🖼",
-    evidenceName: "screenshot_1023.jpg",
-  },
-  {
-    id: "VL-9104",
-    name: "Aisha Rashid",
-    initials: "AR",
-    avatarColor: "#e08a2c",
-    date: "22 Oct, 2023",
-    type: "Alcance Comunitario",
-    duration: "6.0 hrs",
-    evidenceIcon: "📍",
-    evidenceName: "geo_log_report.pdf",
-  },
-  {
-    id: "VL-8440",
-    name: "Kevin Lee",
-    initials: "KL",
-    avatarColor: "#8b7ce0",
-    date: "22 Oct, 2023",
-    type: "Trabajo de Campo",
-    duration: "3.5 hrs",
-    evidenceIcon: "✍",
-    evidenceName: "signature_scan.png",
   },
 ];
 
@@ -219,7 +174,7 @@ export default function AdminDashboard() {
             <span>{item.duration}</span>
 
             <span className={styles.evidenceCell}>
-              {item.evidenceIcon} {item.evidenceName}
+              📷 {item.evidenceFileName}
             </span>
 
             <span className={styles.actionsCell}>
@@ -241,9 +196,12 @@ export default function AdminDashboard() {
                 ✕
               </button>
 
-              <button type="button" className={styles.evidenceButton}>
+              <Link
+                href={`/administracion/${item.id}`}
+                className={styles.evidenceButton}
+              >
                 Ver Evidencia
-              </button>
+              </Link>
             </span>
           </div>
         ))}
