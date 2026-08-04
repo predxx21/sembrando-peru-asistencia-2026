@@ -13,7 +13,8 @@ export default function RegisterScreen() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    const form = event.target; // ✅ usar event.target en vez de currentTarget
+    const formData = new FormData(form);
 
     const nombre = String(formData.get('nombre')).trim();
     const apellido = String(formData.get('apellido')).trim();
@@ -21,7 +22,6 @@ export default function RegisterScreen() {
     const password = String(formData.get('password'));
     const confirmPassword = String(formData.get('confirmPassword'));
 
-    // Validaciones
     if (!nombre || !apellido) {
       setMessage('Por favor, ingresa tu nombre y apellido.');
       return;
@@ -53,18 +53,16 @@ export default function RegisterScreen() {
         return;
       }
 
-      // Si el usuario ya tiene sesión (confirmación automática), redirigir
-      if (data.session) {
+      // ✅ Usar optional chaining para evitar errores si data es null
+      if (data?.session) {
         router.push('/principal');
         return;
       }
 
-      // Si no hay sesión, significa que requiere confirmación de correo
-      setMessage(
-        'Cuenta creada. Revisa tu correo electrónico para confirmar tu registro.'
-      );
-      event.currentTarget.reset();
-    } catch {
+      setMessage('Cuenta creada. Revisa tu correo electrónico para confirmar tu registro.');
+      form.reset(); // ✅ usar form.reset() en vez de currentTarget.reset()
+    } catch (err) {
+      console.error('Error en registro:', err); // ✅ Ver el error real
       setMessage('No se pudo conectar con Supabase. Inténtalo nuevamente.');
     } finally {
       setIsSubmitting(false);
