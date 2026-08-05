@@ -2,66 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import styles from "./AdminDashboard.module.css";
 
-const summaryStats = [
-  {
-    id: "pending",
-    label: "Esperando Aprobación",
-    value: "24",
-    detail: "+5 hoy",
-  },
-  {
-    id: "avgTime",
-    label: "Tiempo Prom. de Revisión",
-    value: "4.2h",
-    detail: "por entrada",
-  },
-  {
-    id: "totalHours",
-    label: "Total de Horas de Voluntariado",
-    value: "1,280",
-    detail: "↑ 12%",
-  },
-  {
-    id: "activeVolunteers",
-    label: "Voluntarios Activos",
-    value: "82",
-    detail: "este mes",
-  },
-];
-
-const weeklyVolume = [
-  { day: "L", value: 55 },
-  { day: "M", value: 78 },
-  { day: "M", value: 60 },
-  { day: "J", value: 92 },
-  { day: "V", value: 70 },
-  { day: "S", value: 38 },
-  { day: "D", value: 30 },
-];
-
-const auditLog = [
-  {
-    id: 1,
-    type: "approved",
-    label: "Aprobado: VL-9011",
-    detail: "por Coordinadora Sarah • hace 5m",
-  },
-  {
-    id: 2,
-    type: "rejected",
-    label: "Rechazado: VL-8892",
-    detail: "por Coordinador Mike • hace 12m",
-  },
-  {
-    id: 3,
-    type: "started",
-    label: "Revisión Iniciada: VL-9032",
-    detail: "por Coordinadora Sarah • hace 1h",
-  },
-];
+// Componente para el spinner de carga
+function LoadingSpinner() {
+  return <span className={styles.loadingSpinner}>⏳</span>;
+}
 
 export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -71,52 +19,156 @@ export default function AdminDashboard() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
+  // Estado para estadísticas, tendencia y auditoría
+  const [stats, setStats] = useState({
+    pendientes: 0,
+    totalHoras: 0,
+    horasAprobadas: 0,
+    voluntariosActivos: 0,
+  });
+  const [weeklyVolume, setWeeklyVolume] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Cargar estadísticas, tendencia y auditoría
+  async function cargarEstadisticas() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    try {
+      // Estadísticas
+      const resStats = await fetch('/api/estadisticas?tipo=estadisticas', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const statsData = await resStats.json();
+      if (statsData.data) {
+        setStats({
+          pendientes: statsData.data.pendientes || 0,
+          totalHoras: statsData.data.totalHoras || 0,
+          horasAprobadas: statsData.data.horasAprobadas || 0,
+          voluntariosActivos: statsData.data.voluntariosActivos || 0,
+        });
+      }
+
+      // Tendencia
+      const resTendencia = await fetch('/api/estadisticas?tipo=tendencia', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const tendenciaData = await resTendencia.json();
+      if (tendenciaData.data) {
+        setWeeklyVolume(tendenciaData.data);
+      }
+
+      // Auditoría
+      const resAuditoria = await fetch('/api/estadisticas?tipo=auditoria', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const auditoriaData = await resAuditoria.json();
+      if (auditoriaData.data) {
+        setAuditLog(auditoriaData.data.map((item, index) => ({
+          id: index,
+          type: item.estado === 'aprobado' ? 'approved' : 'rejected',
+          label: `${item.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}: Registro #${item.id}`,
+          detail: `por ${item.revisor?.nombre || 'Coordinador'} • ${new Date(item.fechaRevision).toLocaleString('es-PE')}`,
+        })));
+      }
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
+
+  // Cargar registros pendientes (con paginación y filtros)
+  async function cargarRegistros() {
+    try {
+      setLoading(true);
+      const registros = await getPendingSubmissions();
+
+      // Aplicar filtros de búsqueda y fecha
+      let filtrados = registros;
+      if (search) {
+        filtrados = filtrados.filter(r =>
+          r.name.toLowerCase().includes(search.toLowerCase()) ||
+          r.description?.toLowerCase().includes(search.toLowerCase())
+        );
+      }
+      if (dateFrom) {
+        filtrados = filtrados.filter(r => new Date(r.date) >= new Date(dateFrom));
+      }
+      if (dateTo) {
+        filtrados = filtrados.filter(r => new Date(r.date) <= new Date(dateTo));
+      }
+
+      setSubmissions(filtrados);
+      setCurrentPage(1); // Resetear a primera página al aplicar filtros
+    } catch (error) {
+      setDataError(error.message || "No se pudieron cargar los registros.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadSubmissions() {
-      try {
-        setSubmissions(await getPendingSubmissions());
-      } catch (error) {
-        setDataError(error.message || "No se pudieron cargar los registros.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadSubmissions();
+    cargarEstadisticas();
+    cargarRegistros();
   }, []);
+
+  // Cargar registros cuando cambian los filtros
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      cargarRegistros();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, dateFrom, dateTo]);
 
   async function handleApprove(id) {
     try {
-      await reviewSubmission(id, "aprobado", "");
+      await reviewSubmission(id, "aprobado", "Aprobado por el coordinador.");
+      // Actualizar la lista local
       setSubmissions((current) => current.filter((submission) => submission.id !== id));
+      // Actualizar estadísticas
+      setStats(prev => ({
+        ...prev,
+        pendientes: prev.pendientes - 1,
+        horasAprobadas: prev.horasAprobadas + (submissions.find(s => s.id === id)?.horas || 0),
+      }));
     } catch (error) {
       setDataError(error.message || "No se pudo aprobar el registro.");
     }
   }
 
   async function handleReject(id) {
+    const comentario = prompt('Motivo del rechazo:');
+    if (comentario === null) return;
     try {
-      await reviewSubmission(id, "rechazado", "");
+      await reviewSubmission(id, "rechazado", comentario);
       setSubmissions((current) => current.filter((submission) => submission.id !== id));
+      setStats(prev => ({
+        ...prev,
+        pendientes: prev.pendientes - 1,
+      }));
     } catch (error) {
       setDataError(error.message || "No se pudo rechazar el registro.");
     }
   }
 
-  const maxVolume = Math.max(...weeklyVolume.map((d) => d.value));
+  // Paginación
+  const totalPages = Math.ceil(submissions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = submissions.slice(startIndex, startIndex + itemsPerPage);
+  const maxVolume = Math.max(...weeklyVolume.map(d => d.value), 1);
 
   return (
     <div className={styles.adminPage}>
       <header className={styles.pageHeader}>
         <div>
           <h1>Revisión de Evidencias Pendientes</h1>
-          <p>
-            Revisar y auditar las horas enviadas por la red de
-            voluntarios.
-          </p>
+          <p>Revisar y auditar las horas enviadas por la red de voluntarios.</p>
         </div>
-
         <div className={styles.headerControls}>
           <div className={styles.searchField}>
             <span>⌕</span>
@@ -127,7 +179,6 @@ export default function AdminDashboard() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-
           <div className={styles.dateRange}>
             <span>📅</span>
             <input
@@ -142,30 +193,54 @@ export default function AdminDashboard() {
               onChange={(event) => setDateTo(event.target.value)}
             />
           </div>
-
-          <button type="button" className={styles.filterButton}>
+          <button type="button" className={styles.filterButton} onClick={cargarRegistros}>
             ≡ Filtros
           </button>
         </div>
       </header>
 
       <section className={styles.stats}>
-        {summaryStats.map((stat) => (
-          <article className={styles.statCard} key={stat.id}>
-            <span className={styles.statLabel}>{stat.label}</span>
-
-            <div className={styles.statValueRow}>
-              <h2>{stat.value}</h2>
-              <small>{stat.detail}</small>
-            </div>
-          </article>
-        ))}
+        {loadingStats ? (
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Cargando estadísticas...</span>
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Esperando Aprobación</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.pendientes}</h2>
+                <small>{stats.pendientes > 0 ? `${stats.pendientes} pendientes` : 'Sin registros'}</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Horas Aprobadas</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.horasAprobadas}</h2>
+                <small>de {stats.totalHoras} hrs totales</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Total de Horas</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.totalHoras}</h2>
+                <small>↑ {stats.totalHoras > 0 ? 'Activo' : 'Sin registros'}</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Voluntarios Activos</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.voluntariosActivos}</h2>
+                <small>este mes</small>
+              </div>
+            </article>
+          </>
+        )}
       </section>
 
       <div className={styles.tableCard}>
-        <div
-          className={`${styles.tableRow} ${styles.tableRowHead}`}
-        >
+        <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
           <span>Voluntario</span>
           <span>Fecha de Actividad</span>
           <span>Tipo de Actividad</span>
@@ -174,37 +249,30 @@ export default function AdminDashboard() {
           <span className={styles.actionsHead}>Acciones</span>
         </div>
 
-        {loading && <p>Cargando registros desde Supabase...</p>}
-        {dataError && <p>{dataError}</p>}
-        {!loading && !dataError && submissions.length === 0 && <p>No hay registros pendientes.</p>}
-        {submissions.map((item) => (
+        {loading && <p>Cargando registros...</p>}
+        {dataError && <p className={styles.errorMessage}>{dataError}</p>}
+        {!loading && !dataError && currentItems.length === 0 && (
+          <p>No hay registros pendientes.</p>
+        )}
+        {currentItems.map((item) => (
           <div className={styles.tableRow} key={item.id}>
             <span className={styles.volunteerCell}>
-              <i
-                className={styles.avatar}
-                style={{ background: item.avatarColor }}
-              >
+              <i className={styles.avatar} style={{ background: item.avatarColor }}>
                 {item.initials}
               </i>
-
               <span>
                 <strong>{item.name}</strong>
                 <small>ID: #{item.id}</small>
               </span>
             </span>
-
             <span>{item.date}</span>
-
             <span>
               <i className={styles.typeBadge}>{item.type}</i>
             </span>
-
             <span>{item.duration}</span>
-
             <span className={styles.evidenceCell}>
               📷 {item.evidenceFileName}
             </span>
-
             <span className={styles.actionsCell}>
               <button
                 type="button"
@@ -214,7 +282,6 @@ export default function AdminDashboard() {
               >
                 ✓
               </button>
-
               <button
                 type="button"
                 className={styles.rejectButton}
@@ -223,7 +290,6 @@ export default function AdminDashboard() {
               >
                 ✕
               </button>
-
               <Link
                 href={`/administracion/${item.id}`}
                 className={styles.evidenceButton}
@@ -234,76 +300,89 @@ export default function AdminDashboard() {
           </div>
         ))}
 
-        <div className={styles.pagination}>
-          <span>Mostrando 1 a 4 de 24 entradas</span>
-
-          <div className={styles.pageControls}>
-            <button type="button" disabled={currentPage === 1}>
-              Anterior
-            </button>
-
-            {[1, 2, 3].map((page) => (
+        {!loading && !dataError && submissions.length > 0 && (
+          <div className={styles.pagination}>
+            <span>
+              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, submissions.length)} de {submissions.length} entradas
+            </span>
+            <div className={styles.pageControls}>
               <button
                 type="button"
-                key={page}
-                className={page === currentPage ? styles.pageActive : ""}
-                onClick={() => setCurrentPage(page)}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
               >
-                {page}
+                Anterior
               </button>
-            ))}
-
-            <button type="button" onClick={() => setCurrentPage((p) => p + 1)}>
-              Siguiente
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  type="button"
+                  key={page}
+                  className={page === currentPage ? styles.pageActive : ""}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <section className={styles.bottomGrid}>
         <article className={styles.chartCard}>
           <h2>Tendencias de Volumen de Envíos</h2>
-
-          <div className={styles.chart}>
-            {weeklyVolume.map((item, index) => (
-              <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
-                <div
-                  className={styles.chartBar}
-                  style={{ height: `${(item.value / maxVolume) * 100}%` }}
-                />
-                <span>{item.day}</span>
-              </div>
-            ))}
-          </div>
+          {weeklyVolume.length > 0 ? (
+            <div className={styles.chart}>
+              {weeklyVolume.map((item, index) => (
+                <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
+                  <div
+                    className={styles.chartBar}
+                    style={{ height: `${(item.value / maxVolume) * 100}%` }}
+                  />
+                  <span>{item.day}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No hay datos de tendencia.</p>
+          )}
         </article>
 
         <article className={styles.auditCard}>
           <h2>Registros de Auditoría</h2>
-
-          <ul className={styles.auditList}>
-            {auditLog.map((entry) => (
-              <li key={entry.id}>
-                <i
-                  className={`${styles.auditDot} ${
-                    entry.type === "approved"
-                      ? styles.dotApproved
-                      : entry.type === "rejected"
-                      ? styles.dotRejected
-                      : styles.dotStarted
-                  }`}
-                />
-
-                <div>
-                  <strong>{entry.label}</strong>
-                  <small>{entry.detail}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <a href="#" className={styles.auditLink}>
+          {auditLog.length > 0 ? (
+            <ul className={styles.auditList}>
+              {auditLog.map((entry) => (
+                <li key={entry.id}>
+                  <i
+                    className={`${styles.auditDot} ${
+                      entry.type === "approved"
+                        ? styles.dotApproved
+                        : entry.type === "rejected"
+                        ? styles.dotRejected
+                        : styles.dotStarted
+                    }`}
+                  />
+                  <div>
+                    <strong>{entry.label}</strong>
+                    <small>{entry.detail}</small>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No hay registros de auditoría.</p>
+          )}
+          <Link href="/reportes" className={styles.auditLink}>
             Ver Historial Completo
-          </a>
+          </Link>
         </article>
       </section>
     </div>

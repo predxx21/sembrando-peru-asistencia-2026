@@ -444,3 +444,20 @@
     display: none;
   }
 }
+
+.loadingSpinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  font-size: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.errorMessage {
+  color: #d64545;
+  padding: 12px;
+  text-align: center;
+}
