@@ -1,65 +1,62 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase/client';
 
-function formatDate(date) {
-  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(new Date(`${date}T00:00:00`));
+async function fetchRegistros() {
+  // Obtener el token de sesión
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    throw new Error('No hay sesión activa.');
+  }
+
+  const res = await fetch('/api/registros', {
+    cache: 'no-store',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error('Error al obtener los registros');
+  }
+  const data = await res.json();
+  return data.data || [];
 }
 
-function hours(startTime, endTime) {
-  const [startHour, startMinute] = startTime.split(':').map(Number);
-  const [endHour, endMinute] = endTime.split(':').map(Number);
-  return Math.max(0, Math.round(((endHour * 60 + endMinute - startHour * 60 - startMinute) / 60) * 10) / 10);
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('es-PE', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 function mapActivity(row) {
-  const evidencePhoto = row.evidence_path
-    ? supabase.storage.from('activity-evidence').getPublicUrl(row.evidence_path).data.publicUrl
-    : null;
-
   return {
     id: row.id,
-    title: row.activity_type,
-    description: row.description,
-    date: formatDate(row.activity_date),
-    isoDate: row.activity_date,
-    startTime: row.start_time.slice(0, 5),
-    endTime: row.end_time.slice(0, 5),
-    hours: hours(row.start_time, row.end_time),
-    type: row.activity_type,
-    status: row.status,
-    evidencePhoto,
-    evidenceFileName: row.evidence_file_name || 'Sin evidencia adjunta',
-    location: row.location || 'Sin ubicación registrada',
-    coordinatorComment: row.coordinator_comment || '',
-    reviewedBy: '',
+    title: row.descripcion,
+    description: row.descripcion,
+    date: formatDate(row.fecha),
+    isoDate: row.fecha,
+    startTime: row.horaInicio,
+    endTime: row.horaFin,
+    hours: row.horas,
+    type: row.tipo || 'Actividad',
+    status: row.estado,
+    evidencePhoto: row.evidenciaUrl,
+    evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
+    location: row.ubicacion || 'Sin ubicación',
+    coordinatorComment: row.comentarioRevision || '',
+    reviewedBy: row.revisor ? row.revisor.nombre : '',
   };
 }
 
 export async function getHistoryActivities() {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (!userData.user) return [];
-
-  const { data, error } = await supabase
-    .from('activity_registrations')
-    .select('*')
-    .eq('user_id', userData.user.id)
-    .order('activity_date', { ascending: false });
-
-  if (error) throw error;
-  return data.map(mapActivity);
+  const registros = await fetchRegistros();
+  return registros.map(mapActivity);
 }
 
 export async function getActivityById(id) {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) return null;
-
-  const { data, error } = await supabase
-    .from('activity_registrations')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', userData.user.id)
-    .single();
-
-  if (error) return null;
-  return mapActivity(data);
+  const registros = await fetchRegistros();
+  const row = registros.find(r => r.id === id);
+  return row ? mapActivity(row) : null;
 }

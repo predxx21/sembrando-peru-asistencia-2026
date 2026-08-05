@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ========== ENUMS ==========
+enum Rol {
+  voluntario
+  admin
+}
+
+enum EstadoRegistro {
+  pendiente
+  aprobado
+  rechazado
+}
+
+// ========== TABLAS ==========
+model Profile {
+  id            String             @id @default(uuid())
+  nombre        String
+  apellido      String
+  rol           Rol                @default(voluntario)
+  fechaCreacion DateTime           @default(now())
+  
+  registros     RegistroAsistencia[]
+  registrosRevisados RegistroAsistencia[] @relation("revisor")
+  
+  @@map("profiles")
+}
+
+model RegistroAsistencia {
+  id                Int              @id @default(autoincrement())
+  profileId         String
+  profile           Profile          @relation(fields: [profileId], references: [id])
+  
+  fecha             DateTime
+  horaInicio        String           // Se guarda como "HH:MM" en texto
+  horaFin           String
+  horas             Float
+  descripcion       String
+  evidenciaUrl      String?
+  estado            EstadoRegistro   @default(pendiente)
+  
+  comentarioRevision String?
+  revisorId         String?
+  revisor           Profile?         @relation("revisor", fields: [revisorId], references: [id])
+  fechaRevision     DateTime?
+  fechaCreacion     DateTime         @default(now())
+  
+  @@map("registroasistencia")
+}
