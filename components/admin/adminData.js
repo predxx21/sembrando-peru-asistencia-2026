@@ -1,25 +1,37 @@
+// components/admin/adminData.js
+
 import { supabase } from '@/lib/supabase/client';
 
-async function fetchRegistros() {
+// ============================================================
+// 1. Obtener token
+// ============================================================
+async function getToken() {
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  if (!token) {
-    throw new Error('No hay sesión activa.');
-  }
+  return session?.access_token;
+}
+
+// ============================================================
+// 2. Fetch de registros
+// ============================================================
+async function fetchRegistros() {
+  const token = await getToken();
+  if (!token) throw new Error('No hay sesión activa.');
 
   const res = await fetch('/api/registros', {
     cache: 'no-store',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { 'Authorization': `Bearer ${token}` },
   });
   if (!res.ok) {
-    throw new Error('Error al obtener los registros');
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al obtener los registros');
   }
   const data = await res.json();
   return data.data || [];
 }
 
+// ============================================================
+// 3. Transformar datos
+// ============================================================
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-PE', {
@@ -47,16 +59,46 @@ function mapActivity(row) {
   };
 }
 
+// ============================================================
+// 4. Funciones exportadas
+// ============================================================
 export async function getSubmissions() {
   const registros = await fetchRegistros();
   return registros.map(mapActivity);
 }
 
+export async function getPendingSubmissions() {
+  const registros = await fetchRegistros();
+  return registros
+    .filter(r => r.estado === 'pendiente')
+    .map(mapActivity);
+}
+
 export async function getSubmissionById(id) {
   const registros = await fetchRegistros();
-  const row = registros.find(r => r.id === id);
+  // 👇 Convertir a número porque Prisma usa Int
+  const row = registros.find(r => Number(r.id) === Number(id));
   return row ? mapActivity(row) : null;
 }
 
-// Para compatibilidad con el código existente que espera un array
-export const submissions = await getSubmissions();
+export async function reviewSubmission(id, estado, comentario) {
+  const token = await getToken();
+  if (!token) throw new Error('No hay sesión activa.');
+
+  const res = await fetch(`/api/registros/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ estado, comentarioRevision: comentario }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al revisar el registro.');
+  }
+
+  const data = await res.json();
+  return data.data;
+}
