@@ -206,3 +206,26 @@
     padding: 24px;
   }
 }
+
+.mensaje {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  text-align: center;
+  background: #f8f9ff;
+  border: 1px solid #dfe4ea;
+  color: #26384b;
+}
+
+.mensaje:has(> .✅) {
+  background: #e5f8ee;
+  border-color: #197343;
+  color: #197343;
+}
+
+.mensaje:has(> .❌) {
+  background: #fdecec;
+  border-color: #d64545;
+  color: #d64545;
+}

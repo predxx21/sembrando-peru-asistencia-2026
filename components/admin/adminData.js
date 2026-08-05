@@ -1,73 +1,62 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase/client';
 
-function formatDate(date) {
-  return new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium' }).format(new Date(`${date}T00:00:00`));
+async function fetchRegistros() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) {
+    throw new Error('No hay sesión activa.');
+  }
+
+  const res = await fetch('/api/registros', {
+    cache: 'no-store',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    throw new Error('Error al obtener los registros');
+  }
+  const data = await res.json();
+  return data.data || [];
 }
 
-function duration(startTime, endTime) {
-  const [startHour, startMinute] = startTime.split(':').map(Number);
-  const [endHour, endMinute] = endTime.split(':').map(Number);
-  return Math.max(0, (endHour * 60 + endMinute - startHour * 60 - startMinute) / 60);
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('es-PE', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
-function initials(name) {
-  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-}
-
-function mapSubmission(row) {
-  const name = row.profiles?.full_name || 'Voluntario';
-  const evidencePhoto = row.evidence_path
-    ? supabase.storage.from('activity-evidence').getPublicUrl(row.evidence_path).data.publicUrl
-    : null;
-
+function mapActivity(row) {
   return {
     id: row.id,
-    name,
-    initials: initials(name),
-    avatarColor: '#287a49',
-    date: formatDate(row.activity_date),
-    type: row.activity_type,
-    duration: `${duration(row.start_time, row.end_time)} hrs`,
-    status: row.status,
-    description: row.description,
-    location: row.location || 'Sin ubicación registrada',
-    evidencePhoto,
-    evidenceFileName: row.evidence_file_name || 'Sin evidencia adjunta',
-    evidenceFileSize: row.evidence_file_size ? `${(row.evidence_file_size / 1024 / 1024).toFixed(1)} MB` : '',
-    coordinatorComment: row.coordinator_comment || '',
+    name: row.profile?.nombre || 'Voluntario',
+    initials: row.profile?.nombre ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '') : 'V',
+    avatarColor: '#197343',
+    date: formatDate(row.fecha),
+    type: row.tipo || 'Actividad',
+    duration: `${row.horas} hrs`,
+    status: row.estado,
+    description: row.descripcion,
+    location: row.ubicacion || 'Sin ubicación',
+    evidencePhoto: row.evidenciaUrl,
+    evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
+    evidenceFileSize: 'N/A',
   };
 }
 
-export async function getPendingSubmissions() {
-  const { data, error } = await supabase
-    .from('activity_registrations')
-    .select('*, profiles(full_name)')
-    .eq('status', 'pendiente')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data.map(mapSubmission);
+export async function getSubmissions() {
+  const registros = await fetchRegistros();
+  return registros.map(mapActivity);
 }
 
 export async function getSubmissionById(id) {
-  const { data, error } = await supabase
-    .from('activity_registrations')
-    .select('*, profiles(full_name)')
-    .eq('id', id)
-    .single();
-
-  if (error) return null;
-  return mapSubmission(data);
+  const registros = await fetchRegistros();
+  const row = registros.find(r => r.id === id);
+  return row ? mapActivity(row) : null;
 }
 
-export async function reviewSubmission(id, status, coordinatorComment) {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-
-  const { error } = await supabase
-    .from('activity_registrations')
-    .update({ status, coordinator_comment: coordinatorComment, reviewed_by: userData.user.id, reviewed_at: new Date().toISOString() })
-    .eq('id', id);
-
-  if (error) throw error;
-}
+// Para compatibilidad con el código existente que espera un array
+export const submissions = await getSubmissions();
