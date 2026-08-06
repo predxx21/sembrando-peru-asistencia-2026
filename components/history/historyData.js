@@ -36,15 +36,16 @@ function mapActivity(row) {
     title: row.descripcion,
     description: row.descripcion,
     date: formatDate(row.fecha),
+    // Fecha ISO para poder inicializar el <input type="date"> de la pantalla
+    // de corrección (necesita "YYYY-MM-DD", no la fecha ya formateada).
     isoDate: row.fecha,
     startTime: row.horaInicio,
     endTime: row.horaFin,
     hours: row.horas,
-    type: row.tipo || 'Actividad',
     status: row.estado,
-    evidencePhoto: row.evidenciaUrl,
+    // Nombre del archivo de evidencia (la URL firmada se obtiene por separado
+    // con getEvidenciaSignedUrl porque el bucket es privado).
     evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
-    location: row.ubicacion || 'Sin ubicación',
     coordinatorComment: row.comentarioRevision || '',
     reviewedBy: row.revisor ? row.revisor.nombre : '',
   };
@@ -57,6 +58,8 @@ export async function getHistoryActivities() {
 
 export async function getActivityById(id) {
   const registros = await fetchRegistros();
-  const row = registros.find(r => r.id === id);
+  // 👇 Convertir a número porque Prisma usa Int (igual que en adminData.js).
+  // El id llega como string desde useParams().
+  const row = registros.find(r => Number(r.id) === Number(id));
   return row ? mapActivity(row) : null;
 }

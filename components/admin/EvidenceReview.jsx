@@ -51,11 +51,9 @@ export default function EvidenceReview() {
           initials: registro.profile?.nombre ? registro.profile.nombre.charAt(0) + (registro.profile.apellido?.charAt(0) || "") : "V",
           avatarColor: "#197343",
           date: new Date(registro.fecha).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }),
-          type: registro.tipo || "Actividad",
           duration: `${registro.horas} hrs`,
           status: registro.estado,
           description: registro.descripcion,
-          location: registro.ubicacion || "Sin ubicación",
           evidenceFileName: registro.evidenciaUrl ? registro.evidenciaUrl.split("/").pop() : "Sin evidencia",
         });
         setSignedUrl(registro.evidenciaSignedUrl);
@@ -146,10 +144,6 @@ export default function EvidenceReview() {
           <article className={styles.detailsCard}>
             <h2>ⓘ Detalles de Actividad</h2>
             <div className={styles.detailsRow}>
-              <div>
-                <span className={styles.detailLabel}>Tipo</span>
-                <i className={styles.typeBadge}>{submission.type}</i>
-              </div>
               <div className={styles.durationBlock}>
                 <span className={styles.detailLabel}>Duración</span>
                 <strong>{submission.duration}</strong>
@@ -158,10 +152,6 @@ export default function EvidenceReview() {
             <div className={styles.detailBlock}>
               <span className={styles.detailLabel}>Descripción</span>
               <p>{submission.description}</p>
-            </div>
-            <div className={styles.detailBlock}>
-              <span className={styles.detailLabel}>Ubicación Registrada</span>
-              <span className={styles.locationRow}>📍 {submission.location}</span>
             </div>
           </article>
         </aside>

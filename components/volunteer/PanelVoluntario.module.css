@@ -167,6 +167,11 @@
   color: #744600;
 }
 
+.badgeRejected {
+  background: #ffc9c0;
+  color: #9b2c1f;
+}
+
 .evidenceColumn {
   display: grid;
   gap: 16px;
@@ -200,14 +205,25 @@
   margin: 0 0 18px;
 }
 
-.guideCardBody button {
+.guideCardBody .guideButton {
+  display: block;
   width: 100%;
   border: 1px solid #ffffff33;
   border-radius: 8px;
   background: #ffffff1a;
   color: white;
+  text-align: center;
+  text-decoration: none;
   padding: 10px;
   cursor: pointer;
+  box-sizing: border-box;
+}
+
+.loadingText {
+  margin: 0;
+  padding: 16px 20px;
+  color: #667281;
+  font-size: 13px;
 }
 
 .tagsCard {

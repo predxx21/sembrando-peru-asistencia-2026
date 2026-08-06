@@ -13,11 +13,14 @@ async function getToken() {
 // ============================================================
 // 2. Fetch de registros
 // ============================================================
-async function fetchRegistros() {
+async function fetchRegistros(estado) {
   const token = await getToken();
   if (!token) throw new Error('No hay sesión activa.');
 
-  const res = await fetch('/api/registros', {
+  // El servidor ya soporta filtrar por estado (?estado=pendiente);
+  // usarlo evita bajar todos los registros para filtrarlos en el cliente.
+  const query = estado ? `?estado=${encodeURIComponent(estado)}` : '';
+  const res = await fetch(`/api/registros${query}`, {
     cache: 'no-store',
     headers: { 'Authorization': `Bearer ${token}` },
   });
@@ -48,37 +51,23 @@ function mapActivity(row) {
     initials: row.profile?.nombre ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '') : 'V',
     avatarColor: '#197343',
     date: formatDate(row.fecha),
-    type: row.tipo || 'Actividad',
+    // Fecha en ISO para comparar en los filtros de rango (new Date() no debe
+    // parsear la fecha ya formateada).
+    isoDate: row.fecha,
     duration: `${row.horas} hrs`,
     status: row.estado,
     description: row.descripcion,
-    location: row.ubicacion || 'Sin ubicación',
-    evidencePhoto: row.evidenciaUrl,
     evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
-    evidenceFileSize: 'N/A',
   };
 }
 
 // ============================================================
 // 4. Funciones exportadas
 // ============================================================
-export async function getSubmissions() {
-  const registros = await fetchRegistros();
-  return registros.map(mapActivity);
-}
-
 export async function getPendingSubmissions() {
-  const registros = await fetchRegistros();
-  return registros
-    .filter(r => r.estado === 'pendiente')
-    .map(mapActivity);
-}
-
-export async function getSubmissionById(id) {
-  const registros = await fetchRegistros();
-  // 👇 Convertir a número porque Prisma usa Int
-  const row = registros.find(r => Number(r.id) === Number(id));
-  return row ? mapActivity(row) : null;
+  // El servidor ya devuelve solo pendientes vía ?estado=pendiente.
+  const registros = await fetchRegistros('pendiente');
+  return registros.map(mapActivity);
 }
 
 export async function reviewSubmission(id, estado, comentario) {

@@ -71,8 +71,17 @@
   padding-top: 16px;
 }
 
+.sidebarBottom a,
 .sidebarBottom span {
   color: #667281;
   font-size: 14px;
   padding: 12px 16px;
+}
+
+.sidebarBottom a {
+  text-decoration: none;
+}
+
+.sidebarBottom a:hover {
+  color: #26384b;
 }

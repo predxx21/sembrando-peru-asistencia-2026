@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getEvidenciaSignedUrl } from "@/lib/supabase/evidencias";
 import styles from "./VerEvidencia.module.css";
 
 const STATUS_CONFIG = {
@@ -12,12 +13,35 @@ const STATUS_CONFIG = {
 
 export default function EvidenceViewer({ activity }) {
   const [zoomed, setZoomed] = useState(false);
+  const [signedUrl, setSignedUrl] = useState(null);
+  const [signedUrlError, setSignedUrlError] = useState("");
 
   const statusInfo = STATUS_CONFIG[activity.status] ?? STATUS_CONFIG.pendiente;
 
+  // El bucket de evidencias es privado, así que la URL se pide al servidor
+  // (vía /api/evidencias) y caduca a los pocos minutos.
+  useEffect(() => {
+    let cancelled = false;
+
+    getEvidenciaSignedUrl(activity.id).then(({ url, error }) => {
+      if (cancelled) return;
+      if (error) {
+        console.error("No se pudo obtener la evidencia:", error);
+        setSignedUrlError("No hay evidencia adjunta para este registro.");
+      } else {
+        setSignedUrl(url);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activity.id]);
+
   function handleDownload() {
-    // TODO: descargar la imagen real desde el backend.
-    console.log("Descargar evidencia", activity.evidenceFileName);
+    if (signedUrl) {
+      window.open(signedUrl, "_blank");
+    }
   }
 
   return (
@@ -99,14 +123,18 @@ export default function EvidenceViewer({ activity }) {
           </div>
 
           <div className={styles.imageFrame}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={activity.evidencePhoto}
-              alt={`Evidencia de la actividad ${activity.title}`}
-              className={`${styles.evidenceImage} ${
-                zoomed ? styles.evidenceImageZoomed : ""
-              }`}
-            />
+            {signedUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={signedUrl}
+                alt={`Evidencia de la actividad ${activity.title}`}
+                className={`${styles.evidenceImage} ${
+                  zoomed ? styles.evidenceImageZoomed : ""
+                }`}
+              />
+            ) : (
+              <p>{signedUrlError || "Cargando evidencia..."}</p>
+            )}
           </div>
 
           <div className={styles.imageCaption}>
@@ -118,11 +146,6 @@ export default function EvidenceViewer({ activity }) {
           <h2>ⓘ Detalles de Actividad</h2>
 
           <div className={styles.detailsRow}>
-            <div>
-              <span className={styles.detailLabel}>Tipo</span>
-              <i className={styles.typeBadge}>{activity.type}</i>
-            </div>
-
             <div className={styles.durationBlock}>
               <span className={styles.detailLabel}>Duración</span>
               <strong>
@@ -135,11 +158,6 @@ export default function EvidenceViewer({ activity }) {
           <div className={styles.detailBlock}>
             <span className={styles.detailLabel}>Descripción</span>
             <p>{activity.description}</p>
-          </div>
-
-          <div className={styles.detailBlock}>
-            <span className={styles.detailLabel}>Ubicación Registrada</span>
-            <span className={styles.locationRow}>📍 {activity.location}</span>
           </div>
         </aside>
       </div>

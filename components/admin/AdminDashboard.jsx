@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
@@ -32,43 +32,42 @@ export default function AdminDashboard() {
   const [auditLog, setAuditLog] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Cargar estadísticas, tendencia y auditoría
+  // Evita que el useEffect de filtros dispare también en el primer render
+  // (la carga inicial la hace el primer useEffect, con deps vacías).
+  const isFirstRender = useRef(true);
+
+  // Cargar estadísticas, tendencia y auditoría en UNA sola petición.
+  // El endpoint consolidado /api/admin/estadisticas ejecuta las consultas
+  // en paralelo del lado del servidor y devuelve todo junto, con lo que se
+  // pasa de 3 round-trips + ~12 consultas secuenciales a 1 round-trip.
   async function cargarEstadisticas() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) return;
 
     try {
-      // Estadísticas
-      const resStats = await fetch('/api/estadisticas?tipo=estadisticas', {
+      const res = await fetch('/api/admin/estadisticas', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      const statsData = await resStats.json();
-      if (statsData.data) {
+      if (!res.ok) throw new Error('Error al cargar las estadísticas.');
+
+      const { data } = await res.json();
+
+      if (data?.stats) {
         setStats({
-          pendientes: statsData.data.pendientes || 0,
-          totalHoras: statsData.data.totalHoras || 0,
-          horasAprobadas: statsData.data.horasAprobadas || 0,
-          voluntariosActivos: statsData.data.voluntariosActivos || 0,
+          pendientes: data.stats.pendientes || 0,
+          totalHoras: data.stats.totalHoras || 0,
+          horasAprobadas: data.stats.horasAprobadas || 0,
+          voluntariosActivos: data.stats.voluntariosActivos || 0,
         });
       }
 
-      // Tendencia
-      const resTendencia = await fetch('/api/estadisticas?tipo=tendencia', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const tendenciaData = await resTendencia.json();
-      if (tendenciaData.data) {
-        setWeeklyVolume(tendenciaData.data);
+      if (Array.isArray(data?.tendencia)) {
+        setWeeklyVolume(data.tendencia);
       }
 
-      // Auditoría
-      const resAuditoria = await fetch('/api/estadisticas?tipo=auditoria', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const auditoriaData = await resAuditoria.json();
-      if (auditoriaData.data) {
-        setAuditLog(auditoriaData.data.map((item, index) => ({
+      if (Array.isArray(data?.auditoria)) {
+        setAuditLog(data.auditoria.map((item, index) => ({
           id: index,
           type: item.estado === 'aprobado' ? 'approved' : 'rejected',
           label: `${item.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}: Registro #${item.id}`,
@@ -96,11 +95,13 @@ export default function AdminDashboard() {
           r.description?.toLowerCase().includes(search.toLowerCase())
         );
       }
+      // El filtro compara contra isoDate (la fecha real ISO), no contra la
+      // fecha ya formateada para mostrar, que 'new Date()' podía malinterpretar.
       if (dateFrom) {
-        filtrados = filtrados.filter(r => new Date(r.date) >= new Date(dateFrom));
+        filtrados = filtrados.filter(r => new Date(r.isoDate) >= new Date(dateFrom));
       }
       if (dateTo) {
-        filtrados = filtrados.filter(r => new Date(r.date) <= new Date(dateTo));
+        filtrados = filtrados.filter(r => new Date(r.isoDate) <= new Date(dateTo));
       }
 
       setSubmissions(filtrados);
@@ -117,8 +118,15 @@ export default function AdminDashboard() {
     cargarRegistros();
   }, []);
 
-  // Cargar registros cuando cambian los filtros
+  // Cargar registros cuando cambian los filtros.
+  // Se omite el primer render: la carga inicial ya la hace el useEffect de
+  // arriba (con deps vacías). Antes esto disparaba cargarRegistros() dos
+  // veces al montar la página.
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       cargarRegistros();
     }, 300);
@@ -243,7 +251,6 @@ export default function AdminDashboard() {
         <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
           <span>Voluntario</span>
           <span>Fecha de Actividad</span>
-          <span>Tipo de Actividad</span>
           <span>Duración</span>
           <span>Evidencia</span>
           <span className={styles.actionsHead}>Acciones</span>
@@ -266,9 +273,6 @@ export default function AdminDashboard() {
               </span>
             </span>
             <span>{item.date}</span>
-            <span>
-              <i className={styles.typeBadge}>{item.type}</i>
-            </span>
             <span>{item.duration}</span>
             <span className={styles.evidenceCell}>
               📷 {item.evidenceFileName}

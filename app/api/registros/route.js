@@ -30,7 +30,6 @@ export async function POST(request) {
     fecha: body.fecha,
     horaInicio: body.horaInicio,
     horaFin: body.horaFin,
-    horas: body.horas,
     descripcion: body.descripcion,
     evidenciaUrl: body.evidenciaUrl,
   });

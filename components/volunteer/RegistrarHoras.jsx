@@ -3,18 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { calcularHoras } from '@/lib/utils/horas';
 import styles from './RegistrarHoras.module.css';
 
-function calculateHours(startTime, endTime) {
-  if (!startTime || !endTime) return 0;
-  const [startH, startM] = startTime.split(':').map(Number);
-  const [endH, endM] = endTime.split(':').map(Number);
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
-  const diff = endMinutes - startMinutes;
-  if (diff <= 0) return 0;
-  return Math.round((diff / 60) * 10) / 10;
-}
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
 export default function FormularioHoras() {
   const router = useRouter();
@@ -24,34 +16,35 @@ export default function FormularioHoras() {
     horaFin: '',
     descripcion: '',
   });
-  const [files, setFiles] = useState([]);
+  // Una sola evidencia por registro (imagen o PDF).
+  const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mensaje, setMensaje] = useState('');
 
-  const horasCalculadas = calculateHours(formData.horaInicio, formData.horaFin);
+  const horasCalculadas = calcularHoras(formData.horaInicio, formData.horaFin);
 
   function handleChange(event) {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  function addFiles(newFiles) {
-    const accepted = Array.from(newFiles).filter((file) =>
-      ['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)
-    );
-    setFiles((prev) => [...prev, ...accepted]);
+  function pickFile(selected) {
+    if (!ACCEPTED_TYPES.includes(selected.type)) return;
+    setFile(selected);
   }
 
   function handleFileChange(event) {
-    addFiles(event.target.files);
+    const selected = event.target.files[0];
+    if (selected) pickFile(selected);
     event.target.value = '';
   }
 
   function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
-    addFiles(event.dataTransfer.files);
+    const selected = event.dataTransfer.files[0];
+    if (selected) pickFile(selected);
   }
 
   function handleDragOver(event) {
@@ -63,13 +56,13 @@ export default function FormularioHoras() {
     setIsDragging(false);
   }
 
-  function removeFile(index) {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  function removeFile() {
+    setFile(null);
   }
 
   function handleCancel() {
     setFormData({ fecha: '', horaInicio: '', horaFin: '', descripcion: '' });
-    setFiles([]);
+    setFile(null);
     setMensaje('');
   }
 
@@ -88,8 +81,8 @@ export default function FormularioHoras() {
     return;
   }
 
-  if (files.length === 0) {
-    setMensaje('❌ Debes adjuntar al menos una evidencia (imagen o PDF).');
+  if (!file) {
+    setMensaje('❌ Debes adjuntar una evidencia (imagen o PDF).');
     return;
   }
 
@@ -110,8 +103,7 @@ export default function FormularioHoras() {
     }
     const userId = userData.user.id;
 
-    // 2. Subir evidencia a Supabase Storage
-    const file = files[0];
+    // 2. Subir la evidencia a Supabase Storage (bucket privado)
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
@@ -123,7 +115,8 @@ export default function FormularioHoras() {
       throw new Error('Error al subir la evidencia: ' + uploadError.message);
     }
 
-    // 3. Guardar el registro en la API (con token)
+    // 3. Guardar el registro en la API (con token). El servidor recalcula
+    //    las horas a partir de horaInicio/horaFin (no confía en el cliente).
     const response = await fetch('/api/registros', {
       method: 'POST',
       headers: {
@@ -135,7 +128,6 @@ export default function FormularioHoras() {
         fecha,
         horaInicio,
         horaFin,
-        horas: horasCalculadas,
         descripcion,
         evidenciaUrl: fileName,
       }),
@@ -148,7 +140,7 @@ export default function FormularioHoras() {
 
     setMensaje('✅ Registro guardado exitosamente. Será revisado por la coordinación.');
     setFormData({ fecha: '', horaInicio: '', horaFin: '', descripcion: '' });
-    setFiles([]);
+    setFile(null);
 
     setTimeout(() => {
       router.push('/historial');
@@ -242,27 +234,24 @@ export default function FormularioHoras() {
             <input
               id="evidenciaInput"
               type="file"
-              multiple
               accept=".jpg,.jpeg,.png,.pdf"
               className={styles.hiddenInput}
               onChange={handleFileChange}
             />
           </div>
 
-          {files.length > 0 && (
+          {file && (
             <ul className={styles.fileList}>
-              {files.map((file, index) => (
-                <li key={`${file.name}-${index}`}>
-                  <span>{file.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    aria-label={`Quitar ${file.name}`}
-                  >
-                    ✕
-                  </button>
-                </li>
-              ))}
+              <li>
+                <span>{file.name}</span>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  aria-label={`Quitar ${file.name}`}
+                >
+                  ✕
+                </button>
+              </li>
             </ul>
           )}
         </div>

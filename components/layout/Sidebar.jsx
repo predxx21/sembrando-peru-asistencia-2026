@@ -63,7 +63,7 @@ export default function Sidebar() {
       )}
 
       <div className={styles.sidebarBottom}>
-        <span>⚙　Configuración</span>
+        <Link href="/editar-perfil">⚙　Configuración</Link>
         <span>⇥　Cerrar Sesión</span>
       </div>
     </aside>
