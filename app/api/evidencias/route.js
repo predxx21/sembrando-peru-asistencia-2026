@@ -3,9 +3,19 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId } from '@/lib/db/registro';
+import { getCached, setCached } from '@/lib/cache';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 5; // 5 minutos
+
+// Caché corta de la signed URL. Generarla cuesta 2 round-trips (query del
+// registro + Storage); con la caché, revisitar la evidencia responde en ms.
+// TTL de 60s, muy por debajo de la expiración (5 min), así nunca se sirve una
+// URL vencida. Cualquier escritura (aprobar/rechazar, corrección) invalida
+// toda la caché, así un reenvío con nueva evidencia no queda stale. La
+// autorización se re-evalúa en CADA request ANTES de servir la URL cacheada:
+// se guarda el profileId en la entrada de caché solo para esa comprobación.
+const CACHE_TTL_MS = 60 * 1000;
 
 // Genera una URL temporal (signed URL) para ver la evidencia de UN registro
 // específico. El bucket 'evidencias' es privado: nadie puede leerlo con
@@ -27,13 +37,25 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Falta el id del registro.' }, { status: 400 });
   }
 
+  const cacheKey = `evidencia:${registroId}`;
+
+  // El perfil se lee en ambos caminos (cache hit o miss) para evaluar el rol.
+  const { profile } = await getPerfilByUserId(user.id);
+
+  const cacheado = getCached(cacheKey);
+  if (cacheado) {
+    if (!(cacheado.profileId === user.id || profile?.rol === 'admin')) {
+      return NextResponse.json({ error: 'No tienes permiso para ver esta evidencia.' }, { status: 403 });
+    }
+    return NextResponse.json({ url: cacheado.url, expiresIn: cacheado.expiresIn });
+  }
+
   const { data: registro, error: registroError } = await obtenerRegistroPorId(registroId);
 
   if (registroError || !registro) {
     return NextResponse.json({ error: 'No se encontró el registro.' }, { status: 404 });
   }
 
-  const { profile } = await getPerfilByUserId(user.id);
   const esDueno = registro.profileId === user.id;
   const esAdmin = profile?.rol === 'admin';
 
@@ -53,6 +75,12 @@ export async function GET(request) {
     console.error('Error creando signed URL:', error);
     return NextResponse.json({ error: 'No se pudo generar el enlace de la evidencia.' }, { status: 500 });
   }
+
+  setCached(
+    cacheKey,
+    { profileId: registro.profileId, url: data.signedUrl, expiresIn: SIGNED_URL_EXPIRES_IN },
+    CACHE_TTL_MS
+  );
 
   return NextResponse.json({ url: data.signedUrl, expiresIn: SIGNED_URL_EXPIRES_IN });
 }

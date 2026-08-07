@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
+import { invalidateCache } from '@/lib/cache';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
@@ -58,6 +59,9 @@ export async function PATCH(request, context) {
   if (error) {
     return NextResponse.json({ error: 'No se pudo corregir el registro.' }, { status: 500 });
   }
+
+  // El reenvío devuelve el registro a 'pendiente': cambia el listado y stats.
+  invalidateCache();
 
   return NextResponse.json({ data: actualizado });
 }

@@ -48,6 +48,9 @@ export default function AdminDashboard() {
 
     try {
       const res = await fetch('/api/admin/estadisticas', {
+        // no-store: que el navegador no guarde una copia propia; la frescura
+        // la decide la caché del servidor (lib/cache.js).
+        cache: 'no-store',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Error al cargar las estadísticas.');

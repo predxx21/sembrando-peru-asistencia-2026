@@ -6,6 +6,15 @@ import {
   obtenerRegistrosPorUsuario,
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
+import { getCached, setCached, invalidateCache } from '@/lib/cache';
+
+// Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
+// o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
+// combinación (scope=mine, estado, paginación, búsqueda, rango) tiene su
+// propia entrada. Las escrituras invalidan TODA la caché, así el TTL solo
+// aplica entre escrituras — cuando los datos están igual, es seguro servir la
+// lista 30 s sin volver a la BD.
+const CACHE_TTL_MS = 30 * 1000;
 
 // POST: Crear un registro de asistencia
 export async function POST(request) {
@@ -37,6 +46,9 @@ export async function POST(request) {
   if (error) {
     return NextResponse.json({ error: 'No se pudo guardar el registro.' }, { status: 500 });
   }
+
+  // Un registro nuevo cambia listados, estadísticas y reportes.
+  invalidateCache();
 
   return NextResponse.json({ data });
 }
@@ -78,6 +90,14 @@ export async function GET(request) {
 
   const scope = searchParams.get('scope') === 'mine' ? 'mine' : null;
 
+  // Caché por usuario + filtros: recargar la página devuelve la lista casi
+  // al instante si no hubo escrituras en los últimos 30 s.
+  const cacheKey = `registros:${profile.id}:${searchParams.toString()}`;
+  const cacheado = getCached(cacheKey);
+  if (cacheado) {
+    return NextResponse.json(cacheado);
+  }
+
   let result;
   if (scope === 'mine') {
     result = await obtenerRegistrosPorUsuario(profile.id, filtros);
@@ -97,6 +117,8 @@ export async function GET(request) {
     body.page = page;
     body.limit = limit;
   }
+
+  setCached(cacheKey, body, CACHE_TTL_MS);
 
   return NextResponse.json(body);
 }
