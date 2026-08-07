@@ -1,23 +1,9 @@
-// Capa de datos del cliente para /reportes (patrón idéntico a adminData.js).
-// getReportes() pide el token de Supabase y llama al endpoint admin. El mapper
-// puro mapReportes vive en lib/utils/reportesFormato.js y se re-exporta aquí
-// para que la UI lo use sin repetir la transformación.
-import { supabase } from '@/lib/supabase/client';
+// Capa de datos del cliente para /reportes.
+import { fetchConToken } from '@/lib/api/client';
 import { mapReportes } from '@/lib/utils/reportesFormato';
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
-}
-
 export async function getReportes() {
-  const token = await getToken();
-  if (!token) throw new Error('No hay sesión activa.');
-
-  const res = await fetch('/api/admin/reportes', {
-    cache: 'no-store',
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await fetchConToken('/api/admin/reportes');
   const body = await res.json().catch(() => ({}));
 
   if (res.status === 401) throw new Error('No hay sesión activa.');
@@ -32,5 +18,3 @@ export async function getReportes() {
 
   return mapReportes(body.data);
 }
-
-export { mapReportes };

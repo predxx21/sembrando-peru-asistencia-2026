@@ -5,17 +5,24 @@ validación de coordinadores y reportes. Next.js (App Router) + Prisma/PostgreSQ
 
 ## Ejecutar el proyecto
 
+El proyecto usa **pnpm** como gestor de paquetes (versión en el campo
+`packageManager` de `package.json`). Si no lo tienes: `npm install -g pnpm`.
+
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
-Abre `http://localhost:3000`. Se necesitan las variables de entorno de
-`.env.local` (Supabase URL + claves y `DATABASE_URL` de Postgres).
+Abre `http://localhost:3000`. Se necesitan las variables de entorno:
+
+- `.env` → `DATABASE_URL` y `DIRECT_URL` (PostgreSQL)
+- `.env.local` → claves de Supabase (URL, publishable key y service role)
+
+Hay una plantilla `.env.example` con todas las variables documentadas.
 
 ```bash
-npm test        # Pruebas unitarias (Vitest): funciones puras de lib/utils
-npm run build   # Build de producción
+pnpm test        # Pruebas unitarias (Vitest): funciones puras de lib/utils
+pnpm build       # Build de producción
 ```
 
 ## Roles y acceso

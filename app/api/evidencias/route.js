@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId } from '@/lib/db/registro';
 import { getCached, setCached } from '@/lib/cache';
+import { esEnteroPositivo } from '@/lib/utils/validar';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 5; // 5 minutos
@@ -35,6 +36,10 @@ export async function GET(request) {
 
   if (!registroId) {
     return NextResponse.json({ error: 'Falta el id del registro.' }, { status: 400 });
+  }
+
+  if (!esEnteroPositivo(registroId)) {
+    return NextResponse.json({ error: 'Id de registro inválido.' }, { status: 400 });
   }
 
   const cacheKey = `evidencia:${registroId}`;

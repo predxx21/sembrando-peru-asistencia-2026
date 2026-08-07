@@ -7,6 +7,7 @@ import {
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { esFechaValida, esHoraValida } from '@/lib/utils/validar';
 
 // Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
 // o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
@@ -27,6 +28,13 @@ export async function POST(request) {
   const body = await request.json().catch(() => null);
   if (!body?.fecha || !body?.horaInicio || !body?.horaFin || !body?.descripcion) {
     return NextResponse.json({ error: 'Faltan datos obligatorios.' }, { status: 400 });
+  }
+
+  if (!esFechaValida(body.fecha) || !esHoraValida(body.horaInicio) || !esHoraValida(body.horaFin)) {
+    return NextResponse.json(
+      { error: 'Fecha u horas inválidas. Usa AAAA-MM-DD para la fecha y HH:MM para las horas.' },
+      { status: 400 }
+    );
   }
 
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
@@ -79,11 +87,20 @@ export async function GET(request) {
   const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : null;
   const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : null;
 
+  const desde = searchParams.get('desde') || undefined;
+  const hasta = searchParams.get('hasta') || undefined;
+  if ((desde && !esFechaValida(desde)) || (hasta && !esFechaValida(hasta))) {
+    return NextResponse.json(
+      { error: 'Rango de fechas inválido. Usa el formato AAAA-MM-DD.' },
+      { status: 400 }
+    );
+  }
+
   const filtros = {
     estado: searchParams.get('estado') || undefined,
     busqueda: searchParams.get('busqueda') || undefined,
-    desde: searchParams.get('desde') || undefined,
-    hasta: searchParams.get('hasta') || undefined,
+    desde,
+    hasta,
     page,
     limit,
   };

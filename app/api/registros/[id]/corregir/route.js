@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
 import { invalidateCache } from '@/lib/cache';
+import { esEnteroPositivo, esFechaValida, esHoraValida } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
@@ -20,6 +21,13 @@ export async function PATCH(request, context) {
 
   if (!body?.fecha || !body?.horaInicio || !body?.horaFin || !body?.descripcion) {
     return NextResponse.json({ error: 'Faltan datos obligatorios.' }, { status: 400 });
+  }
+
+  if (!esEnteroPositivo(id) || !esFechaValida(body.fecha) || !esHoraValida(body.horaInicio) || !esHoraValida(body.horaFin)) {
+    return NextResponse.json(
+      { error: 'Id, fecha u horas inválidos. Usa AAAA-MM-DD y HH:MM.' },
+      { status: 400 }
+    );
   }
 
   const { data: registro, error: registroError } = await obtenerRegistroPorId(id);

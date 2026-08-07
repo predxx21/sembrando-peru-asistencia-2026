@@ -5,7 +5,19 @@ node_modules/
 # Local configuration and logs
 .env
 .env.local
+.env.production
+.env.test
 .env*.local
 npm-debug.log*
+*.log
+
+# Sistemas y herramientas
+.DS_Store
+.vercel/
+
+# Skills de terceros instalados (regenerables vía skills-lock.json)
+.agents/
+.windsurf/
+.claude/skills/
 
 /lib/generated/prisma

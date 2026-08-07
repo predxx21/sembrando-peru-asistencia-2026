@@ -5,11 +5,12 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getHistoryActivities } from "@/components/history/historyData";
 import styles from "./PanelVoluntario.module.css";
+import { ESTADO_LABEL } from "@/lib/utils/estado";
 
 const STATUS_CONFIG = {
-  aprobado: { label: "Aprobado", className: "badgeSuccess" },
-  pendiente: { label: "Pendiente", className: "badgePending" },
-  rechazado: { label: "Rechazado", className: "badgeRejected" },
+  aprobado: { label: ESTADO_LABEL.aprobado, className: "badgeSuccess" },
+  pendiente: { label: ESTADO_LABEL.pendiente, className: "badgePending" },
+  rechazado: { label: ESTADO_LABEL.rechazado, className: "badgeRejected" },
 };
 
 export default function VolunteerDashboard() {

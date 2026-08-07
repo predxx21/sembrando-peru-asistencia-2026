@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { esEnteroPositivo } from '@/lib/utils/validar';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 10; // 10 minutos
@@ -35,6 +36,12 @@ export async function GET(request, context) {
   }
 
   const { id } = await context.params;
+
+  // Un id no numérico debe dar 400, no llegar a Prisma (que devolvería 500).
+  if (!esEnteroPositivo(id)) {
+    return NextResponse.json({ error: 'Id de registro inválido.' }, { status: 400 });
+  }
+
   const cacheKey = `registro:${id}`;
 
   // El perfil se lee en ambos caminos (cache hit o miss) para evaluar el rol.
@@ -101,6 +108,12 @@ export async function PATCH(request, context) {
   }
 
   const { id } = await context.params;
+
+  // Un id no numérico debe dar 400, no llegar a Prisma (que devolvería 500).
+  if (!esEnteroPositivo(id)) {
+    return NextResponse.json({ error: 'Id de registro inválido.' }, { status: 400 });
+  }
+
   const body = await request.json().catch(() => null);
   const { estado, comentarioRevision } = body || {};
 
@@ -108,6 +121,29 @@ export async function PATCH(request, context) {
     return NextResponse.json(
       { error: 'Estado inválido. Debe ser "aprobado" o "rechazado".' },
       { status: 400 }
+    );
+  }
+
+  // La revisión es una transición desde 'pendiente': un registro ya revisado
+  // (aprobado o rechazado) debe pasar por la corrección del voluntario, no por
+  // otra revisión directa.
+  const { data: registroActual, error: registroError } = await obtenerRegistroPorId(id);
+  if (registroError || !registroActual) {
+    return NextResponse.json({ error: 'No se encontró el registro.' }, { status: 404 });
+  }
+
+  if (registroActual.estado !== 'pendiente') {
+    return NextResponse.json(
+      { error: 'El registro ya fue revisado. Solo se revisan registros pendientes.' },
+      { status: 409 }
+    );
+  }
+
+  // Un admin no puede revisar su propio registro (conflicto de interés).
+  if (registroActual.profileId === user.id) {
+    return NextResponse.json(
+      { error: 'No puedes revisar tu propio registro.' },
+      { status: 403 }
     );
   }
 

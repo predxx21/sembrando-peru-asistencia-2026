@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getEvidenciaSignedUrl } from "@/lib/supabase/evidencias";
 import styles from "./VerEvidencia.module.css";
+import { ESTADO_LABEL } from "@/lib/utils/estado";
 
 const STATUS_CONFIG = {
-  pendiente: { label: "Pendiente", className: "statusPending" },
-  aprobado: { label: "Aprobado", className: "statusApproved" },
-  rechazado: { label: "Rechazado", className: "statusRejected" },
+  pendiente: { label: ESTADO_LABEL.pendiente, className: "statusPending" },
+  aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
+  rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
 export default function EvidenceViewer({ activity }) {
@@ -23,15 +24,23 @@ export default function EvidenceViewer({ activity }) {
   useEffect(() => {
     let cancelled = false;
 
-    getEvidenciaSignedUrl(activity.id).then(({ url, error }) => {
-      if (cancelled) return;
-      if (error) {
-        console.error("No se pudo obtener la evidencia:", error);
-        setSignedUrlError("No hay evidencia adjunta para este registro.");
-      } else {
-        setSignedUrl(url);
-      }
-    });
+    getEvidenciaSignedUrl(activity.id)
+      .then(({ url, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("No se pudo obtener la evidencia:", error);
+          setSignedUrlError("No hay evidencia adjunta para este registro.");
+        } else {
+          setSignedUrl(url);
+        }
+      })
+      .catch(() => {
+        // La signed URL puede fallar por red (fetch que rechaza). Sin este
+        // catch la promesa queda suelta y el visor muestra "Cargando..." para
+        // siempre.
+        if (cancelled) return;
+        setSignedUrlError("No se pudo cargar la evidencia.");
+      });
 
     return () => {
       cancelled = true;

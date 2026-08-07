@@ -1,34 +1,21 @@
-// components/admin/adminData.js
+// Capa de datos del Panel de administración.
+//
+// Reutiliza lib/api/client.js (token + fetch autenticado) y los helpers de
+// fechas de lib/utils/fecha.js en vez de duplicarlos.
+import { fetchConToken, nombreEvidencia } from '@/lib/api/client';
+import { formatFechaEs } from '@/lib/utils/fecha';
 
-import { supabase } from '@/lib/supabase/client';
-
-// ============================================================
-// 1. Obtener token
-// ============================================================
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
-}
-
-// ============================================================
-// 2. Fetch de registros (listado) con filtros opcionales
-// ============================================================
-// `estado`, `page` (1-based), `limit`, `busqueda`, `desde`, `hasta`. Devuelve
+// Fetch de registros (listado pendiente) con filtros opcionales. `estado`,
+// `page` (1-based), `limit`, `busqueda`, `desde`, `hasta`. Devuelve
 // { items, total, page, limit } para poder paginar en el servidor.
 async function fetchRegistros(filtros = {}) {
-  const token = await getToken();
-  if (!token) throw new Error('No hay sesión activa.');
-
   const params = new URLSearchParams();
   Object.entries(filtros).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') params.set(k, v);
   });
   const qs = params.toString();
 
-  const res = await fetch(`/api/registros${qs ? `?${qs}` : ''}`, {
-    cache: 'no-store',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  const res = await fetchConToken(`/api/registros${qs ? `?${qs}` : ''}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || 'Error al obtener los registros');
@@ -43,25 +30,15 @@ async function fetchRegistros(filtros = {}) {
   };
 }
 
-// ============================================================
-// 3. Transformar datos
-// ============================================================
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('es-PE', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 function mapActivity(row) {
   return {
     id: row.id,
     name: row.profile?.nombre || 'Voluntario',
-    initials: row.profile?.nombre ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '') : 'V',
+    initials: row.profile?.nombre
+      ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '')
+      : 'V',
     avatarColor: '#197343',
-    date: formatDate(row.fecha),
+    date: formatFechaEs(row.fecha),
     // Fecha en ISO para comparar en los filtros de rango (new Date() no debe
     // parsear la fecha ya formateada).
     isoDate: row.fecha,
@@ -69,13 +46,10 @@ function mapActivity(row) {
     horas: row.horas,
     status: row.estado,
     description: row.descripcion,
-    evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
+    evidenceFileName: nombreEvidencia(row.evidenciaUrl),
   };
 }
 
-// ============================================================
-// 4. Funciones exportadas
-// ============================================================
 // Trae la página actual de pendientes con filtros aplicados EN EL SERVIDOR
 // (búsqueda por nombre y rango de fechas). Devuelve { items, total }.
 export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta } = {}) {
@@ -91,16 +65,9 @@ export async function getPendingSubmissions({ page, limit, busqueda, desde, hast
 }
 
 export async function reviewSubmission(id, estado, comentario) {
-  const token = await getToken();
-  if (!token) throw new Error('No hay sesión activa.');
-
-  const res = await fetch(`/api/registros/${id}`, {
+  const res = await fetchConToken(`/api/registros/${id}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ estado, comentarioRevision: comentario }),
+    body: { estado, comentarioRevision: comentario },
   });
 
   if (!res.ok) {
