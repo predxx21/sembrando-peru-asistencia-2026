@@ -7,7 +7,7 @@ import {
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
-import { esFechaValida, esHoraValida } from '@/lib/utils/validar';
+import { esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
 
 // Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
 // o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
@@ -40,6 +40,13 @@ export async function POST(request) {
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
   if (perfilError || !profile) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
+  }
+
+  // La evidencia debe vivir en la carpeta del usuario en el bucket privado
+  // (`evidencias/<userId>/…`). Sin esta validación, cualquiera podría adjuntar
+  // la ruta de un archivo ajeno y pedir luego su signed URL (IDOR).
+  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
+    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
   }
 
   const { data, error } = await guardarRegistroAsistencia({

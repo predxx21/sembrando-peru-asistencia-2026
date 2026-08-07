@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId } from '@/lib/db/registro';
 import { getCached, setCached } from '@/lib/cache';
-import { esEnteroPositivo } from '@/lib/utils/validar';
+import { esEnteroPositivo, esEvidenciaPropia } from '@/lib/utils/validar';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 5; // 5 minutos
@@ -68,7 +68,10 @@ export async function GET(request) {
     return NextResponse.json({ error: 'No tienes permiso para ver esta evidencia.' }, { status: 403 });
   }
 
-  if (!registro.evidenciaUrl) {
+  // Defensa en profundidad: además de la propiedad del registro, la ruta
+  // debe vivir en la carpeta del DUEÑO del registro (`evidencias/<profileId>/…`).
+  // Una fila legacy con una ruta ajena no se firma ni para su propio dueño.
+  if (!registro.evidenciaUrl || !esEvidenciaPropia(registro.evidenciaUrl, registro.profileId)) {
     return NextResponse.json({ error: 'Este registro no tiene evidencia adjunta.' }, { status: 404 });
   }
 

@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
-import { esEnteroPositivo } from '@/lib/utils/validar';
+import { esEnteroPositivo, esEvidenciaPropia } from '@/lib/utils/validar';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 10; // 10 minutos
@@ -73,7 +73,10 @@ export async function GET(request, context) {
 
   let evidenciaSignedUrl = null;
 
-  if (registro.evidenciaUrl) {
+  // Defensa en profundidad: solo se firma si la ruta vive en la carpeta del
+  // dueño del registro (`evidencias/<profileId>/…`). Una fila legacy con una
+  // ruta ajena no se firma ni para su propio dueño (IDOR).
+  if (registro.evidenciaUrl && esEvidenciaPropia(registro.evidenciaUrl, registro.profileId)) {
     const { data: signed, error: signedError } = await supabaseAdmin.storage
       .from(EVIDENCIAS_BUCKET)
       .createSignedUrl(registro.evidenciaUrl, SIGNED_URL_EXPIRES_IN);

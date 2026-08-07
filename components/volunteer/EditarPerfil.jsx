@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { fetchConToken } from "@/lib/api/client";
 import styles from "./EditarPerfil.module.css";
 
 export default function EditarPerfil() {
@@ -22,7 +23,8 @@ export default function EditarPerfil() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No hay sesión activa.");
 
-        const res = await fetch(`/api/auth/perfil?id=${user.id}`);
+        // El perfil siempre es el de la sesión: el endpoint ya no acepta ?id=.
+        const res = await fetchConToken("/api/auth/perfil");
         const body = await res.json().catch(() => null);
 
         if (cancelled) return;

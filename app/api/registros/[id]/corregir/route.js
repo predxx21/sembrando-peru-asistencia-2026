@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
 import { invalidateCache } from '@/lib/cache';
-import { esEnteroPositivo, esFechaValida, esHoraValida } from '@/lib/utils/validar';
+import { esEnteroPositivo, esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
@@ -44,6 +44,14 @@ export async function PATCH(request, context) {
   // Solo el dueño del registro puede corregirlo.
   if (registro.profileId !== profile.id) {
     return NextResponse.json({ error: 'No tienes permiso para corregir este registro.' }, { status: 403 });
+  }
+
+  // La evidencia nueva debe vivir en la carpeta del usuario en el bucket
+  // privado (`evidencias/<userId>/…`); si no se manda una, se conserva la del
+  // registro original, que ya pertenece a este perfil. Sin la validación,
+  // cualquiera podría adjuntar la ruta de un archivo ajeno (IDOR).
+  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
+    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
   }
 
   // Solo se corrige un registro que haya sido rechazado.

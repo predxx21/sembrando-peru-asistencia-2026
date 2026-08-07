@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase/client";
+import { fetchConToken } from "@/lib/api/client";
 import { getHistoryActivities } from "@/components/history/historyData";
 import styles from "./PanelVoluntario.module.css";
 import { ESTADO_LABEL } from "@/lib/utils/estado";
@@ -26,9 +26,8 @@ export default function VolunteerDashboard() {
 
     async function load() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        const perfilRes = await fetch(`/api/auth/perfil?id=${user?.id || ""}`);
+        // El perfil siempre es el de la sesión: el endpoint ya no acepta ?id=.
+        const perfilRes = await fetchConToken("/api/auth/perfil");
         const perfil = await perfilRes.json().catch(() => null);
 
         if (cancelled) return;
