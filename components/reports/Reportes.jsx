@@ -1,148 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ExportReportModal from "./ExportarReporte";
+import { getReportes } from "./reportesData";
 import styles from "./Reportes.module.css";
 
-const SUMMARY_STATS = [
-  {
-    id: "totalHours",
-    type: "metric",
-    label: "Total de Horas Acumuladas",
-    value: "12,482",
-    trend: "up",
-    detail: "+12%",
-  },
-  {
-    id: "activeVolunteers",
-    type: "metric",
-    label: "Voluntarios Activos",
-    value: "342",
-    trend: "up",
-    detail: "+4%",
-  },
-  {
-    id: "avgHours",
-    type: "metric",
-    label: "Promedio de Horas por Voluntario",
-    value: "36.5",
-    trend: "neutral",
-    detail: "Fijo",
-  },
-  {
-    id: "milestone",
-    type: "progress",
-    label: "Hito del Proyecto",
-    percent: 82,
-    detail: "82% de la Meta",
-    goal: "Meta de 15k",
-  },
-];
+const ITEMS_PER_PAGE = 10;
 
-const MONTHLY_HOURS = [
-  { month: "Ene", value: 1200 },
-  { month: "Feb", value: 1550 },
-  { month: "Mar", value: 1400 },
-  { month: "Abr", value: 1980 },
-  { month: "May", value: 2260 },
-  { month: "Jun", value: 2650 },
-];
+// Formatea un número con separador de miles (es-PE), p.ej. "12,482".
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("es-PE");
+}
 
-const TOP_CONTRIBUTORS = [
-  {
-    id: "sarah-jenkins",
-    name: "Sarah Jenkins",
-    initials: "SJ",
-    avatarColor: "#2f6fed",
-    context: "Proyecto Alpha",
-    hours: "248h",
-    tag: "TOP 1%",
-    tagColor: "#2f9e6f",
-  },
-  {
-    id: "robert-chen",
-    name: "Robert Chen",
-    initials: "RC",
-    avatarColor: "#2f9e6f",
-    context: "Logística",
-    hours: "212h",
-    tag: "CONFIABLE",
-    tagColor: "#2f6fed",
-  },
-  {
-    id: "amara-okoro",
-    name: "Amara Okoro",
-    initials: "AO",
-    avatarColor: "#e08a2c",
-    context: "Educación",
-    hours: "195h",
-    tag: "LÍDER",
-    tagColor: "#e08a2c",
-  },
-  {
-    id: "marcus-vane",
-    name: "Marcus Vane",
-    initials: "MV",
-    avatarColor: "#8b7ce0",
-    context: "Soporte Técnico",
-    hours: "188h",
-    tag: "REGULAR",
-    tagColor: "#667281",
-  },
-];
-
-const VOLUNTEERS = [
-  {
-    id: "sarah-jenkins",
-    name: "Sarah Jenkins",
-    initials: "SJ",
-    avatarColor: "#2f6fed",
-    department: "Proyecto Alpha",
-    totalHours: "248.5 hrs",
-    lastActivity: "12 Oct, 2023",
-  },
-  {
-    id: "robert-chen",
-    name: "Robert Chen",
-    initials: "RC",
-    avatarColor: "#2f9e6f",
-    department: "Logística",
-    totalHours: "212.0 hrs",
-    lastActivity: "11 Oct, 2023",
-  },
-  {
-    id: "amara-okoro",
-    name: "Amara Okoro",
-    initials: "AO",
-    avatarColor: "#e08a2c",
-    department: "Educación",
-    totalHours: "195.2 hrs",
-    lastActivity: "14 Oct, 2023",
-  },
-  {
-    id: "marcus-vane",
-    name: "Marcus Vane",
-    initials: "MV",
-    avatarColor: "#8b7ce0",
-    department: "Soporte Técnico",
-    totalHours: "188.0 hrs",
-    lastActivity: "09 Oct, 2023",
-  },
-];
-
-const TOTAL_PAGES = 12;
-
+// Gráfico de línea simple (SVG) alimentado por las horas aprobadas por mes.
 function MonthlyHoursChart({ data }) {
   const width = 640;
   const height = 220;
   const padding = 24;
 
-  const maxValue = Math.max(...data.map((point) => point.value));
+  if (!data.length) {
+    return (
+      <p className={styles.chartEmpty}>
+        Aún no hay horas aprobadas para mostrar.
+      </p>
+    );
+  }
+
+  const maxValue = Math.max(...data.map((point) => point.value)) || 1;
+  const span = data.length - 1 || 1;
 
   const points = data.map((point, index) => {
-    const x =
-      padding +
-      (index / (data.length - 1)) * (width - padding * 2);
+    const x = padding + (index / span) * (width - padding * 2);
     const y =
       height -
       padding -
@@ -169,7 +57,7 @@ function MonthlyHoursChart({ data }) {
 
       {points.map((point) => (
         <circle
-          key={point.month}
+          key={`${point.month}-${point.year}`}
           className={styles.chartDot}
           cx={point.x}
           cy={point.y}
@@ -179,7 +67,7 @@ function MonthlyHoursChart({ data }) {
 
       {points.map((point) => (
         <text
-          key={`${point.month}-label`}
+          key={`label-${point.month}-${point.year}`}
           className={styles.chartAxisLabel}
           x={point.x}
           y={height + 18}
@@ -192,6 +80,7 @@ function MonthlyHoursChart({ data }) {
   );
 }
 
+// Tarjeta de resumen: métrica simple o barra de progreso (hito).
 function SummaryCard({ stat }) {
   if (stat.type === "progress") {
     return (
@@ -219,21 +108,69 @@ function SummaryCard({ stat }) {
 
       <div className={styles.statValueRow}>
         <h2>{stat.value}</h2>
-
-        <small
-          className={
-            stat.trend === "up"
-              ? styles.trendUp
-              : stat.trend === "down"
-              ? styles.trendDown
-              : styles.trendNeutral
-          }
-        >
-          {stat.trend === "up" ? "↗ " : stat.trend === "down" ? "↘ " : ""}
-          {stat.detail}
-        </small>
+        <small className={styles.trendNeutral}>{stat.detail}</small>
       </div>
     </article>
+  );
+}
+
+// Paginación real: siempre muestra la primera y la última página, más una
+// ventana alrededor de la página actual.
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  const ventana = 2;
+  const pages = [];
+
+  for (let p = 1; p <= totalPages; p++) {
+    if (
+      p === 1 ||
+      p === totalPages ||
+      Math.abs(p - currentPage) <= ventana
+    ) {
+      pages.push(p);
+    }
+  }
+
+  const items = [];
+  let anterior = 0;
+  pages.forEach((p) => {
+    if (p - anterior > 1) {
+      items.push(
+        <span key={`ellipsis-${anterior}-${p}`} className={styles.pageEllipsis}>
+          ...
+        </span>
+      );
+    }
+    items.push(
+      <button
+        key={p}
+        type="button"
+        className={p === currentPage ? styles.pageActive : ""}
+        onClick={() => onPageChange(p)}
+      >
+        {p}
+      </button>
+    );
+    anterior = p;
+  });
+
+  return (
+    <div className={styles.pagination}>
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        ‹
+      </button>
+      {items}
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        ›
+      </button>
+    </div>
   );
 }
 
@@ -241,21 +178,123 @@ export default function ReportsDashboard() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [reportes, setReportes] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    getReportes()
+      .then((data) => {
+        if (!cancelled) setReportes(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const voluntarios = reportes?.voluntarios ?? [];
+
+  // Las tarjetas de resumen salen de los datos reales (stats del endpoint).
+  const summaryStats = useMemo(() => {
+    const stats = reportes?.stats;
+    if (!stats) return [];
+
+    return [
+      {
+        id: "totalHours",
+        type: "metric",
+        label: "Total de Horas Aprobadas",
+        value: formatNumber(stats.totalHoras),
+        detail: "Horas aprobadas",
+      },
+      {
+        id: "activeVolunteers",
+        type: "metric",
+        label: "Voluntarios Activos",
+        value: formatNumber(stats.voluntariosActivos),
+        detail: "Últimos 30 días",
+      },
+      {
+        id: "avgHours",
+        type: "metric",
+        label: "Promedio por Voluntario",
+        value: String(stats.promedioHoras),
+        detail: "Horas aprobadas",
+      },
+      {
+        id: "milestone",
+        type: "progress",
+        label: "Hito del Proyecto",
+        percent: stats.percent,
+        detail: `${stats.percent}% de la Meta`,
+        goal: `Meta de ${formatNumber(stats.meta)} horas`,
+      },
+    ];
+  }, [reportes]);
+
+  // Búsqueda por nombre sobre los datos reales.
   const filteredVolunteers = useMemo(() => {
     const query = search.trim().toLowerCase();
-
-    if (!query) return VOLUNTEERS;
-
-    return VOLUNTEERS.filter(
-      (volunteer) =>
-        volunteer.name.toLowerCase().includes(query) ||
-        volunteer.department.toLowerCase().includes(query)
+    if (!query) return voluntarios;
+    return voluntarios.filter((v) =>
+      v.nombre.toLowerCase().includes(query)
     );
-  }, [search]);
+  }, [search, voluntarios]);
 
-  function goToPage(page) {
-    setCurrentPage(Math.min(Math.max(page, 1), TOTAL_PAGES));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredVolunteers.length / ITEMS_PER_PAGE)
+  );
+
+  const paginatedVolunteers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredVolunteers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredVolunteers, currentPage]);
+
+  // Si una búsqueda/actualización deja la página actual fuera de rango, volver a la 1.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [currentPage, totalPages]);
+
+  const yearBadge = reportes?.porMes?.length
+    ? String(reportes.porMes[reportes.porMes.length - 1].year)
+    : String(new Date().getFullYear());
+
+  if (loading) {
+    return <p className={styles.loading}>Cargando reportes...</p>;
+  }
+
+  if (error?.status === 403) {
+    return (
+      <div className={styles.reportsPage}>
+        <div className={styles.emptyState}>
+          <strong>Acceso restringido a coordinadores.</strong>
+          <p>
+            Inicia sesión con una cuenta de administrador para ver los reportes.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !reportes) {
+    return (
+      <div className={styles.reportsPage}>
+        <div className={styles.emptyState}>
+          <strong>No se pudieron cargar los reportes.</strong>
+          <p>{error?.message || "Inténtalo de nuevo más tarde."}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -263,7 +302,9 @@ export default function ReportsDashboard() {
       <header className={styles.pageHeader}>
         <div>
           <h1>Reportes Consolidados</h1>
-          <p>Revisar el impacto organizacional y la distribución de voluntarios.</p>
+          <p>
+            Revisar el impacto organizacional y la distribución de voluntarios.
+          </p>
         </div>
 
         <div className={styles.headerActions}>
@@ -278,7 +319,7 @@ export default function ReportsDashboard() {
       </header>
 
       <section className={styles.stats}>
-        {SUMMARY_STATS.map((stat) => (
+        {summaryStats.map((stat) => (
           <SummaryCard stat={stat} key={stat.id} />
         ))}
       </section>
@@ -286,27 +327,27 @@ export default function ReportsDashboard() {
       <section className={styles.insightsGrid}>
         <article className={styles.chartCard}>
           <div className={styles.chartCardHeader}>
-            <h2>Horas Acumuladas por Mes</h2>
+            <h2>Horas Aprobadas por Mes</h2>
 
             <span className={styles.yearBadge}>
-              <i className={styles.yearDot} /> 2023
+              <i className={styles.yearDot} /> {yearBadge}
             </span>
           </div>
 
-          <MonthlyHoursChart data={MONTHLY_HOURS} />
+          <MonthlyHoursChart data={reportes.porMes} />
         </article>
 
         <article className={styles.contributorsCard}>
           <h2>Principales Contribuyentes</h2>
 
           <ul className={styles.contributorsList}>
-            {TOP_CONTRIBUTORS.map((contributor) => (
+            {reportes.contribuyentes.map((contributor) => (
               <li key={contributor.id}>
                 <i
                   className={styles.avatar}
                   style={{ background: contributor.avatarColor }}
                 >
-                  {contributor.initials}
+                  {contributor.iniciales}
                 </i>
 
                 <div className={styles.contributorInfo}>
@@ -316,19 +357,18 @@ export default function ReportsDashboard() {
 
                 <div className={styles.contributorMeta}>
                   <span className={styles.contributorHours}>
-                    {contributor.hours}
+                    {contributor.horas}
                   </span>
-                  <small style={{ color: contributor.tagColor }}>
-                    {contributor.tag}
-                  </small>
                 </div>
               </li>
             ))}
           </ul>
 
-          <button type="button" className={styles.fullListButton}>
-            Ver Lista Completa
-          </button>
+          {reportes.contribuyentes.length === 0 && (
+            <p className={styles.emptyState}>
+              Aún no hay contribuyentes con horas aprobadas.
+            </p>
+          )}
         </article>
       </section>
 
@@ -340,7 +380,7 @@ export default function ReportsDashboard() {
             <span>⌕</span>
             <input
               type="text"
-              placeholder="Buscar por nombre o departamento..."
+              placeholder="Buscar por nombre..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -349,102 +389,54 @@ export default function ReportsDashboard() {
 
         <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
           <span>Nombre del Voluntario</span>
-          <span>Departamento</span>
+          <span>Nº de Registros</span>
           <span>Total de Horas</span>
           <span>Última Actividad</span>
-          <span className={styles.actionsHead}>Acciones</span>
         </div>
 
-        {filteredVolunteers.map((volunteer) => (
+        {paginatedVolunteers.map((volunteer) => (
           <div className={styles.tableRow} key={volunteer.id}>
             <span className={styles.volunteerCell}>
               <i
                 className={styles.avatar}
                 style={{ background: volunteer.avatarColor }}
               >
-                {volunteer.initials}
+                {volunteer.iniciales}
               </i>
-              <strong>{volunteer.name}</strong>
+              <strong>{volunteer.nombre}</strong>
             </span>
 
-            <span>{volunteer.department}</span>
+            <span>{volunteer.registros}</span>
 
             <span>
-              <i className={styles.hoursBadge}>{volunteer.totalHours}</i>
+              <i className={styles.hoursBadge}>{volunteer.horas} hrs</i>
             </span>
 
-            <span>{volunteer.lastActivity}</span>
-
-            <span className={styles.actionsCell}>
-              <button type="button" className={styles.detailsButton}>
-                Detalles
-              </button>
-            </span>
+            <span>{volunteer.ultimaActividad}</span>
           </div>
         ))}
 
-        {filteredVolunteers.length === 0 && (
+        {paginatedVolunteers.length === 0 && (
           <div className={styles.emptyState}>
-            No se encontraron voluntarios para &quot;{search}&quot;.
+            {search
+              ? `No se encontraron voluntarios para "${search}".`
+              : "Aún no hay horas aprobadas para mostrar."}
           </div>
         )}
 
-        <div className={styles.pagination}>
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            ‹
-          </button>
-
-          <button
-            type="button"
-            className={currentPage === 1 ? styles.pageActive : ""}
-            onClick={() => goToPage(1)}
-          >
-            1
-          </button>
-
-          <button
-            type="button"
-            className={currentPage === 2 ? styles.pageActive : ""}
-            onClick={() => goToPage(2)}
-          >
-            2
-          </button>
-
-          <button
-            type="button"
-            className={currentPage === 3 ? styles.pageActive : ""}
-            onClick={() => goToPage(3)}
-          >
-            3
-          </button>
-
-          <span className={styles.pageEllipsis}>...</span>
-
-          <button
-            type="button"
-            className={currentPage === TOTAL_PAGES ? styles.pageActive : ""}
-            onClick={() => goToPage(TOTAL_PAGES)}
-          >
-            {TOTAL_PAGES}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === TOTAL_PAGES}
-          >
-            ›
-          </button>
-        </div>
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
 
       <ExportReportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
+        data={reportes.voluntarios}
       />
     </div>
   );

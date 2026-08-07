@@ -1,27 +1,91 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { buildCsv, buildExcelHtml, descargar } from "@/lib/utils/exportar";
 import styles from "./ExportarReporte.module.css";
 
-const DATE_RANGE_OPTIONS = [
-  "Mes Actual (Octubre 2023)",
-  "Últimos 3 Meses",
-  "Últimos 6 Meses",
-  "Año Completo (2023)",
+// Rango de fecha aplicado sobre la última actividad de cada voluntario.
+const RANGOS = [
+  { id: "mes", label: "Mes Actual" },
+  { id: "3m", label: "Últimos 3 Meses" },
+  { id: "6m", label: "Últimos 6 Meses" },
+  { id: "anio", label: "Año Completo" },
 ];
 
-export default function ExportReportModal({ isOpen, onClose }) {
+// Columnas del archivo exportado (coinciden con la tabla del dashboard).
+const COLUMNAS = [
+  { key: "nombre", label: "Voluntario" },
+  { key: "registros", label: "Nº de Registros" },
+  { key: "horas", label: "Total de Horas" },
+  { key: "ultimaActividad", label: "Última Actividad" },
+];
+
+// Fecha límite (inclusive) para cada rango, respecto a "ahora".
+function limiteInferior(rango, ahora) {
+  const limite = new Date(ahora);
+
+  switch (rango) {
+    case "mes":
+      limite.setDate(1);
+      limite.setHours(0, 0, 0, 0);
+      return limite;
+    case "3m":
+      limite.setMonth(limite.getMonth() - 3);
+      return limite;
+    case "6m":
+      limite.setMonth(limite.getMonth() - 6);
+      return limite;
+    default: // "anio"
+      limite.setMonth(0, 1);
+      limite.setHours(0, 0, 0, 0);
+      return limite;
+  }
+}
+
+export default function ExportReportModal({ isOpen, onClose, data }) {
   const [format, setFormat] = useState("excel");
-  const [dateRange, setDateRange] = useState(DATE_RANGE_OPTIONS[0]);
-  const [scope, setScope] = useState("todos");
+  const [rango, setRango] = useState(RANGOS[0].id);
+  const [mensaje, setMensaje] = useState("");
+
+  const filas = data || [];
+
+  // Filtra las filas (voluntarios) según el rango de fecha elegido.
+  const filasFiltradas = useMemo(() => {
+    const limite = limiteInferior(rango, new Date());
+    return filas.filter((fila) => {
+      if (!fila.ultimaActividadISO) return true;
+      return new Date(fila.ultimaActividadISO) >= limite;
+    });
+  }, [filas, rango]);
 
   if (!isOpen) return null;
 
   function handleGenerate(event) {
     event.preventDefault();
-    // TODO: conectar con el backend para generar y descargar el reporte.
-    console.log("Generar reporte", { format, dateRange, scope });
-    onClose();
+    setMensaje("");
+
+    if (filasFiltradas.length === 0) {
+      setMensaje("No hay voluntarios con actividad en el rango seleccionado.");
+      return;
+    }
+
+    const esExcel = format === "excel";
+    const contenido = esExcel
+      ? buildExcelHtml(filasFiltradas, COLUMNAS)
+      : buildCsv(filasFiltradas, COLUMNAS);
+    const tipoMime = esExcel
+      ? "application/vnd.ms-excel"
+      : "text/csv;charset=utf-8";
+
+    const hoy = new Date();
+    const fecha =
+      `${hoy.getFullYear()}-` +
+      `${String(hoy.getMonth() + 1).padStart(2, "0")}-` +
+      `${String(hoy.getDate()).padStart(2, "0")}`;
+    const extension = esExcel ? "xls" : "csv";
+
+    descargar(`reporte-voluntarios-${fecha}.${extension}`, contenido, tipoMime);
+    setMensaje("✅ Reporte generado correctamente.");
   }
 
   return (
@@ -49,9 +113,7 @@ export default function ExportReportModal({ isOpen, onClose }) {
 
         <form onSubmit={handleGenerate}>
           <div className={styles.section}>
-            <label className={styles.sectionLabel}>
-              📄 Formato de Archivo
-            </label>
+            <label className={styles.sectionLabel}>📄 Formato de Archivo</label>
 
             <div className={styles.formatGrid}>
               <button
@@ -62,7 +124,7 @@ export default function ExportReportModal({ isOpen, onClose }) {
                 onClick={() => setFormat("excel")}
               >
                 <span className={styles.formatIcon}>▦</span>
-                <strong>Excel (.xlsx)</strong>
+                <strong>Excel</strong>
               </button>
 
               <button
@@ -86,45 +148,23 @@ export default function ExportReportModal({ isOpen, onClose }) {
             <select
               id="dateRange"
               className={styles.dateSelect}
-              value={dateRange}
-              onChange={(event) => setDateRange(event.target.value)}
+              value={rango}
+              onChange={(event) => setRango(event.target.value)}
             >
-              {DATE_RANGE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+              {RANGOS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className={styles.section}>
-            <label className={styles.sectionLabel}>▽ Filtros de Datos</label>
-
-            <div className={styles.filtersRow}>
-              <label className={styles.checkboxOption}>
-                <input
-                  type="checkbox"
-                  checked={scope === "todos"}
-                  onChange={() => setScope("todos")}
-                />
-                Todos
-              </label>
-
-              <label className={styles.checkboxOption}>
-                <input
-                  type="checkbox"
-                  checked={scope === "departamento"}
-                  onChange={() => setScope("departamento")}
-                />
-                Por Departamento
-              </label>
-            </div>
           </div>
 
           <button type="submit" className={styles.generateButton}>
             ⬇ Generar Reporte
           </button>
         </form>
+
+        {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
 
         <button
           type="button"
