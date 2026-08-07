@@ -331,6 +331,22 @@
   background: #fdecec;
 }
 
+.actionCard + .contentGrid,
+.actionCard {
+  margin-bottom: 20px;
+}
+
+.reviewAviso {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #f8f9ff;
+  border: 1px solid #dfe4ea;
+  color: #26384b;
+}
+
 .backLink {
   text-decoration: none;
   color: #197343;

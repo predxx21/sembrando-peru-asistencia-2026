@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useRol } from "./PortalAuthProvider";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const rol = useRol();
   const [cerrando, setCerrando] = useState(false);
 
   const isFormularioHoras = pathname === "/formulario-horas";
@@ -27,23 +29,16 @@ export default function Sidebar() {
     }
   }
 
+  // Administración y Reportes son exclusivos de coordinadores (admin).
   const navItems = [
-    {
-      label: "▦　Panel",
-      href: "/principal",
-    },
-    {
-      label: "◴　Historial",
-      href: "/historial",
-    },
-    {
-      label: "◉　Administración",
-      href: "/administracion",
-    },
-    {
-      label: "▥　Reportes",
-      href: "/reportes",
-    },
+    { label: "▦　Panel", href: "/principal" },
+    { label: "◴　Historial", href: "/historial" },
+    ...(rol === "admin"
+      ? [
+          { label: "◉　Administración", href: "/administracion" },
+          { label: "▥　Reportes", href: "/reportes" },
+        ]
+      : []),
   ];
 
   return (

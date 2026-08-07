@@ -41,7 +41,15 @@ export async function POST(request) {
   return NextResponse.json({ data });
 }
 
-// GET: Listar registros (con filtro opcional por estado)
+// GET: Listar registros.
+//
+// Filtros opcionales (query params): estado, busqueda, desde, hasta.
+// Alcance:
+//   - scope=mine      → solo los del usuario actual (cualquier rol). Lo usa
+//                       el historial para que el admin vea ÚNICAMENTE lo suyo.
+//   - admin (sin scope) → todos los registros (cola de revisión).
+//   - voluntario        → solo los suyos.
+// Paginación: page (1-based) + limit → devuelve { data, total, page, limit }.
 export async function GET(request) {
   const user = await getUserFromRequest(request);
   if (!user) {
@@ -53,30 +61,42 @@ export async function GET(request) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
-  // Obtener query params para filtro de estado
   const { searchParams } = new URL(request.url);
-  const estado = searchParams.get('estado') || undefined;
+  const pageRaw = Number(searchParams.get('page'));
+  const limitRaw = Number(searchParams.get('limit'));
+  const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : null;
+  const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : null;
 
-  let data, error;
-  if (profile.rol === 'admin') {
-    // Si es admin, devuelve todos los registros (opcionalmente filtrados por estado)
-    const result = await obtenerTodosLosRegistros({ estado });
-    data = result.data;
-    error = result.error;
+  const filtros = {
+    estado: searchParams.get('estado') || undefined,
+    busqueda: searchParams.get('busqueda') || undefined,
+    desde: searchParams.get('desde') || undefined,
+    hasta: searchParams.get('hasta') || undefined,
+    page,
+    limit,
+  };
+
+  const scope = searchParams.get('scope') === 'mine' ? 'mine' : null;
+
+  let result;
+  if (scope === 'mine') {
+    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
+  } else if (profile.rol === 'admin') {
+    result = await obtenerTodosLosRegistros(filtros);
   } else {
-    // Si es voluntario, solo sus propios registros (opcionalmente filtrados)
-    // Nota: obtenerRegistrosPorUsuario no soporta filtro de estado, pero podemos agregarlo o filtrar después
-    const result = await obtenerRegistrosPorUsuario(profile.id);
-    data = result.data;
-    error = result.error;
-    if (estado) {
-      data = data.filter(r => r.estado === estado);
-    }
+    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
   }
 
-  if (error) {
+  if (result.error) {
     return NextResponse.json({ error: 'No se pudieron obtener los registros.' }, { status: 500 });
   }
 
-  return NextResponse.json({ data });
+  const body = { data: result.data };
+  if (page && limit) {
+    body.total = result.total;
+    body.page = page;
+    body.limit = limit;
+  }
+
+  return NextResponse.json(body);
 }

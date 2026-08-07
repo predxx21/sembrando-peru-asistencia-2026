@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
-import { obtenerRegistroPorId } from '@/lib/db/registro';
-import { prisma } from '@/lib/db/client';
+import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
 const SIGNED_URL_EXPIRES_IN = 60 * 10; // 10 minutos
@@ -77,27 +76,22 @@ export async function PATCH(request, context) {
     );
   }
 
-  try {
-    const registro = await prisma.registroAsistencia.update({
-      where: { id: Number(id) },
-      data: {
-        estado,
-        comentarioRevision: comentarioRevision || null,
-        revisorId: profile.id,
-        fechaRevision: new Date(),
-      },
-      include: {
-        profile: true,
-        revisor: true,
-      },
-    });
+  // Payload mínimo: el cliente ya actualiza su lista de forma optimista, así
+  // que no hace falta devolver el perfil/revisor completos en la respuesta.
+  const { data: registro, error } = await actualizarEstadoRegistro({
+    id,
+    estado,
+    comentarioRevision,
+    revisorId: profile.id,
+  });
 
-    return NextResponse.json({ data: registro });
-  } catch (error) {
+  if (error || !registro) {
     console.error('Error al actualizar registro:', error);
     return NextResponse.json(
       { error: 'No se pudo actualizar el registro.' },
       { status: 500 }
     );
   }
+
+  return NextResponse.json({ data: registro });
 }

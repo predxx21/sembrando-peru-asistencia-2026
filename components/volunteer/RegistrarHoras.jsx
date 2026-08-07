@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { calcularHoras } from '@/lib/utils/horas';
+import { comprimirImagen, superaBytes } from '@/lib/utils/imagen';
 import styles from './RegistrarHoras.module.css';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+// Límite de tamaño por evidencia (5 MB) y meta mensual de horas aprobadas.
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const META_MENSUAL = 30;
 
 export default function FormularioHoras() {
   const router = useRouter();
@@ -16,35 +20,90 @@ export default function FormularioHoras() {
     horaFin: '',
     descripcion: '',
   });
-  // Una sola evidencia por registro (imagen o PDF).
+  // Una sola evidencia por archivo (imagen o PDF).
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  // Horas aprobadas del mes actual (para la tarjeta "Tu Historial").
+  const [horasMes, setHorasMes] = useState(0);
 
   const horasCalculadas = calcularHoras(formData.horaInicio, formData.horaFin);
+
+  // Carga las horas aprobadas del mes para mostrar cifras reales (no texto
+  // hardcodeado). Si falla, el formulario sigue funcionando sin esa cifra.
+  useEffect(() => {
+    let active = true;
+
+    async function cargarHorasMes() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      try {
+        // scope=mine: solo los registros del usuario actual (para un admin no
+        // mezclar las horas de todos los voluntarios en "Tu Historial").
+        const res = await fetch('/api/registros?scope=mine', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return;
+
+        const ahora = new Date();
+        const total = (body.data || []).reduce((sum, r) => {
+          const fecha = new Date(r.fecha);
+          const enEsteMes =
+            fecha.getMonth() === ahora.getMonth() &&
+            fecha.getFullYear() === ahora.getFullYear();
+          if (r.estado === 'aprobado' && enEsteMes) {
+            return sum + (Number(r.horas) || 0);
+          }
+          return sum;
+        }, 0);
+
+        if (active) setHorasMes(Math.round(total * 10) / 10);
+      } catch {
+        // Silencioso: no bloquea el registro si el cálculo falla.
+      }
+    }
+
+    cargarHorasMes();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleChange(event) {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  function pickFile(selected) {
+  // Valida tipo y tamaño (5 MB en bruto), luego comprime la imagen antes de
+  // subirla: reescala a ~1600px y re-codifica a JPEG. Con eso se usa menos
+  // storage y el visor de evidencia descarga un archivo mucho menor.
+  async function pickFile(selected) {
     if (!ACCEPTED_TYPES.includes(selected.type)) return;
-    setFile(selected);
+    if (superaBytes(selected.size, MAX_FILE_SIZE)) {
+      setFileError('El archivo supera los 5 MB. Usa una imagen o PDF más pequeño.');
+      return;
+    }
+    setFileError('');
+    const preparado = await comprimirImagen(selected);
+    setFile(preparado);
   }
 
-  function handleFileChange(event) {
+  async function handleFileChange(event) {
     const selected = event.target.files[0];
-    if (selected) pickFile(selected);
+    if (selected) await pickFile(selected);
     event.target.value = '';
   }
 
-  function handleDrop(event) {
+  async function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
     const selected = event.dataTransfer.files[0];
-    if (selected) pickFile(selected);
+    if (selected) await pickFile(selected);
   }
 
   function handleDragOver(event) {
@@ -58,11 +117,13 @@ export default function FormularioHoras() {
 
   function removeFile() {
     setFile(null);
+    setFileError('');
   }
 
   function handleCancel() {
     setFormData({ fecha: '', horaInicio: '', horaFin: '', descripcion: '' });
     setFile(null);
+    setFileError('');
     setMensaje('');
   }
 
@@ -123,8 +184,9 @@ export default function FormularioHoras() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      // El servidor obtiene el userId del token (Authorization); no se manda
+      // en el body. userId aquí solo se usa para la carpeta del Storage.
       body: JSON.stringify({
-        userId,
         fecha,
         horaInicio,
         horaFin,
@@ -229,7 +291,7 @@ export default function FormularioHoras() {
           >
             <div className={styles.dropzoneIcon}>⇪</div>
             <strong>Arrastra archivos aquí o haz clic</strong>
-            <span>Tamaño máximo por archivo: 5MB. Formatos: JPG, PNG, PDF.</span>
+            <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, PDF.</span>
 
             <input
               id="evidenciaInput"
@@ -239,6 +301,8 @@ export default function FormularioHoras() {
               onChange={handleFileChange}
             />
           </div>
+
+          {fileError && <p className={styles.fileError}>{fileError}</p>}
 
           {file && (
             <ul className={styles.fileList}>
@@ -295,8 +359,13 @@ export default function FormularioHoras() {
           <div>
             <h3>Tu Historial</h3>
             <p>
-              Llevas acumuladas 24.5 horas este mes. ¡Sigue así, estás a
-              solo 5.5 horas de tu meta mensual!
+              {horasMes > 0
+                ? `Llevas ${horasMes} horas aprobadas este mes. ${
+                    META_MENSUAL - horasMes > 0
+                      ? `Te faltan ${META_MENSUAL - horasMes} horas para tu meta mensual de ${META_MENSUAL}.`
+                      : '¡Meta mensual cumplida!'
+                  }`
+                : 'Aún no tienes horas aprobadas este mes. Registra tus actividades para acumular horas.'}
             </p>
           </div>
         </article>

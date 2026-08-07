@@ -8,7 +8,9 @@ async function fetchRegistros() {
     throw new Error('No hay sesión activa.');
   }
 
-  const res = await fetch('/api/registros', {
+  // scope=mine: SIEMPRE solo los registros del usuario actual (independiente
+  // del rol). Así el historial de un admin no muestra los de los demás.
+  const res = await fetch('/api/registros?scope=mine', {
     cache: 'no-store',
     headers: {
       'Authorization': `Bearer ${token}`,

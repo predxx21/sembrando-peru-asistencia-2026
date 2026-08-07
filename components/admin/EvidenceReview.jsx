@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { reviewSubmission } from "./adminData";
 import styles from "./EvidenceReview.module.css";
 
 const STATUS_CONFIG = {
@@ -19,6 +20,43 @@ export default function EvidenceReview() {
   const [submission, setSubmission] = useState(null);
   const [signedUrl, setSignedUrl] = useState(null);
   const [zoomed, setZoomed] = useState(false);
+
+  // Estado de la revisión desde este mismo visor (aprobado/rechazado).
+  const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState("");
+  const [aviso, setAviso] = useState("");
+
+  // Aprobar o rechazar sin recargar nada: se actualiza el estado local y la
+  // sección de revisión desaparece. Si la petición falla, se muestra el error.
+  async function revisar(estado) {
+    if (estado === "rechazado" && !motivo.trim()) {
+      setAviso("Debes indicar el motivo del rechazo.");
+      return;
+    }
+
+    setEnviando(estado);
+    setAviso("");
+
+    try {
+      await reviewSubmission(
+        submission.id,
+        estado,
+        estado === "aprobado"
+          ? motivo.trim() || "Aprobado por el coordinador."
+          : motivo.trim()
+      );
+      setSubmission((prev) => ({ ...prev, status: estado }));
+      setMotivo("");
+      setAviso(
+        `✅ Registro ${estado === "aprobado" ? "aprobado" : "rechazado"} correctamente.`
+      );
+    } catch (err) {
+      console.error("Error al revisar el registro:", err);
+      setAviso("❌ " + (err.message || "No se pudo revisar el registro."));
+    } finally {
+      setEnviando("");
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -105,6 +143,45 @@ export default function EvidenceReview() {
           </span>
         </div>
       </div>
+
+      {submission.status === "pendiente" && (
+        <section className={styles.actionCard}>
+          <h2>Revisión de evidencia</h2>
+
+          <label className={styles.detailLabel} htmlFor="motivoRevision">
+            Motivo (obligatorio al rechazar)
+          </label>
+          <textarea
+            id="motivoRevision"
+            value={motivo}
+            onChange={(event) => setMotivo(event.target.value)}
+            placeholder="Escribe aquí el motivo de tu decisión..."
+            rows={3}
+          />
+
+          <div className={styles.actionButtons}>
+            <button
+              type="button"
+              className={styles.approveButton}
+              disabled={Boolean(enviando)}
+              onClick={() => revisar("aprobado")}
+            >
+              {enviando === "aprobado" ? "Aprobando..." : "✓ Aprobar"}
+            </button>
+
+            <button
+              type="button"
+              className={styles.rejectButton}
+              disabled={Boolean(enviando)}
+              onClick={() => revisar("rechazado")}
+            >
+              {enviando === "rechazado" ? "Rechazando..." : "✕ Rechazar"}
+            </button>
+          </div>
+
+          {aviso && <p className={styles.reviewAviso}>{aviso}</p>}
+        </section>
+      )}
 
       <div className={styles.contentGrid}>
         <article className={styles.viewerCard}>

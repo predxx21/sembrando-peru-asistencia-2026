@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import styles from "./AdminDashboard.module.css";
 
+const ITEMS_PER_PAGE = 8;
+
 // Componente para el spinner de carga
 function LoadingSpinner() {
   return <span className={styles.loadingSpinner}>⏳</span>;
@@ -18,8 +20,8 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // Estado para estadísticas, tendencia y auditoría
   const [stats, setStats] = useState({
@@ -36,10 +38,9 @@ export default function AdminDashboard() {
   // (la carga inicial la hace el primer useEffect, con deps vacías).
   const isFirstRender = useRef(true);
 
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
   // Cargar estadísticas, tendencia y auditoría en UNA sola petición.
-  // El endpoint consolidado /api/admin/estadisticas ejecuta las consultas
-  // en paralelo del lado del servidor y devuelve todo junto, con lo que se
-  // pasa de 3 round-trips + ~12 consultas secuenciales a 1 round-trip.
   async function cargarEstadisticas() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -67,8 +68,8 @@ export default function AdminDashboard() {
       }
 
       if (Array.isArray(data?.auditoria)) {
-        setAuditLog(data.auditoria.map((item, index) => ({
-          id: index,
+        setAuditLog(data.auditoria.map((item) => ({
+          id: item.id,
           type: item.estado === 'aprobado' ? 'approved' : 'rejected',
           label: `${item.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}: Registro #${item.id}`,
           detail: `por ${item.revisor?.nombre || 'Coordinador'} • ${new Date(item.fechaRevision).toLocaleString('es-PE')}`,
@@ -81,31 +82,23 @@ export default function AdminDashboard() {
     }
   }
 
-  // Cargar registros pendientes (con paginación y filtros)
-  async function cargarRegistros() {
+  // Cargar la página actual de pendientes con los filtros aplicados en el
+  // servidor (búsqueda + rango de fechas + paginación).
+  async function cargarRegistros(pagina = page) {
     try {
       setLoading(true);
-      const registros = await getPendingSubmissions();
-
-      // Aplicar filtros de búsqueda y fecha
-      let filtrados = registros;
-      if (search) {
-        filtrados = filtrados.filter(r =>
-          r.name.toLowerCase().includes(search.toLowerCase()) ||
-          r.description?.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-      // El filtro compara contra isoDate (la fecha real ISO), no contra la
-      // fecha ya formateada para mostrar, que 'new Date()' podía malinterpretar.
-      if (dateFrom) {
-        filtrados = filtrados.filter(r => new Date(r.isoDate) >= new Date(dateFrom));
-      }
-      if (dateTo) {
-        filtrados = filtrados.filter(r => new Date(r.isoDate) <= new Date(dateTo));
-      }
-
-      setSubmissions(filtrados);
-      setCurrentPage(1); // Resetear a primera página al aplicar filtros
+      const { items, total: nuevoTotal } = await getPendingSubmissions({
+        page: pagina,
+        limit: ITEMS_PER_PAGE,
+        busqueda: search.trim() || undefined,
+        desde: dateFrom || undefined,
+        hasta: dateTo || undefined,
+      });
+      setSubmissions(items);
+      setTotal(nuevoTotal);
+      // Si la página quedó fuera de rango tras aplicar filtros, volver a la 1.
+      const maxPage = Math.max(1, Math.ceil(nuevoTotal / ITEMS_PER_PAGE));
+      setPage(pagina > maxPage ? maxPage : pagina);
     } catch (error) {
       setDataError(error.message || "No se pudieron cargar los registros.");
     } finally {
@@ -115,60 +108,63 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     cargarEstadisticas();
-    cargarRegistros();
+    cargarRegistros(1);
   }, []);
 
-  // Cargar registros cuando cambian los filtros.
-  // Se omite el primer render: la carga inicial ya la hace el useEffect de
-  // arriba (con deps vacías). Antes esto disparaba cargarRegistros() dos
-  // veces al montar la página.
+  // Recargar al cambiar filtros (búsqueda/rango), con debounce. No en el inicio.
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    const timer = setTimeout(() => {
-      cargarRegistros();
-    }, 300);
+    const timer = setTimeout(() => cargarRegistros(1), 300);
     return () => clearTimeout(timer);
   }, [search, dateFrom, dateTo]);
 
+  // Aprobar con actualización optimista: se quita la fila de inmediato (sin
+  // recargar la tabla); si el PATCH falla, se vuelve a la página para resync.
   async function handleApprove(id) {
+    const fila = submissions.find((s) => s.id === id);
+    setSubmissions((cur) => cur.filter((s) => s.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
+    setStats((prev) => ({
+      ...prev,
+      pendientes: Math.max(0, prev.pendientes - 1),
+      horasAprobadas: prev.horasAprobadas + (fila?.horas || 0),
+    }));
     try {
       await reviewSubmission(id, "aprobado", "Aprobado por el coordinador.");
-      // Actualizar la lista local
-      setSubmissions((current) => current.filter((submission) => submission.id !== id));
-      // Actualizar estadísticas
-      setStats(prev => ({
-        ...prev,
-        pendientes: prev.pendientes - 1,
-        horasAprobadas: prev.horasAprobadas + (submissions.find(s => s.id === id)?.horas || 0),
-      }));
     } catch (error) {
       setDataError(error.message || "No se pudo aprobar el registro.");
+      cargarRegistros(page);
     }
   }
 
+  // Rechazo: pide el motivo, actualiza optimista y, si falla, resync.
   async function handleReject(id) {
     const comentario = prompt('Motivo del rechazo:');
     if (comentario === null) return;
+    const fila = submissions.find((s) => s.id === id);
+    setSubmissions((cur) => cur.filter((s) => s.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
+    setStats((prev) => ({
+      ...prev,
+      pendientes: Math.max(0, prev.pendientes - 1),
+    }));
     try {
       await reviewSubmission(id, "rechazado", comentario);
-      setSubmissions((current) => current.filter((submission) => submission.id !== id));
-      setStats(prev => ({
-        ...prev,
-        pendientes: prev.pendientes - 1,
-      }));
     } catch (error) {
       setDataError(error.message || "No se pudo rechazar el registro.");
+      cargarRegistros(page);
     }
   }
 
-  // Paginación
-  const totalPages = Math.ceil(submissions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = submissions.slice(startIndex, startIndex + itemsPerPage);
-  const maxVolume = Math.max(...weeklyVolume.map(d => d.value), 1);
+  // Botón "≡ Filtros": re-aplica filtros desde la primera página.
+  function aplicarFiltros() {
+    cargarRegistros(1);
+  }
+
+  const maxVolume = Math.max(...weeklyVolume.map((d) => d.value), 1);
 
   return (
     <div className={styles.adminPage}>
@@ -201,7 +197,7 @@ export default function AdminDashboard() {
               onChange={(event) => setDateTo(event.target.value)}
             />
           </div>
-          <button type="button" className={styles.filterButton} onClick={cargarRegistros}>
+          <button type="button" className={styles.filterButton} onClick={aplicarFiltros}>
             ≡ Filtros
           </button>
         </div>
@@ -258,10 +254,10 @@ export default function AdminDashboard() {
 
         {loading && <p>Cargando registros...</p>}
         {dataError && <p className={styles.errorMessage}>{dataError}</p>}
-        {!loading && !dataError && currentItems.length === 0 && (
+        {!loading && !dataError && submissions.length === 0 && (
           <p>No hay registros pendientes.</p>
         )}
-        {currentItems.map((item) => (
+        {submissions.map((item) => (
           <div className={styles.tableRow} key={item.id}>
             <span className={styles.volunteerCell}>
               <i className={styles.avatar} style={{ background: item.avatarColor }}>
@@ -304,33 +300,33 @@ export default function AdminDashboard() {
           </div>
         ))}
 
-        {!loading && !dataError && submissions.length > 0 && (
+        {!loading && !dataError && total > 0 && (
           <div className={styles.pagination}>
             <span>
-              Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, submissions.length)} de {submissions.length} entradas
+              Mostrando {((page - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(page * ITEMS_PER_PAGE, total)} de {total} entradas
             </span>
             <div className={styles.pageControls}>
               <button
                 type="button"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
+                disabled={page === 1}
+                onClick={() => cargarRegistros(page - 1)}
               >
                 Anterior
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pagina) => (
                 <button
                   type="button"
-                  key={page}
-                  className={page === currentPage ? styles.pageActive : ""}
-                  onClick={() => setCurrentPage(page)}
+                  key={pagina}
+                  className={pagina === page ? styles.pageActive : ""}
+                  onClick={() => cargarRegistros(pagina)}
                 >
-                  {page}
+                  {pagina}
                 </button>
               ))}
               <button
                 type="button"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
+                disabled={page === totalPages}
+                onClick={() => cargarRegistros(page + 1)}
               >
                 Siguiente
               </button>

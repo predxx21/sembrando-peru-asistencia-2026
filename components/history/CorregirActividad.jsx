@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { calcularHoras } from "@/lib/utils/horas";
+import { comprimirImagen, superaBytes } from "@/lib/utils/imagen";
 import styles from "./CorregirActividad.module.css";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export default function CorrectionForm({ activity }) {
   const router = useRouter();
@@ -27,24 +30,31 @@ export default function CorrectionForm({ activity }) {
     [horaInicio, horaFin]
   );
 
-  function pickFile(file) {
+  // Valida tipo y tamaño (5 MB), luego comprime la imagen antes de reenviarla.
+  async function pickFile(file) {
     const accepted = ["image/jpeg", "image/png", "application/pdf"];
     if (!accepted.includes(file.type)) return;
 
-    setNewFile(file);
+    if (superaBytes(file.size, MAX_FILE_SIZE)) {
+      setMensaje("❌ El archivo supera los 5 MB. Usa una imagen o PDF más pequeño.");
+      return;
+    }
+
+    const preparado = await comprimirImagen(file);
+    setNewFile(preparado);
   }
 
-  function handleFileChange(event) {
+  async function handleFileChange(event) {
     const file = event.target.files[0];
-    if (file) pickFile(file);
+    if (file) await pickFile(file);
     event.target.value = "";
   }
 
-  function handleDrop(event) {
+  async function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
     const file = event.dataTransfer.files[0];
-    if (file) pickFile(file);
+    if (file) await pickFile(file);
   }
 
   function handleDragOver(event) {
@@ -244,7 +254,7 @@ export default function CorrectionForm({ activity }) {
             >
               <div className={styles.dropzoneIcon}>⬆</div>
               <strong>Subir nueva evidencia</strong>
-              <span>Arrastra un archivo o haz clic para buscar (JPG, PNG, PDF)</span>
+              <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, PDF.</span>
 
               <input
                 id="newEvidenceInput"

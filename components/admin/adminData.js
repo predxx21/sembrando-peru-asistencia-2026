@@ -11,16 +11,21 @@ async function getToken() {
 }
 
 // ============================================================
-// 2. Fetch de registros
+// 2. Fetch de registros (listado) con filtros opcionales
 // ============================================================
-async function fetchRegistros(estado) {
+// `estado`, `page` (1-based), `limit`, `busqueda`, `desde`, `hasta`. Devuelve
+// { items, total, page, limit } para poder paginar en el servidor.
+async function fetchRegistros(filtros = {}) {
   const token = await getToken();
   if (!token) throw new Error('No hay sesión activa.');
 
-  // El servidor ya soporta filtrar por estado (?estado=pendiente);
-  // usarlo evita bajar todos los registros para filtrarlos en el cliente.
-  const query = estado ? `?estado=${encodeURIComponent(estado)}` : '';
-  const res = await fetch(`/api/registros${query}`, {
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') params.set(k, v);
+  });
+  const qs = params.toString();
+
+  const res = await fetch(`/api/registros${qs ? `?${qs}` : ''}`, {
     cache: 'no-store',
     headers: { 'Authorization': `Bearer ${token}` },
   });
@@ -28,8 +33,14 @@ async function fetchRegistros(estado) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || 'Error al obtener los registros');
   }
-  const data = await res.json();
-  return data.data || [];
+  const body = await res.json();
+  const items = body.data || [];
+  return {
+    items,
+    total: body.total ?? items.length,
+    page: body.page,
+    limit: body.limit,
+  };
 }
 
 // ============================================================
@@ -55,6 +66,7 @@ function mapActivity(row) {
     // parsear la fecha ya formateada).
     isoDate: row.fecha,
     duration: `${row.horas} hrs`,
+    horas: row.horas,
     status: row.estado,
     description: row.descripcion,
     evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
@@ -64,10 +76,18 @@ function mapActivity(row) {
 // ============================================================
 // 4. Funciones exportadas
 // ============================================================
-export async function getPendingSubmissions() {
-  // El servidor ya devuelve solo pendientes vía ?estado=pendiente.
-  const registros = await fetchRegistros('pendiente');
-  return registros.map(mapActivity);
+// Trae la página actual de pendientes con filtros aplicados EN EL SERVIDOR
+// (búsqueda por nombre y rango de fechas). Devuelve { items, total }.
+export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta } = {}) {
+  const { items, total } = await fetchRegistros({
+    estado: 'pendiente',
+    page,
+    limit,
+    busqueda,
+    desde,
+    hasta,
+  });
+  return { items: items.map(mapActivity), total };
 }
 
 export async function reviewSubmission(id, estado, comentario) {

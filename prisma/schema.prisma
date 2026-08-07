@@ -57,6 +57,11 @@ model RegistroAsistencia {
   revisor           Profile?         @relation("revisor", fields: [revisorId], references: [id])
   fechaRevision     DateTime?
   fechaCreacion     DateTime         @default(now())
-  
+
+  @@index([profileId])
+  @@index([estado])
+  @@index([fecha])
+  @@index([fechaRevision])
+  @@index([estado, fecha])
   @@map("registroasistencia")
 }
