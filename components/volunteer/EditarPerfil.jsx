@@ -1,187 +1,150 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import styles from "./EditarPerfil.module.css";
 
-/* ================= MOCK DATA ================= */
-const mockUser = {
-  id: 1,
-  nombre: "Pedro Rojas ",
-  email: "pedroelmagnifico@gmail.com",
-  telefono: "+51 929 300 160",
-  habilidades: ["Liderazgo", "Sostenibilidad", "Gestión"],
-  bio: "Apasionado por el impacto social y la gestión de proyectos comunitarios",
-  avatar: "/avatar.png",
-};
-
-/* ================= VALIDACIÓN ================= */
-const validateProfile = (form) => {
-  if (!form.nombre) return "El nombre es obligatorio";
-  if (!form.telefono) return "El teléfono es obligatorio";
-  if (!form.bio || form.bio.length < 10)
-    return "La biografía debe tener al menos 10 caracteres";
-
-  return null;
-};
-
 export default function EditarPerfil() {
+  const router = useRouter();
   const [form, setForm] = useState(null);
-  const [preview, setPreview] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [mensaje, setMensaje] = useState("");
 
-  /* ================= LOAD (SIMULA API) ================= */
+  // Carga el perfil real (nombre/apellido) desde /api/auth/perfil.
   useEffect(() => {
-    const loadData = async () => {
-      await new Promise((res) => setTimeout(res, 800));
+    let cancelled = false;
 
-      setForm({
-        ...mockUser,
-        habilidades: mockUser.habilidades.join(", "),
-      });
+    async function load() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No hay sesión activa.");
 
-      setPreview(mockUser.avatar);
-      setLoading(false);
+        const res = await fetch(`/api/auth/perfil?id=${user.id}`);
+        const body = await res.json().catch(() => null);
+
+        if (cancelled) return;
+
+        if (!body?.profile) throw new Error("No se encontró tu perfil.");
+
+        setForm({
+          nombre: body.profile.nombre || "",
+          apellido: body.profile.apellido || "",
+        });
+        setEmail(user.email || "");
+      } catch (err) {
+        if (!cancelled) {
+          setMensaje("❌ " + (err.message || "No se pudo cargar el perfil."));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
     };
-
-    loadData();
   }, []);
 
-  /* ================= HANDLERS ================= */
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
 
-  const handleImage = (e) => {
-    const file = e.target.files[0];
-    if (file) setPreview(URL.createObjectURL(file));
-  };
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const error = validateProfile(form);
-    if (error) return alert(error);
+    if (!form.nombre.trim() || !form.apellido.trim()) {
+      setMensaje("❌ El nombre y el apellido son obligatorios.");
+      return;
+    }
 
     setSaving(true);
+    setMensaje("");
 
-    // 🔥 Aquí luego irá tu API real
-    const payload = {
-      ...form,
-      habilidades: form.habilidades.split(",").map((h) => h.trim()),
-    };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("No hay sesión activa.");
 
-    console.log("📦 Enviando datos:", payload);
+      const res = await fetch("/api/auth/perfil", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nombre: form.nombre.trim(),
+          apellido: form.apellido.trim(),
+        }),
+      });
 
-    await new Promise((res) => setTimeout(res, 1000));
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "No se pudo actualizar el perfil.");
+      }
 
-    setSaving(false);
-    alert("Perfil actualizado correctamente ✅");
-  };
+      setMensaje("✅ Perfil actualizado correctamente.");
+    } catch (err) {
+      console.error("Error al actualizar perfil:", err);
+      setMensaje("❌ " + (err.message || "No se pudo actualizar el perfil."));
+    } finally {
+      setSaving(false);
+    }
+  }
 
-  if (loading || !form) return <p>Cargando perfil...</p>;
+  if (loading) return <p>Cargando perfil...</p>;
+  if (!form) return <p>No hay datos para mostrar.</p>;
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Editar Perfil</h1>
-      <p className={styles.subtitle}>
-        Actualiza tu información personal y profesional
-      </p>
+      <p className={styles.subtitle}>Actualiza tu información personal</p>
 
       <form className={styles.card} onSubmit={handleSubmit}>
-        {/* FOTO */}
-        <div className={styles.sectionTop}>
-          <img src={preview} className={styles.avatar} />
-
-          <div>
-            <h3>Foto de Perfil</h3>
-            <p className={styles.desc}>
-              Imagen cuadrada mínimo 400x400px
-            </p>
-
-            <div className={styles.photoActions}>
-              <label className={styles.btnSecondary}>
-                Cambiar Imagen
-                <input type="file" hidden onChange={handleImage} />
-              </label>
-
-              <button type="button" className={styles.delete}>
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.divider}></div>
-
-        {/* FORM */}
         <div className={styles.grid}>
           <div className={styles.field}>
-            <label>Nombre Completo</label>
+            <label htmlFor="nombre">Nombre</label>
             <input
+              id="nombre"
               name="nombre"
               value={form.nombre}
               onChange={handleChange}
               disabled={saving}
+              required
             />
           </div>
 
           <div className={styles.field}>
+            <label htmlFor="apellido">Apellido</label>
+            <input
+              id="apellido"
+              name="apellido"
+              value={form.apellido}
+              onChange={handleChange}
+              disabled={saving}
+              required
+            />
+          </div>
+
+          <div className={styles.fieldFull}>
             <label>Correo Electrónico</label>
-            <input value={form.email} disabled className={styles.disabled} />
-            <span className={styles.hint}>
-              El correo no se puede modificar
-            </span>
-          </div>
-
-          <div className={styles.field}>
-            <label>Teléfono</label>
-            <input
-              name="telefono"
-              value={form.telefono}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label>Habilidades</label>
-            <input
-              name="habilidades"
-              value={form.habilidades}
-              onChange={handleChange}
-              disabled={saving}
-            />
+            <input value={email} disabled className={styles.disabled} />
+            <span className={styles.hint}>El correo no se puede modificar</span>
           </div>
         </div>
 
-        <div className={styles.fieldFull}>
-          <label>Biografía</label>
-          <textarea
-            name="bio"
-            value={form.bio}
-            onChange={handleChange}
-            disabled={saving}
-          />
-        </div>
-
-        <div className={styles.divider}></div>
-
-        {/* SEGURIDAD */}
-        <div className={styles.security}>
-          <div>
-            <h4>Seguridad de la Cuenta</h4>
-            <p>Mínimo 12 caracteres</p>
-          </div>
-
-          <button type="button" className={styles.btnPrimary}>
-            Actualizar Password
-          </button>
-        </div>
-
-        {/* BOTONES */}
         <div className={styles.actions}>
-          <button type="button" className={styles.cancel}>
+          <button
+            type="button"
+            className={styles.cancel}
+            onClick={() => router.push("/principal")}
+            disabled={saving}
+          >
             Cancelar
           </button>
 
@@ -189,6 +152,8 @@ export default function EditarPerfil() {
             {saving ? "Guardando..." : "Guardar Cambios"}
           </button>
         </div>
+
+        {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
       </form>
     </div>
   );

@@ -2,54 +2,59 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+import { calcularHoras } from "@/lib/utils/horas";
+import { comprimirImagen, superaBytes } from "@/lib/utils/imagen";
 import styles from "./CorregirActividad.module.css";
 
-function calculateHours(startTime, endTime) {
-  if (!startTime || !endTime) return 0;
-
-  const [startH, startM] = startTime.split(":").map(Number);
-  const [endH, endM] = endTime.split(":").map(Number);
-
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
-
-  const diff = endMinutes - startMinutes;
-  if (diff <= 0) return 0;
-
-  return Math.round((diff / 60) * 10) / 10;
-}
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export default function CorrectionForm({ activity }) {
-  const [fecha, setFecha] = useState(activity.isoDate);
+  const router = useRouter();
+
+  // activity.isoDate llega como ISO con hora ("2026-08-06T..."); el input
+  // type="date" necesita solo "YYYY-MM-DD", así que se recorta.
+  const [fecha, setFecha] = useState(activity.isoDate?.slice(0, 10) || "");
   const [horaInicio, setHoraInicio] = useState(activity.startTime);
   const [horaFin, setHoraFin] = useState(activity.endTime);
   const [descripcion, setDescripcion] = useState(activity.description);
   const [oldFileDismissed, setOldFileDismissed] = useState(false);
-  const [newFiles, setNewFiles] = useState([]);
+  const [newFile, setNewFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [mensaje, setMensaje] = useState("");
 
   const calculatedHours = useMemo(
-    () => calculateHours(horaInicio, horaFin),
+    () => calcularHoras(horaInicio, horaFin),
     [horaInicio, horaFin]
   );
 
-  function addFiles(fileList) {
-    const accepted = Array.from(fileList).filter((file) =>
-      ["image/jpeg", "image/png", "application/pdf"].includes(file.type)
-    );
+  // Valida tipo y tamaño (5 MB), luego comprime la imagen antes de reenviarla.
+  async function pickFile(file) {
+    const accepted = ["image/jpeg", "image/png", "application/pdf"];
+    if (!accepted.includes(file.type)) return;
 
-    setNewFiles((prev) => [...prev, ...accepted]);
+    if (superaBytes(file.size, MAX_FILE_SIZE)) {
+      setMensaje("❌ El archivo supera los 5 MB. Usa una imagen o PDF más pequeño.");
+      return;
+    }
+
+    const preparado = await comprimirImagen(file);
+    setNewFile(preparado);
   }
 
-  function handleFileChange(event) {
-    addFiles(event.target.files);
+  async function handleFileChange(event) {
+    const file = event.target.files[0];
+    if (file) await pickFile(file);
     event.target.value = "";
   }
 
-  function handleDrop(event) {
+  async function handleDrop(event) {
     event.preventDefault();
     setIsDragging(false);
-    addFiles(event.dataTransfer.files);
+    const file = event.dataTransfer.files[0];
+    if (file) await pickFile(file);
   }
 
   function handleDragOver(event) {
@@ -61,20 +66,85 @@ export default function CorrectionForm({ activity }) {
     setIsDragging(false);
   }
 
-  function removeNewFile(index) {
-    setNewFiles((prev) => prev.filter((_, i) => i !== index));
+  function removeNewFile() {
+    setNewFile(null);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    // TODO: conectar con el backend para reenviar el registro corregido a revisión.
-    console.log("Guardar y reenviar", activity.id, {
-      fecha,
-      horaInicio,
-      horaFin,
-      descripcion,
-      newFiles,
-    });
+
+    if (!fecha || !horaInicio || !horaFin || !descripcion) {
+      setMensaje("❌ Completa todos los campos obligatorios.");
+      return;
+    }
+
+    if (calculatedHours <= 0) {
+      setMensaje("❌ La hora de fin debe ser mayor que la hora de inicio.");
+      return;
+    }
+
+    setSaving(true);
+    setMensaje("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
+      }
+
+      // Si el voluntario adjuntó una evidencia nueva, subirla a Storage
+      // (bucket privado) y guardar su ruta. Si no, se conserva la anterior.
+      let evidenciaUrl;
+      if (newFile) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("No se pudo obtener el usuario autenticado.");
+        }
+
+        const fileExt = newFile.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("evidencias")
+          .upload(fileName, newFile);
+
+        if (uploadError) {
+          throw new Error("Error al subir la evidencia: " + uploadError.message);
+        }
+
+        evidenciaUrl = fileName;
+      }
+
+      const res = await fetch(`/api/registros/${activity.id}/corregir`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fecha,
+          horaInicio,
+          horaFin,
+          descripcion,
+          evidenciaUrl,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "No se pudo reenviar el registro.");
+      }
+
+      router.push("/historial");
+    } catch (err) {
+      console.error("Error al corregir el registro:", err);
+      setMensaje("❌ " + (err.message || "No se pudo guardar la corrección."));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -184,33 +254,29 @@ export default function CorrectionForm({ activity }) {
             >
               <div className={styles.dropzoneIcon}>⬆</div>
               <strong>Subir nueva evidencia</strong>
-              <span>Arrastra un archivo o haz clic para buscar (JPG, PNG, PDF)</span>
+              <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, PDF.</span>
 
               <input
                 id="newEvidenceInput"
                 type="file"
-                multiple
                 accept=".jpg,.jpeg,.png,.pdf"
                 className={styles.hiddenInput}
                 onChange={handleFileChange}
               />
             </div>
 
-            {newFiles.length > 0 && (
+            {newFile && (
               <ul className={styles.fileList}>
-                {newFiles.map((file, index) => (
-                  <li key={`${file.name}-${index}`}>
-                    <span>{file.name}</span>
-
-                    <button
-                      type="button"
-                      onClick={() => removeNewFile(index)}
-                      aria-label={`Quitar ${file.name}`}
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
+                <li>
+                  <span>{newFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={removeNewFile}
+                    aria-label="Quitar archivo"
+                  >
+                    ✕
+                  </button>
+                </li>
               </ul>
             )}
           </div>
@@ -223,11 +289,6 @@ export default function CorrectionForm({ activity }) {
             <div className={styles.summaryRow}>
               <span>Duración calculada</span>
               <strong>{calculatedHours} Horas</strong>
-            </div>
-
-            <div className={styles.summaryRow}>
-              <span>Categoría</span>
-              <i className={styles.typeBadge}>{activity.type}</i>
             </div>
           </article>
 
@@ -252,9 +313,11 @@ export default function CorrectionForm({ activity }) {
             />
           </div>
 
-          <button type="submit" className={styles.submitButton}>
-            ▷ Guardar y Reenviar
+          <button type="submit" className={styles.submitButton} disabled={saving}>
+            {saving ? "Enviando..." : "▷ Guardar y Reenviar"}
           </button>
+
+          {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
 
           <Link href="/historial" className={styles.cancelLink}>
             Cancelar

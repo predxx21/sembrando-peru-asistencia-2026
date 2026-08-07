@@ -1,25 +1,51 @@
+// components/admin/adminData.js
+
 import { supabase } from '@/lib/supabase/client';
 
-async function fetchRegistros() {
+// ============================================================
+// 1. Obtener token
+// ============================================================
+async function getToken() {
   const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  if (!token) {
-    throw new Error('No hay sesión activa.');
-  }
-
-  const res = await fetch('/api/registros', {
-    cache: 'no-store',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) {
-    throw new Error('Error al obtener los registros');
-  }
-  const data = await res.json();
-  return data.data || [];
+  return session?.access_token;
 }
 
+// ============================================================
+// 2. Fetch de registros (listado) con filtros opcionales
+// ============================================================
+// `estado`, `page` (1-based), `limit`, `busqueda`, `desde`, `hasta`. Devuelve
+// { items, total, page, limit } para poder paginar en el servidor.
+async function fetchRegistros(filtros = {}) {
+  const token = await getToken();
+  if (!token) throw new Error('No hay sesión activa.');
+
+  const params = new URLSearchParams();
+  Object.entries(filtros).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') params.set(k, v);
+  });
+  const qs = params.toString();
+
+  const res = await fetch(`/api/registros${qs ? `?${qs}` : ''}`, {
+    cache: 'no-store',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al obtener los registros');
+  }
+  const body = await res.json();
+  const items = body.data || [];
+  return {
+    items,
+    total: body.total ?? items.length,
+    page: body.page,
+    limit: body.limit,
+  };
+}
+
+// ============================================================
+// 3. Transformar datos
+// ============================================================
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('es-PE', {
@@ -36,27 +62,52 @@ function mapActivity(row) {
     initials: row.profile?.nombre ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '') : 'V',
     avatarColor: '#197343',
     date: formatDate(row.fecha),
-    type: row.tipo || 'Actividad',
+    // Fecha en ISO para comparar en los filtros de rango (new Date() no debe
+    // parsear la fecha ya formateada).
+    isoDate: row.fecha,
     duration: `${row.horas} hrs`,
+    horas: row.horas,
     status: row.estado,
     description: row.descripcion,
-    location: row.ubicacion || 'Sin ubicación',
-    evidencePhoto: row.evidenciaUrl,
     evidenceFileName: row.evidenciaUrl ? row.evidenciaUrl.split('/').pop() : 'Sin evidencia',
-    evidenceFileSize: 'N/A',
   };
 }
 
-export async function getSubmissions() {
-  const registros = await fetchRegistros();
-  return registros.map(mapActivity);
+// ============================================================
+// 4. Funciones exportadas
+// ============================================================
+// Trae la página actual de pendientes con filtros aplicados EN EL SERVIDOR
+// (búsqueda por nombre y rango de fechas). Devuelve { items, total }.
+export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta } = {}) {
+  const { items, total } = await fetchRegistros({
+    estado: 'pendiente',
+    page,
+    limit,
+    busqueda,
+    desde,
+    hasta,
+  });
+  return { items: items.map(mapActivity), total };
 }
 
-export async function getSubmissionById(id) {
-  const registros = await fetchRegistros();
-  const row = registros.find(r => r.id === id);
-  return row ? mapActivity(row) : null;
-}
+export async function reviewSubmission(id, estado, comentario) {
+  const token = await getToken();
+  if (!token) throw new Error('No hay sesión activa.');
 
-// Para compatibilidad con el código existente que espera un array
-export const submissions = await getSubmissions();
+  const res = await fetch(`/api/registros/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ estado, comentarioRevision: comentario }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al revisar el registro.');
+  }
+
+  const data = await res.json();
+  return data.data;
+}

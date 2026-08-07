@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
-import { loginUser, loginWithGoogle } from '@/lib/auth/login';
+import { loginUser } from '@/lib/auth/login';
+import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
 import LoginVisual from './LoginVisual';
 
 export default function LoginScreen() {
@@ -14,19 +15,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function handleGoogleLogin() {
-    setIsSubmitting(true);
-    setMessage('');
-
-    const { error } = await loginWithGoogle();
-
-    if (error) {
-      setMessage(error.message);
-      setIsSubmitting(false);
-    }
-    // No redirigimos aquí porque la redirección la maneja Supabase OAuth
-  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -47,9 +35,9 @@ export default function LoginScreen() {
         return;
       }
 
-      // Redirigir según el rol (lo haremos más adelante)
-      // Por ahora, siempre a principal
-      router.push('/principal');
+      // Redirigir según el rol: admin → administración, resto → principal.
+      const rol = await obtenerRolActual();
+      router.push(rutaPorRol(rol));
     } catch {
       setMessage('No se pudo conectar con Supabase. Inténtalo nuevamente.');
     } finally {
@@ -129,19 +117,6 @@ export default function LoginScreen() {
 
               {message && <p className="message" role="status">{message}</p>}
             </form>
-
-            <div className="divider">
-              <span /><b>o</b><span />
-            </div>
-
-            <button
-              className="google-button"
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isSubmitting}
-            >
-              <strong>G</strong> Continuar con Google
-            </button>
 
             <p className="register">
               ¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link>

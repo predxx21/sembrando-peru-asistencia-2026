@@ -112,7 +112,6 @@ export default function HistoryDashboard({ activities }) {
 
                 <div className={styles.activityMeta}>
                   <span className={styles.hoursBadge}>{activity.hours} hrs</span>
-                  <span className={styles.typeBadge}>{activity.type}</span>
                 </div>
 
                 <div className={styles.cardActions}>

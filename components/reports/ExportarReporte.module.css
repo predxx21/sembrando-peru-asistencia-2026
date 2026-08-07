@@ -122,33 +122,6 @@
   outline-offset: 1px;
 }
 
-.filtersRow {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  background: #f8f9ff;
-  border: 1px solid #dfe4ea;
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-
-.checkboxOption {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #26384b;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.checkboxOption input {
-  width: 18px;
-  height: 18px;
-  accent-color: #197343;
-  cursor: pointer;
-}
-
 .generateButton {
   width: 100%;
   border: 0;
@@ -163,6 +136,17 @@
 
 .generateButton:hover {
   background: #125a33;
+}
+
+.mensaje {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #e7f4ec;
+  color: #145c34;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .backLink {

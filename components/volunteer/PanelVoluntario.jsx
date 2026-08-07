@@ -1,59 +1,79 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase/client";
+import { getHistoryActivities } from "@/components/history/historyData";
 import styles from "./PanelVoluntario.module.css";
 
-const activities = [
-  {
-    id: 1,
-    date: "Oct 24, 2023",
-    title: "Apoyo en Comedor Comunitario",
-    type: "Trabajo de Campo",
-    hours: 4.5,
-    status: "Aprobado",
-  },
-  {
-    id: 2,
-    date: "Oct 22, 2023",
-    title: "Gestión de Inventario",
-    type: "Administración",
-    hours: 3,
-    status: "Pendiente",
-  },
-  {
-    id: 3,
-    date: "Oct 20, 2023",
-    title: "Sesión de Mentoría Juvenil",
-    type: "Trabajo de Campo",
-    hours: 5,
-    status: "Aprobado",
-  },
-];
+const STATUS_CONFIG = {
+  aprobado: { label: "Aprobado", className: "badgeSuccess" },
+  pendiente: { label: "Pendiente", className: "badgePending" },
+  rechazado: { label: "Rechazado", className: "badgeRejected" },
+};
 
 export default function VolunteerDashboard() {
-  const totalHours = activities.reduce(
-    (total, activity) => total + activity.hours,
-    0
-  );
+  const [nombre, setNombre] = useState("");
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Carga las actividades reales del voluntario (vía historyData → /api/registros)
+  // y su nombre (vía /api/auth/perfil).
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const perfilRes = await fetch(`/api/auth/perfil?id=${user?.id || ""}`);
+        const perfil = await perfilRes.json().catch(() => null);
+
+        if (cancelled) return;
+        setNombre(perfil?.profile?.nombre || "");
+
+        const historial = await getHistoryActivities();
+        if (!cancelled) setActivities(historial);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "No se pudieron cargar tus actividades.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totalHours = activities.reduce((total, a) => total + a.hours, 0);
   const approvedHours = activities
-    .filter((activity) => activity.status === "Aprobado")
-    .reduce((total, activity) => total + activity.hours, 0);
-
+    .filter((a) => a.status === "aprobado")
+    .reduce((total, a) => total + a.hours, 0);
   const pendingHours = activities
-    .filter((activity) => activity.status === "Pendiente")
-    .reduce((total, activity) => total + activity.hours, 0);
+    .filter((a) => a.status === "pendiente")
+    .reduce((total, a) => total + a.hours, 0);
+
+  // La API ya devuelve los registros ordenados de más reciente a más antiguo.
+  const recent = activities.slice(0, 4);
 
   return (
     <div className={styles.dashboard}>
       {/* Bienvenida */}
       <header className={styles.welcome}>
         <div>
-          <h1>Bienvenido de nuevo, Alex</h1>
+          <h1>Bienvenido de nuevo{nombre ? `, ${nombre}` : ""}</h1>
 
           <p>
             Aquí tienes un resumen de tus contribuciones de
-            voluntariado este mes.
+            voluntariado.
           </p>
         </div>
-
       </header>
 
       {/* Estadísticas */}
@@ -98,7 +118,9 @@ export default function VolunteerDashboard() {
           <div className={styles.sectionTitle}>
             <h2>Actividad Reciente</h2>
 
-            <span>Ver Todo ›</span>
+            <Link href="/historial">
+              <span>Ver Todo ›</span>
+            </Link>
           </div>
 
           <div className={styles.tableCard}>
@@ -107,44 +129,43 @@ export default function VolunteerDashboard() {
               className={`${styles.activityRow} ${styles.activityRowHead}`}
             >
               <span>Fecha</span>
-              <span>Tipo de actividad</span>
+              <span>Actividad</span>
               <span>Horas</span>
               <span>Estado</span>
               <span>Acción</span>
             </div>
 
-            {/* Actividades */}
-            {activities.map((activity) => (
-              <div
-                className={styles.activityRow}
-                key={activity.id}
-              >
-                <span>{activity.date}</span>
+            {loading && <p className={styles.loadingText}>Cargando actividades...</p>}
+            {error && <p className={styles.loadingText}>{error}</p>}
+            {!loading && !error && recent.length === 0 && (
+              <p className={styles.loadingText}>Aún no tienes actividades registradas.</p>
+            )}
 
-                <span>
-                  <strong>{activity.title}</strong>
-                  <small>{activity.type}</small>
-                </span>
+            {recent.map((activity) => {
+              const status = STATUS_CONFIG[activity.status] || STATUS_CONFIG.pendiente;
 
-                <span>
-                  {activity.hours.toFixed(1)} hrs
-                </span>
+              return (
+                <div className={styles.activityRow} key={activity.id}>
+                  <span>{activity.date}</span>
 
-                <span>
-                  <i
-                    className={`${styles.badge} ${
-                      activity.status === "Aprobado"
-                        ? styles.badgeSuccess
-                        : styles.badgePending
-                    }`}
-                  >
-                    {activity.status}
-                  </i>
-                </span>
+                  <span>
+                    <strong>{activity.title}</strong>
+                  </span>
 
-                <span>◉</span>
-              </div>
-            ))}
+                  <span>{activity.hours.toFixed(1)} hrs</span>
+
+                  <span>
+                    <i className={`${styles.badge} ${styles[status.className]}`}>
+                      {status.label}
+                    </i>
+                  </span>
+
+                  <span>
+                    <Link href={`/historial/${activity.id}`}>Ver</Link>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -164,20 +185,9 @@ export default function VolunteerDashboard() {
                 rápida.
               </p>
 
-              <button type="button">
-                Saber más
-              </button>
-            </div>
-          </article>
-
-          <article className={styles.tagsCard}>
-            <span>Etiquetas de actividad</span>
-
-            <div>
-              <i>Trabajo de Campo</i>
-              <i>Administración</i>
-              <i>Mentoría</i>
-              <i>Evento</i>
+              <Link href="/formulario-horas" className={styles.guideButton}>
+                Registrar ahora
+              </Link>
             </div>
           </article>
         </aside>

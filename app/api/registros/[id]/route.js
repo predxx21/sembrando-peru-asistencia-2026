@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getPerfilByUserId } from '@/lib/db/perfil';
-import { obtenerRegistroPorId } from '@/lib/db/registro';
+import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
 
 const EVIDENCIAS_BUCKET = 'evidencias';
-const SIGNED_URL_EXPIRES_IN = 60 * 5; // 5 minutos
+const SIGNED_URL_EXPIRES_IN = 60 * 10; // 10 minutos
 
 // Devuelve UN registro (para la pantalla de detalle de evidencia), ya con
 // una signed URL fresca para la evidencia si existe. Solo el dueño del
@@ -47,4 +47,51 @@ export async function GET(request, context) {
   }
 
   return NextResponse.json({ data: { ...registro, evidenciaSignedUrl } });
+}
+
+export async function PATCH(request, context) {
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+  }
+
+  const { profile, error: perfilError } = await getPerfilByUserId(user.id);
+  if (perfilError || !profile) {
+    return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
+  }
+
+  // Solo admin puede aprobar/rechazar
+  if (profile.rol !== 'admin') {
+    return NextResponse.json({ error: 'No tienes permisos de administrador.' }, { status: 403 });
+  }
+
+  const { id } = await context.params;
+  const body = await request.json().catch(() => null);
+  const { estado, comentarioRevision } = body || {};
+
+  if (!estado || !['aprobado', 'rechazado'].includes(estado)) {
+    return NextResponse.json(
+      { error: 'Estado inválido. Debe ser "aprobado" o "rechazado".' },
+      { status: 400 }
+    );
+  }
+
+  // Payload mínimo: el cliente ya actualiza su lista de forma optimista, así
+  // que no hace falta devolver el perfil/revisor completos en la respuesta.
+  const { data: registro, error } = await actualizarEstadoRegistro({
+    id,
+    estado,
+    comentarioRevision,
+    revisorId: profile.id,
+  });
+
+  if (error || !registro) {
+    console.error('Error al actualizar registro:', error);
+    return NextResponse.json(
+      { error: 'No se pudo actualizar el registro.' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ data: registro });
 }

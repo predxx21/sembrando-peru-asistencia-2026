@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
 import { registerUser } from '@/lib/auth/register';
+import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -53,9 +54,11 @@ export default function RegisterScreen() {
         return;
       }
 
-      // ✅ Usar optional chaining para evitar errores si data es null
+      // Si el registro inicia sesión automáticamente, redirigir según el rol
+      // (los nuevos usuarios son voluntario → /principal).
       if (data?.session) {
-        router.push('/principal');
+        const rol = await obtenerRolActual();
+        router.push(rutaPorRol(rol));
         return;
       }
 

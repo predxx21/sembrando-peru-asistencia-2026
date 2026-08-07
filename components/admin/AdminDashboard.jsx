@@ -1,67 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import styles from "./AdminDashboard.module.css";
 
-const summaryStats = [
-  {
-    id: "pending",
-    label: "Esperando Aprobación",
-    value: "24",
-    detail: "+5 hoy",
-  },
-  {
-    id: "avgTime",
-    label: "Tiempo Prom. de Revisión",
-    value: "4.2h",
-    detail: "por entrada",
-  },
-  {
-    id: "totalHours",
-    label: "Total de Horas de Voluntariado",
-    value: "1,280",
-    detail: "↑ 12%",
-  },
-  {
-    id: "activeVolunteers",
-    label: "Voluntarios Activos",
-    value: "82",
-    detail: "este mes",
-  },
-];
+const ITEMS_PER_PAGE = 8;
 
-const weeklyVolume = [
-  { day: "L", value: 55 },
-  { day: "M", value: 78 },
-  { day: "M", value: 60 },
-  { day: "J", value: 92 },
-  { day: "V", value: 70 },
-  { day: "S", value: 38 },
-  { day: "D", value: 30 },
-];
-
-const auditLog = [
-  {
-    id: 1,
-    type: "approved",
-    label: "Aprobado: VL-9011",
-    detail: "por Coordinadora Sarah • hace 5m",
-  },
-  {
-    id: 2,
-    type: "rejected",
-    label: "Rechazado: VL-8892",
-    detail: "por Coordinador Mike • hace 12m",
-  },
-  {
-    id: 3,
-    type: "started",
-    label: "Revisión Iniciada: VL-9032",
-    detail: "por Coordinadora Sarah • hace 1h",
-  },
-];
+// Componente para el spinner de carga
+function LoadingSpinner() {
+  return <span className={styles.loadingSpinner}>⏳</span>;
+}
 
 export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -70,53 +20,159 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  // Estado para estadísticas, tendencia y auditoría
+  const [stats, setStats] = useState({
+    pendientes: 0,
+    totalHoras: 0,
+    horasAprobadas: 0,
+    voluntariosActivos: 0,
+  });
+  const [weeklyVolume, setWeeklyVolume] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Evita que el useEffect de filtros dispare también en el primer render
+  // (la carga inicial la hace el primer useEffect, con deps vacías).
+  const isFirstRender = useRef(true);
+
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+  // Cargar estadísticas, tendencia y auditoría en UNA sola petición.
+  async function cargarEstadisticas() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/admin/estadisticas', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Error al cargar las estadísticas.');
+
+      const { data } = await res.json();
+
+      if (data?.stats) {
+        setStats({
+          pendientes: data.stats.pendientes || 0,
+          totalHoras: data.stats.totalHoras || 0,
+          horasAprobadas: data.stats.horasAprobadas || 0,
+          voluntariosActivos: data.stats.voluntariosActivos || 0,
+        });
+      }
+
+      if (Array.isArray(data?.tendencia)) {
+        setWeeklyVolume(data.tendencia);
+      }
+
+      if (Array.isArray(data?.auditoria)) {
+        setAuditLog(data.auditoria.map((item) => ({
+          id: item.id,
+          type: item.estado === 'aprobado' ? 'approved' : 'rejected',
+          label: `${item.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}: Registro #${item.id}`,
+          detail: `por ${item.revisor?.nombre || 'Coordinador'} • ${new Date(item.fechaRevision).toLocaleString('es-PE')}`,
+        })));
+      }
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
+
+  // Cargar la página actual de pendientes con los filtros aplicados en el
+  // servidor (búsqueda + rango de fechas + paginación).
+  async function cargarRegistros(pagina = page) {
+    try {
+      setLoading(true);
+      const { items, total: nuevoTotal } = await getPendingSubmissions({
+        page: pagina,
+        limit: ITEMS_PER_PAGE,
+        busqueda: search.trim() || undefined,
+        desde: dateFrom || undefined,
+        hasta: dateTo || undefined,
+      });
+      setSubmissions(items);
+      setTotal(nuevoTotal);
+      // Si la página quedó fuera de rango tras aplicar filtros, volver a la 1.
+      const maxPage = Math.max(1, Math.ceil(nuevoTotal / ITEMS_PER_PAGE));
+      setPage(pagina > maxPage ? maxPage : pagina);
+    } catch (error) {
+      setDataError(error.message || "No se pudieron cargar los registros.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadSubmissions() {
-      try {
-        setSubmissions(await getPendingSubmissions());
-      } catch (error) {
-        setDataError(error.message || "No se pudieron cargar los registros.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadSubmissions();
+    cargarEstadisticas();
+    cargarRegistros(1);
   }, []);
 
+  // Recargar al cambiar filtros (búsqueda/rango), con debounce. No en el inicio.
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => cargarRegistros(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, dateFrom, dateTo]);
+
+  // Aprobar con actualización optimista: se quita la fila de inmediato (sin
+  // recargar la tabla); si el PATCH falla, se vuelve a la página para resync.
   async function handleApprove(id) {
+    const fila = submissions.find((s) => s.id === id);
+    setSubmissions((cur) => cur.filter((s) => s.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
+    setStats((prev) => ({
+      ...prev,
+      pendientes: Math.max(0, prev.pendientes - 1),
+      horasAprobadas: prev.horasAprobadas + (fila?.horas || 0),
+    }));
     try {
-      await reviewSubmission(id, "aprobado", "");
-      setSubmissions((current) => current.filter((submission) => submission.id !== id));
+      await reviewSubmission(id, "aprobado", "Aprobado por el coordinador.");
     } catch (error) {
       setDataError(error.message || "No se pudo aprobar el registro.");
+      cargarRegistros(page);
     }
   }
 
+  // Rechazo: pide el motivo, actualiza optimista y, si falla, resync.
   async function handleReject(id) {
+    const comentario = prompt('Motivo del rechazo:');
+    if (comentario === null) return;
+    const fila = submissions.find((s) => s.id === id);
+    setSubmissions((cur) => cur.filter((s) => s.id !== id));
+    setTotal((t) => Math.max(0, t - 1));
+    setStats((prev) => ({
+      ...prev,
+      pendientes: Math.max(0, prev.pendientes - 1),
+    }));
     try {
-      await reviewSubmission(id, "rechazado", "");
-      setSubmissions((current) => current.filter((submission) => submission.id !== id));
+      await reviewSubmission(id, "rechazado", comentario);
     } catch (error) {
       setDataError(error.message || "No se pudo rechazar el registro.");
+      cargarRegistros(page);
     }
   }
 
-  const maxVolume = Math.max(...weeklyVolume.map((d) => d.value));
+  // Botón "≡ Filtros": re-aplica filtros desde la primera página.
+  function aplicarFiltros() {
+    cargarRegistros(1);
+  }
+
+  const maxVolume = Math.max(...weeklyVolume.map((d) => d.value), 1);
 
   return (
     <div className={styles.adminPage}>
       <header className={styles.pageHeader}>
         <div>
           <h1>Revisión de Evidencias Pendientes</h1>
-          <p>
-            Revisar y auditar las horas enviadas por la red de
-            voluntarios.
-          </p>
+          <p>Revisar y auditar las horas enviadas por la red de voluntarios.</p>
         </div>
-
         <div className={styles.headerControls}>
           <div className={styles.searchField}>
             <span>⌕</span>
@@ -127,7 +183,6 @@ export default function AdminDashboard() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-
           <div className={styles.dateRange}>
             <span>📅</span>
             <input
@@ -142,69 +197,82 @@ export default function AdminDashboard() {
               onChange={(event) => setDateTo(event.target.value)}
             />
           </div>
-
-          <button type="button" className={styles.filterButton}>
+          <button type="button" className={styles.filterButton} onClick={aplicarFiltros}>
             ≡ Filtros
           </button>
         </div>
       </header>
 
       <section className={styles.stats}>
-        {summaryStats.map((stat) => (
-          <article className={styles.statCard} key={stat.id}>
-            <span className={styles.statLabel}>{stat.label}</span>
-
-            <div className={styles.statValueRow}>
-              <h2>{stat.value}</h2>
-              <small>{stat.detail}</small>
-            </div>
-          </article>
-        ))}
+        {loadingStats ? (
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Cargando estadísticas...</span>
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Esperando Aprobación</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.pendientes}</h2>
+                <small>{stats.pendientes > 0 ? `${stats.pendientes} pendientes` : 'Sin registros'}</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Horas Aprobadas</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.horasAprobadas}</h2>
+                <small>de {stats.totalHoras} hrs totales</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Total de Horas</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.totalHoras}</h2>
+                <small>↑ {stats.totalHoras > 0 ? 'Activo' : 'Sin registros'}</small>
+              </div>
+            </article>
+            <article className={styles.statCard}>
+              <span className={styles.statLabel}>Voluntarios Activos</span>
+              <div className={styles.statValueRow}>
+                <h2>{stats.voluntariosActivos}</h2>
+                <small>este mes</small>
+              </div>
+            </article>
+          </>
+        )}
       </section>
 
       <div className={styles.tableCard}>
-        <div
-          className={`${styles.tableRow} ${styles.tableRowHead}`}
-        >
+        <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
           <span>Voluntario</span>
           <span>Fecha de Actividad</span>
-          <span>Tipo de Actividad</span>
           <span>Duración</span>
           <span>Evidencia</span>
           <span className={styles.actionsHead}>Acciones</span>
         </div>
 
-        {loading && <p>Cargando registros desde Supabase...</p>}
-        {dataError && <p>{dataError}</p>}
-        {!loading && !dataError && submissions.length === 0 && <p>No hay registros pendientes.</p>}
+        {loading && <p>Cargando registros...</p>}
+        {dataError && <p className={styles.errorMessage}>{dataError}</p>}
+        {!loading && !dataError && submissions.length === 0 && (
+          <p>No hay registros pendientes.</p>
+        )}
         {submissions.map((item) => (
           <div className={styles.tableRow} key={item.id}>
             <span className={styles.volunteerCell}>
-              <i
-                className={styles.avatar}
-                style={{ background: item.avatarColor }}
-              >
+              <i className={styles.avatar} style={{ background: item.avatarColor }}>
                 {item.initials}
               </i>
-
               <span>
                 <strong>{item.name}</strong>
                 <small>ID: #{item.id}</small>
               </span>
             </span>
-
             <span>{item.date}</span>
-
-            <span>
-              <i className={styles.typeBadge}>{item.type}</i>
-            </span>
-
             <span>{item.duration}</span>
-
             <span className={styles.evidenceCell}>
               📷 {item.evidenceFileName}
             </span>
-
             <span className={styles.actionsCell}>
               <button
                 type="button"
@@ -214,7 +282,6 @@ export default function AdminDashboard() {
               >
                 ✓
               </button>
-
               <button
                 type="button"
                 className={styles.rejectButton}
@@ -223,7 +290,6 @@ export default function AdminDashboard() {
               >
                 ✕
               </button>
-
               <Link
                 href={`/administracion/${item.id}`}
                 className={styles.evidenceButton}
@@ -234,76 +300,89 @@ export default function AdminDashboard() {
           </div>
         ))}
 
-        <div className={styles.pagination}>
-          <span>Mostrando 1 a 4 de 24 entradas</span>
-
-          <div className={styles.pageControls}>
-            <button type="button" disabled={currentPage === 1}>
-              Anterior
-            </button>
-
-            {[1, 2, 3].map((page) => (
+        {!loading && !dataError && total > 0 && (
+          <div className={styles.pagination}>
+            <span>
+              Mostrando {((page - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(page * ITEMS_PER_PAGE, total)} de {total} entradas
+            </span>
+            <div className={styles.pageControls}>
               <button
                 type="button"
-                key={page}
-                className={page === currentPage ? styles.pageActive : ""}
-                onClick={() => setCurrentPage(page)}
+                disabled={page === 1}
+                onClick={() => cargarRegistros(page - 1)}
               >
-                {page}
+                Anterior
               </button>
-            ))}
-
-            <button type="button" onClick={() => setCurrentPage((p) => p + 1)}>
-              Siguiente
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pagina) => (
+                <button
+                  type="button"
+                  key={pagina}
+                  className={pagina === page ? styles.pageActive : ""}
+                  onClick={() => cargarRegistros(pagina)}
+                >
+                  {pagina}
+                </button>
+              ))}
+              <button
+                type="button"
+                disabled={page === totalPages}
+                onClick={() => cargarRegistros(page + 1)}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <section className={styles.bottomGrid}>
         <article className={styles.chartCard}>
           <h2>Tendencias de Volumen de Envíos</h2>
-
-          <div className={styles.chart}>
-            {weeklyVolume.map((item, index) => (
-              <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
-                <div
-                  className={styles.chartBar}
-                  style={{ height: `${(item.value / maxVolume) * 100}%` }}
-                />
-                <span>{item.day}</span>
-              </div>
-            ))}
-          </div>
+          {weeklyVolume.length > 0 ? (
+            <div className={styles.chart}>
+              {weeklyVolume.map((item, index) => (
+                <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
+                  <div
+                    className={styles.chartBar}
+                    style={{ height: `${(item.value / maxVolume) * 100}%` }}
+                  />
+                  <span>{item.day}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No hay datos de tendencia.</p>
+          )}
         </article>
 
         <article className={styles.auditCard}>
           <h2>Registros de Auditoría</h2>
-
-          <ul className={styles.auditList}>
-            {auditLog.map((entry) => (
-              <li key={entry.id}>
-                <i
-                  className={`${styles.auditDot} ${
-                    entry.type === "approved"
-                      ? styles.dotApproved
-                      : entry.type === "rejected"
-                      ? styles.dotRejected
-                      : styles.dotStarted
-                  }`}
-                />
-
-                <div>
-                  <strong>{entry.label}</strong>
-                  <small>{entry.detail}</small>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <a href="#" className={styles.auditLink}>
+          {auditLog.length > 0 ? (
+            <ul className={styles.auditList}>
+              {auditLog.map((entry) => (
+                <li key={entry.id}>
+                  <i
+                    className={`${styles.auditDot} ${
+                      entry.type === "approved"
+                        ? styles.dotApproved
+                        : entry.type === "rejected"
+                        ? styles.dotRejected
+                        : styles.dotStarted
+                    }`}
+                  />
+                  <div>
+                    <strong>{entry.label}</strong>
+                    <small>{entry.detail}</small>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No hay registros de auditoría.</p>
+          )}
+          <Link href="/reportes" className={styles.auditLink}>
             Ver Historial Completo
-          </a>
+          </Link>
         </article>
       </section>
     </div>
