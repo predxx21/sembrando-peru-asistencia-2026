@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
+import { invalidateCache } from '@/lib/cache';
+import { esEnteroPositivo, esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
@@ -21,6 +23,13 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'Faltan datos obligatorios.' }, { status: 400 });
   }
 
+  if (!esEnteroPositivo(id) || !esFechaValida(body.fecha) || !esHoraValida(body.horaInicio) || !esHoraValida(body.horaFin)) {
+    return NextResponse.json(
+      { error: 'Id, fecha u horas inválidos. Usa AAAA-MM-DD y HH:MM.' },
+      { status: 400 }
+    );
+  }
+
   const { data: registro, error: registroError } = await obtenerRegistroPorId(id);
 
   if (registroError || !registro) {
@@ -35,6 +44,14 @@ export async function PATCH(request, context) {
   // Solo el dueño del registro puede corregirlo.
   if (registro.profileId !== profile.id) {
     return NextResponse.json({ error: 'No tienes permiso para corregir este registro.' }, { status: 403 });
+  }
+
+  // La evidencia nueva debe vivir en la carpeta del usuario en el bucket
+  // privado (`evidencias/<userId>/…`); si no se manda una, se conserva la del
+  // registro original, que ya pertenece a este perfil. Sin la validación,
+  // cualquiera podría adjuntar la ruta de un archivo ajeno (IDOR).
+  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
+    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
   }
 
   // Solo se corrige un registro que haya sido rechazado.
@@ -58,6 +75,9 @@ export async function PATCH(request, context) {
   if (error) {
     return NextResponse.json({ error: 'No se pudo corregir el registro.' }, { status: 500 });
   }
+
+  // El reenvío devuelve el registro a 'pendiente': cambia el listado y stats.
+  invalidateCache();
 
   return NextResponse.json({ data: actualizado });
 }

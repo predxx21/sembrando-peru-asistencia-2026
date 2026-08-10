@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import styles from "./ListadoHistorial.module.css";
+import { ESTADO_LABEL } from "@/lib/utils/estado";
 
 const statusConfig = {
-  aprobado: { label: "Aprobado", className: "statusApproved" },
-  pendiente: { label: "Pendiente", className: "statusPending" },
-  rechazado: { label: "Rechazado", className: "statusRejected" },
+  aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
+  pendiente: { label: ESTADO_LABEL.pendiente, className: "statusPending" },
+  rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
 export default function HistoryDashboard({ activities }) {
@@ -37,6 +38,13 @@ export default function HistoryDashboard({ activities }) {
     .reduce((sum, a) => sum + a.hours, 0);
   const pendingCount = activities.filter((a) => a.status === "pendiente").length;
   const rejectedCount = activities.filter((a) => a.status === "rechazado").length;
+
+  // Al cambiar de filtros (búsqueda o estado), volver a la primera página: si
+  // no, se puede quedar en una página que quedó fuera de rango y la lista
+  // aparece vacía aunque haya resultados.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterStatus]);
 
   return (
     <div className={styles.historyPage}>
@@ -107,8 +115,8 @@ export default function HistoryDashboard({ activities }) {
                   <span className={styles.activityDate}>{activity.date}</span>
                 </div>
 
+                {/* El título ya es la descripción: no repetirla dos veces. */}
                 <h3 className={styles.activityTitle}>{activity.title}</h3>
-                <p className={styles.activityDescription}>{activity.description}</p>
 
                 <div className={styles.activityMeta}>
                   <span className={styles.hoursBadge}>{activity.hours} hrs</span>

@@ -4,14 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
+import AuditLog from "./AuditLog";
+import LoadingSpinner from "./LoadingSpinner";
+import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 8;
-
-// Componente para el spinner de carga
-function LoadingSpinner() {
-  return <span className={styles.loadingSpinner}>⏳</span>;
-}
 
 export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -48,6 +46,9 @@ export default function AdminDashboard() {
 
     try {
       const res = await fetch('/api/admin/estadisticas', {
+        // no-store: que el navegador no guarde una copia propia; la frescura
+        // la decide la caché del servidor (lib/cache.js).
+        cache: 'no-store',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Error al cargar las estadísticas.');
@@ -137,6 +138,7 @@ export default function AdminDashboard() {
     } catch (error) {
       setDataError(error.message || "No se pudo aprobar el registro.");
       cargarRegistros(page);
+      cargarEstadisticas();
     }
   }
 
@@ -156,6 +158,7 @@ export default function AdminDashboard() {
     } catch (error) {
       setDataError(error.message || "No se pudo rechazar el registro.");
       cargarRegistros(page);
+      cargarEstadisticas();
     }
   }
 
@@ -336,54 +339,9 @@ export default function AdminDashboard() {
       </div>
 
       <section className={styles.bottomGrid}>
-        <article className={styles.chartCard}>
-          <h2>Tendencias de Volumen de Envíos</h2>
-          {weeklyVolume.length > 0 ? (
-            <div className={styles.chart}>
-              {weeklyVolume.map((item, index) => (
-                <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
-                  <div
-                    className={styles.chartBar}
-                    style={{ height: `${(item.value / maxVolume) * 100}%` }}
-                  />
-                  <span>{item.day}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No hay datos de tendencia.</p>
-          )}
-        </article>
+        <WeeklyVolumeChart data={weeklyVolume} maxVolume={maxVolume} />
 
-        <article className={styles.auditCard}>
-          <h2>Registros de Auditoría</h2>
-          {auditLog.length > 0 ? (
-            <ul className={styles.auditList}>
-              {auditLog.map((entry) => (
-                <li key={entry.id}>
-                  <i
-                    className={`${styles.auditDot} ${
-                      entry.type === "approved"
-                        ? styles.dotApproved
-                        : entry.type === "rejected"
-                        ? styles.dotRejected
-                        : styles.dotStarted
-                    }`}
-                  />
-                  <div>
-                    <strong>{entry.label}</strong>
-                    <small>{entry.detail}</small>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No hay registros de auditoría.</p>
-          )}
-          <Link href="/reportes" className={styles.auditLink}>
-            Ver Historial Completo
-          </Link>
-        </article>
+        <AuditLog entries={auditLog} />
       </section>
     </div>
   );

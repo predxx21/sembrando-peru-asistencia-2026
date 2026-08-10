@@ -6,11 +6,13 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { reviewSubmission } from "./adminData";
 import styles from "./EvidenceReview.module.css";
+import { ESTADO_LABEL } from "@/lib/utils/estado";
+import { formatFechaEs } from "@/lib/utils/fecha";
 
 const STATUS_CONFIG = {
-  pendiente: { label: "Pendiente", className: "statusPending" },
-  aprobado: { label: "Aprobado", className: "statusApproved" },
-  rechazado: { label: "Rechazado", className: "statusRejected" },
+  pendiente: { label: ESTADO_LABEL.pendiente, className: "statusPending" },
+  aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
+  rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
 export default function EvidenceReview() {
@@ -88,7 +90,7 @@ export default function EvidenceReview() {
           name: registro.profile?.nombre || "Voluntario",
           initials: registro.profile?.nombre ? registro.profile.nombre.charAt(0) + (registro.profile.apellido?.charAt(0) || "") : "V",
           avatarColor: "#197343",
-          date: new Date(registro.fecha).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }),
+          date: formatFechaEs(registro.fecha),
           duration: `${registro.horas} hrs`,
           status: registro.estado,
           description: registro.descripcion,
