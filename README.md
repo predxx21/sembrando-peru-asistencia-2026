@@ -10,7 +10,7 @@ El proyecto usa **pnpm** como gestor de paquetes (versión en el campo
 
 ```bash
 pnpm install
-pnpm dev
+pnpm run dev
 ```
 
 Abre `http://localhost:3000`. Se necesitan las variables de entorno:

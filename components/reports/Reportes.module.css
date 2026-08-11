@@ -19,7 +19,7 @@
 .pageHeader p {
   color: #667281;
   margin: 0;
-  max-width: 460px;
+  white-space: nowrap;
 }
 
 .headerActions {
@@ -164,6 +164,11 @@
   color: #26384b;
   font-size: 16px;
   margin: 0;
+}
+
+.contributorsCard h2 {
+  /* Más aire entre el título y la lista de contribuyentes. */
+  margin-bottom: 18px;
 }
 
 .yearBadge {
