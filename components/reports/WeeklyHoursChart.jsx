@@ -1,9 +1,11 @@
 "use client";
 
-// Gráfico de línea simple (SVG) alimentado por las horas aprobadas por mes.
+// Gráfico de línea simple (SVG) alimentado por las horas aprobadas de la
+// semana actual (lunes a domingo), un punto por día. Los datos llegan como
+// { fecha: 'YYYY-MM-DD', dia: 'Lun'…'Dom', value }.
 import styles from "./Reportes.module.css";
 
-export default function MonthlyHoursChart({ data }) {
+export default function WeeklyHoursChart({ data }) {
   const width = 640;
   const height = 220;
   const padding = 24;
@@ -47,7 +49,7 @@ export default function MonthlyHoursChart({ data }) {
 
       {points.map((point) => (
         <circle
-          key={`${point.month}-${point.year}`}
+          key={point.fecha}
           className={styles.chartDot}
           cx={point.x}
           cy={point.y}
@@ -57,13 +59,13 @@ export default function MonthlyHoursChart({ data }) {
 
       {points.map((point) => (
         <text
-          key={`label-${point.month}-${point.year}`}
+          key={`label-${point.fecha}`}
           className={styles.chartAxisLabel}
           x={point.x}
           y={height + 18}
           textAnchor="middle"
         >
-          {point.month}
+          {point.dia}
         </text>
       ))}
     </svg>

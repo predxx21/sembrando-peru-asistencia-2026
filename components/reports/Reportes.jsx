@@ -3,17 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import ExportReportModal from "./ExportarReporte";
 import { getReportes } from "./reportesData";
-import MonthlyHoursChart from "./MonthlyHoursChart";
+import WeeklyHoursChart from "./WeeklyHoursChart";
 import SummaryCard from "./SummaryCard";
 import Pagination from "./Pagination";
+import { formatFechaCorta } from "@/lib/utils/fecha";
 import styles from "./Reportes.module.css";
 
 const ITEMS_PER_PAGE = 10;
-
-// Formatea un número con separador de miles (es-PE), p.ej. "12,482".
-function formatNumber(value) {
-  return Number(value || 0).toLocaleString("es-PE");
-}
 
 export default function ReportsDashboard() {
   const [search, setSearch] = useState("");
@@ -45,39 +41,42 @@ export default function ReportsDashboard() {
   const voluntarios = reportes?.voluntarios ?? [];
 
   // Las tarjetas de resumen salen de los datos reales (stats del endpoint).
+  // Son los 4 cards de métricas del Panel de Administración (misma semántica
+  // que lib/db/estadisticas.js): pendientes, horas aprobadas, total y
+  // voluntarios activos.
   const summaryStats = useMemo(() => {
     const stats = reportes?.stats;
     if (!stats) return [];
 
     return [
       {
+        id: "pending",
+        type: "metric",
+        label: "Esperando Aprobación",
+        value: String(stats.pendientes),
+        detail:
+          stats.pendientes > 0 ? `${stats.pendientes} pendientes` : "Sin registros",
+      },
+      {
+        id: "approvedHours",
+        type: "metric",
+        label: "Horas Aprobadas",
+        value: String(stats.horasAprobadas),
+        detail: `de ${stats.totalHoras} hrs totales`,
+      },
+      {
         id: "totalHours",
         type: "metric",
-        label: "Total de Horas Aprobadas",
-        value: formatNumber(stats.totalHoras),
-        detail: "Horas aprobadas",
+        label: "Total de Horas",
+        value: String(stats.totalHoras),
+        detail: stats.totalHoras > 0 ? "Activo" : "Sin registros",
       },
       {
         id: "activeVolunteers",
         type: "metric",
         label: "Voluntarios Activos",
-        value: formatNumber(stats.voluntariosActivos),
-        detail: "Últimos 30 días",
-      },
-      {
-        id: "avgHours",
-        type: "metric",
-        label: "Promedio por Voluntario",
-        value: String(stats.promedioHoras),
-        detail: "Horas aprobadas",
-      },
-      {
-        id: "milestone",
-        type: "progress",
-        label: "Hito del Proyecto",
-        percent: stats.percent,
-        detail: `${stats.percent}% de la Meta`,
-        goal: `Meta de ${formatNumber(stats.meta)} horas`,
+        value: String(stats.voluntariosActivos),
+        detail: "este mes",
       },
     ];
   }, [reportes]);
@@ -106,9 +105,14 @@ export default function ReportsDashboard() {
     if (currentPage > totalPages) setCurrentPage(1);
   }, [currentPage, totalPages]);
 
-  const yearBadge = reportes?.porMes?.length
-    ? String(reportes.porMes[reportes.porMes.length - 1].year)
-    : String(new Date().getFullYear());
+  // Rango de la semana actual para el badge del gráfico (p.ej. "4 Ago – 10 Ago").
+  const rangoSemana = useMemo(() => {
+    const semana = reportes?.porSemana;
+    if (!semana || semana.length < 2) return "";
+    return `${formatFechaCorta(semana[0].fecha)} – ${formatFechaCorta(
+      semana[semana.length - 1].fecha
+    )}`;
+  }, [reportes]);
 
   if (loading) {
     return <p className={styles.loading}>Cargando reportes...</p>;
@@ -168,14 +172,14 @@ export default function ReportsDashboard() {
       <section className={styles.insightsGrid}>
         <article className={styles.chartCard}>
           <div className={styles.chartCardHeader}>
-            <h2>Horas Aprobadas por Mes</h2>
+            <h2>Horas Aprobadas por Semana</h2>
 
             <span className={styles.yearBadge}>
-              <i className={styles.yearDot} /> {yearBadge}
+              <i className={styles.yearDot} /> {rangoSemana}
             </span>
           </div>
 
-          <MonthlyHoursChart data={reportes.porMes} />
+          <WeeklyHoursChart data={reportes.porSemana} />
         </article>
 
         <article className={styles.contributorsCard}>

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import AuditLog from "./AuditLog";
-import LoadingSpinner from "./LoadingSpinner";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import styles from "./AdminDashboard.module.css";
 
@@ -21,16 +20,10 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  // Estado para estadísticas, tendencia y auditoría
-  const [stats, setStats] = useState({
-    pendientes: 0,
-    totalHoras: 0,
-    horasAprobadas: 0,
-    voluntariosActivos: 0,
-  });
+  // Estado para tendencia y auditoría (los 4 cards de métricas se movieron
+  // a la página de Reportes).
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
-  const [loadingStats, setLoadingStats] = useState(true);
 
   // Evita que el useEffect de filtros dispare también en el primer render
   // (la carga inicial la hace el primer useEffect, con deps vacías).
@@ -38,8 +31,9 @@ export default function AdminDashboard() {
 
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
-  // Cargar estadísticas, tendencia y auditoría en UNA sola petición.
-  async function cargarEstadisticas() {
+  // Cargar tendencia y auditoría en UNA sola petición. El endpoint sigue
+  // devolviendo también las stats, pero ya no se muestran aquí.
+  async function cargarTendencias() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     if (!token) return;
@@ -51,18 +45,9 @@ export default function AdminDashboard() {
         cache: 'no-store',
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Error al cargar las estadísticas.');
+      if (!res.ok) throw new Error('Error al cargar la tendencia.');
 
       const { data } = await res.json();
-
-      if (data?.stats) {
-        setStats({
-          pendientes: data.stats.pendientes || 0,
-          totalHoras: data.stats.totalHoras || 0,
-          horasAprobadas: data.stats.horasAprobadas || 0,
-          voluntariosActivos: data.stats.voluntariosActivos || 0,
-        });
-      }
 
       if (Array.isArray(data?.tendencia)) {
         setWeeklyVolume(data.tendencia);
@@ -77,9 +62,7 @@ export default function AdminDashboard() {
         })));
       }
     } catch (error) {
-      console.error('Error al cargar estadísticas:', error);
-    } finally {
-      setLoadingStats(false);
+      console.error('Error al cargar la tendencia:', error);
     }
   }
 
@@ -108,7 +91,7 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    cargarEstadisticas();
+    cargarTendencias();
     cargarRegistros(1);
   }, []);
 
@@ -125,20 +108,14 @@ export default function AdminDashboard() {
   // Aprobar con actualización optimista: se quita la fila de inmediato (sin
   // recargar la tabla); si el PATCH falla, se vuelve a la página para resync.
   async function handleApprove(id) {
-    const fila = submissions.find((s) => s.id === id);
     setSubmissions((cur) => cur.filter((s) => s.id !== id));
     setTotal((t) => Math.max(0, t - 1));
-    setStats((prev) => ({
-      ...prev,
-      pendientes: Math.max(0, prev.pendientes - 1),
-      horasAprobadas: prev.horasAprobadas + (fila?.horas || 0),
-    }));
     try {
       await reviewSubmission(id, "aprobado", "Aprobado por el coordinador.");
     } catch (error) {
       setDataError(error.message || "No se pudo aprobar el registro.");
       cargarRegistros(page);
-      cargarEstadisticas();
+      cargarTendencias();
     }
   }
 
@@ -146,19 +123,14 @@ export default function AdminDashboard() {
   async function handleReject(id) {
     const comentario = prompt('Motivo del rechazo:');
     if (comentario === null) return;
-    const fila = submissions.find((s) => s.id === id);
     setSubmissions((cur) => cur.filter((s) => s.id !== id));
     setTotal((t) => Math.max(0, t - 1));
-    setStats((prev) => ({
-      ...prev,
-      pendientes: Math.max(0, prev.pendientes - 1),
-    }));
     try {
       await reviewSubmission(id, "rechazado", comentario);
     } catch (error) {
       setDataError(error.message || "No se pudo rechazar el registro.");
       cargarRegistros(page);
-      cargarEstadisticas();
+      cargarTendencias();
     }
   }
 
@@ -205,46 +177,6 @@ export default function AdminDashboard() {
           </button>
         </div>
       </header>
-
-      <section className={styles.stats}>
-        {loadingStats ? (
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>Cargando estadísticas...</span>
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>Esperando Aprobación</span>
-              <div className={styles.statValueRow}>
-                <h2>{stats.pendientes}</h2>
-                <small>{stats.pendientes > 0 ? `${stats.pendientes} pendientes` : 'Sin registros'}</small>
-              </div>
-            </article>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>Horas Aprobadas</span>
-              <div className={styles.statValueRow}>
-                <h2>{stats.horasAprobadas}</h2>
-                <small>de {stats.totalHoras} hrs totales</small>
-              </div>
-            </article>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>Total de Horas</span>
-              <div className={styles.statValueRow}>
-                <h2>{stats.totalHoras}</h2>
-                <small>↑ {stats.totalHoras > 0 ? 'Activo' : 'Sin registros'}</small>
-              </div>
-            </article>
-            <article className={styles.statCard}>
-              <span className={styles.statLabel}>Voluntarios Activos</span>
-              <div className={styles.statValueRow}>
-                <h2>{stats.voluntariosActivos}</h2>
-                <small>este mes</small>
-              </div>
-            </article>
-          </>
-        )}
-      </section>
 
       <div className={styles.tableCard}>
         <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
