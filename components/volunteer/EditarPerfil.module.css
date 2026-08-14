@@ -1,6 +1,7 @@
 .container {
   /* Sin padding ni background: el layout padre (.content) ya provee:
    * background: #f8f9ff; min-height: 100vh; padding: 10px 24px 48px; */
+   padding: 0;
 }
 
 .title {
