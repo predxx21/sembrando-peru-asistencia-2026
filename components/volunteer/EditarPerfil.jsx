@@ -23,7 +23,6 @@ export default function EditarPerfil() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No hay sesión activa.");
 
-        // El perfil siempre es el de la sesión: el endpoint ya no acepta ?id=.
         const res = await fetchConToken("/api/auth/perfil");
         const body = await res.json().catch(() => null);
 
@@ -39,7 +38,7 @@ export default function EditarPerfil() {
         setEmail(user.email || "");
       } catch (err) {
         if (!cancelled) {
-          setMensaje("❌ " + (err.message || "No se pudo cargar el perfil."));
+          setMensaje("Error: " + (err.message || "No se pudo cargar el perfil."));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -62,7 +61,7 @@ export default function EditarPerfil() {
     event.preventDefault();
 
     if (!form.nombre.trim() || !form.apellido.trim()) {
-      setMensaje("❌ El nombre y el apellido son obligatorios.");
+      setMensaje("El nombre y el apellido son obligatorios.");
       return;
     }
 
@@ -91,17 +90,24 @@ export default function EditarPerfil() {
         throw new Error(body.error || "No se pudo actualizar el perfil.");
       }
 
-      setMensaje("✅ Perfil actualizado correctamente.");
+      // Redirige a /principal tras mostrar confirmación breve.
+      setMensaje("Perfil actualizado correctamente.");
+      setTimeout(() => router.push("/principal"), 1200);
     } catch (err) {
       console.error("Error al actualizar perfil:", err);
-      setMensaje("❌ " + (err.message || "No se pudo actualizar el perfil."));
+      setMensaje("Error: " + (err.message || "No se pudo actualizar el perfil."));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return <p>Cargando perfil...</p>;
-  if (!form) return <p>No hay datos para mostrar.</p>;
+  if (loading) return (
+    <div className={styles.loadingContainer}>
+      <div className={styles.loadingSpinner} aria-hidden="true"></div>
+      <p className={styles.loadingText}>Cargando perfil...</p>
+    </div>
+  );
+  if (!form) return <p className={styles.errorContainer}>No hay datos para mostrar.</p>;
 
   return (
     <div className={styles.container}>
@@ -137,13 +143,13 @@ export default function EditarPerfil() {
           <div className={styles.fieldFull}>
             <label>Correo Electrónico</label>
             <input value={email} disabled className={styles.disabled} />
-            <span className={styles.hint}>El correo no se puede modificar</span>
+            <span className={styles.hint}> El correo no se puede modificar</span>
           </div>
 
           <div className={styles.fieldFull}>
             <label>Rol</label>
             <span className={styles.rolBadge}>{form.rol}</span>
-            <span className={styles.hint}>El rol lo gestiona un administrador</span>
+            <span className={styles.hint}> El rol lo gestiona un administrador</span>
           </div>
         </div>
 

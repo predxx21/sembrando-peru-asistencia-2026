@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getHistoryActivities } from './historyData';
 import HistoryDashboard from './ListadoHistorial';
+import styles from './Loaders.module.css';
 
 export default function HistoryLoader() {
   const [activities, setActivities] = useState([]);
@@ -16,7 +17,12 @@ export default function HistoryLoader() {
       .finally(() => setLoaded(true));
   }, []);
 
-  if (error) return <p>{error}</p>;
-  if (!loaded) return <p>Cargando historial...</p>;
+  if (error) return <div className={styles.errorContainer}>{error}</div>;
+  if (!loaded) return (
+    <div className={styles.loadingContainer}>
+      <div className={styles.loadingSpinner} aria-hidden="true"></div>
+      <p className={styles.loadingText}>Cargando historial...</p>
+    </div>
+  );
   return <HistoryDashboard activities={activities} />;
 }

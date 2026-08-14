@@ -70,8 +70,7 @@ export default function VolunteerDashboard() {
           <h1>Bienvenido de nuevo{nombre ? `, ${nombre}` : ""}</h1>
 
           <p>
-            Aquí tienes un resumen de tus contribuciones de
-            voluntariado.
+            Aquí tienes un resumen de tus contribuciones de voluntariado.
           </p>
         </div>
       </header>
