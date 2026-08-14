@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
 import { loginUser } from '@/lib/auth/login';
 import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
@@ -10,11 +10,18 @@ import LoginVisual from './LoginVisual';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get('reset') === 'success') {
+      setMessage('Contraseña actualizada correctamente. Inicia sesión con tu nueva contraseña.');
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -80,7 +87,7 @@ export default function LoginScreen() {
 
               <div className="password-label">
                 <label htmlFor="password">Contraseña</label>
-                <a href="#recover">¿Olvidaste tu contraseña?</a>
+                <a href="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
               </div>
               <div className="input-wrap">
                 <span className="input-icon lock" aria-hidden="true">♙</span>

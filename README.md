@@ -3,27 +3,60 @@
 Aplicación web para registro de asistencia/horas de voluntariado, con evidencias,
 validación de coordinadores y reportes. Next.js (App Router) + Prisma/PostgreSQL + Supabase Auth/Storage.
 
-## Ejecutar el proyecto
+## Puesta en marcha desde cero (para un compañero)
 
 El proyecto usa **pnpm** como gestor de paquetes (versión en el campo
-`packageManager` de `package.json`). Si no lo tienes: `npm install -g pnpm`.
+`packageManager` de `package.json`) y **Node 22**. Cualquiera del equipo puede
+clonarlo y correrlo así:
+
+**1. Pre-requisitos**
+
+```bash
+node -v                 # usar Node 22 (LTS)
+npm install -g pnpm@11.18.0
+```
+
+**2. Clonar y entrar**
+
+```bash
+git clone <URL-del-repo>
+cd asistencia-sembrando-peru
+git checkout main
+```
+
+**3. Variables de entorno** (obligatorio — están en `.gitignore`, así que **no
+viajan en el clone**: hay que pedirlas al equipo o crear un proyecto propio en
+Supabase)
+
+```bash
+cp .env.example .env        # completar DATABASE_URL y DIRECT_URL (PostgreSQL/Supabase)
+cp .env.example .env.local  # completar NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY y SUPABASE_SERVICE_ROLE_KEY
+```
+
+**4. Dependencias y base de datos**
 
 ```bash
 pnpm install
-pnpm run dev
+npx prisma generate       # genera el cliente Prisma
+npx prisma migrate deploy # aplica las migraciones (idempotente si usas la BD compartida)
 ```
 
-Abre `http://localhost:3000`. Se necesitan las variables de entorno:
-
-- `.env` → `DATABASE_URL` y `DIRECT_URL` (PostgreSQL)
-- `.env.local` → claves de Supabase (URL, publishable key y service role)
-
-Hay una plantilla `.env.example` con todas las variables documentadas.
+**5. Levantar y probar**
 
 ```bash
-pnpm test        # Pruebas unitarias (Vitest): funciones puras de lib/utils
-pnpm build       # Build de producción
+pnpm run dev   # → http://localhost:3000
+pnpm test      # Pruebas unitarias (Vitest): funciones puras de lib/utils
+pnpm build     # Build de producción
 ```
+
+**Notas para el compañero**
+
+- Gestor único: **pnpm**. No usar `npm install` ni `yarn`.
+- Al registrarse se crea el perfil como `voluntario`; para probar como admin se
+  promueve con SQL en Supabase (ver §Roles y acceso).
+- El proyecto usa **Next.js 16**, cuyas APIs pueden diferir de la documentación
+  clásica; revisa `node_modules/next/dist/docs/` si algo no se comporta como
+  esperas.
 
 ## Roles y acceso
 

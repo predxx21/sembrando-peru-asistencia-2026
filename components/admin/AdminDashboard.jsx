@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
-import { getPendingSubmissions, reviewSubmission } from "./adminData";
+import { getPendingSubmissions, reviewSubmission, getUsuariosGestion, cambiarRolUsuario } from "./adminData";
+import { obtenerRolActual } from "@/lib/auth/sesion";
 import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 8;
+const USERS_PER_PAGE = 10;
 
 export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -24,6 +26,16 @@ export default function AdminDashboard() {
   // a la página de Reportes).
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
+
+  // Sección "Gestión de usuarios" (solo admin).
+  const [esAdmin, setEsAdmin] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+  const [usuariosLoading, setUsuariosLoading] = useState(false);
+  const [usuariosError, setUsuariosError] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [userTotal, setUserTotal] = useState(0);
+  const [userMsg, setUserMsg] = useState("");
 
   // Evita que el useEffect de filtros dispare también en el primer render
   // (la carga inicial la hace el primer useEffect, con deps vacías).
@@ -93,7 +105,65 @@ export default function AdminDashboard() {
   useEffect(() => {
     cargarTendencias();
     cargarRegistros(1);
+    verificarRolYUsuarios();
   }, []);
+
+  // Si el usuario es admin, carga la sección "Gestión de usuarios".
+  async function verificarRolYUsuarios() {
+    try {
+      const rol = await obtenerRolActual();
+      if (rol === 'admin') {
+        setEsAdmin(true);
+        cargarUsuarios(1);
+      }
+    } catch {
+      // Si falla, simplemente no mostramos la sección.
+    }
+  }
+
+  // Cargar la página actual de usuarios con búsqueda + paginación en el servidor.
+  async function cargarUsuarios(pagina = userPage) {
+    try {
+      setUsuariosLoading(true);
+      setUsuariosError("");
+      const { usuarios: lista, total: nuevoTotal } = await getUsuariosGestion({
+        page: pagina,
+        limit: USERS_PER_PAGE,
+        busqueda: userSearch.trim() || undefined,
+      });
+      setUsuarios(lista);
+      setUserTotal(nuevoTotal);
+      const maxPage = Math.max(1, Math.ceil(nuevoTotal / USERS_PER_PAGE));
+      setUserPage(pagina > maxPage ? maxPage : pagina);
+    } catch (error) {
+      setUsuariosError(error.message || "No se pudieron cargar los usuarios.");
+    } finally {
+      setUsuariosLoading(false);
+    }
+  }
+
+  // Debounce en la búsqueda de usuarios.
+  useEffect(() => {
+    if (!esAdmin) return;
+    const timer = setTimeout(() => cargarUsuarios(1), 300);
+    return () => clearTimeout(timer);
+  }, [userSearch, esAdmin]);
+
+  // Promover a admin (o degradar a voluntario) con actualización optimista.
+  async function handleCambiarRol(usuario) {
+    const nuevoRol = usuario.rol === 'admin' ? 'voluntario' : 'admin';
+    setUsuarios((cur) =>
+      cur.map((u) => (u.id === usuario.id ? { ...u, rol: nuevoRol } : u))
+    );
+    setUserMsg("");
+    try {
+      await cambiarRolUsuario(usuario.id, nuevoRol);
+      setUserMsg(`✅ Rol de ${usuario.nombre} actualizado a ${nuevoRol}.`);
+    } catch (error) {
+      setUserMsg("❌ " + (error.message || "No se pudo cambiar el rol."));
+      cargarUsuarios(userPage);
+    }
+  }
 
   // Recargar al cambiar filtros (búsqueda/rango), con debounce. No en el inicio.
   useEffect(() => {
@@ -275,6 +345,97 @@ export default function AdminDashboard() {
 
         <AuditLog entries={auditLog} />
       </section>
+
+      {esAdmin && (
+        <section className={styles.usersCard}>
+          <h2 className={styles.usersTitle}>Gestión de Usuarios</h2>
+          <p className={styles.usersSubtitle}>
+            Promueve voluntarios a administradores o revoca el rol.
+          </p>
+
+          <div className={styles.searchField}>
+            <span>⌕</span>
+            <input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={userSearch}
+              onChange={(event) => setUserSearch(event.target.value)}
+            />
+          </div>
+
+          <div className={styles.tableCard}>
+            <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
+              <span>Voluntario</span>
+              <span>Correo</span>
+              <span>Rol</span>
+              <span className={styles.actionsHead}>Acción</span>
+            </div>
+
+            {usuariosLoading && <p>Cargando usuarios...</p>}
+            {usuariosError && <p className={styles.errorMessage}>{usuariosError}</p>}
+            {!usuariosLoading && !usuariosError && usuarios.length === 0 && (
+              <p>No hay usuarios para mostrar.</p>
+            )}
+
+            {usuarios.map((u) => {
+              const esAdminUser = u.rol === 'admin';
+              return (
+                <div className={styles.tableRow} key={u.id}>
+                  <span className={styles.volunteerCell}>
+                    <strong>{`${u.nombre} ${u.apellido}`}</strong>
+                  </span>
+                  <span>{u.email}</span>
+                  <span className={styles.rolBadge}>{u.rol}</span>
+                  <span className={styles.actionsCell}>
+                    <button
+                      type="button"
+                      className={esAdminUser ? styles.rejectButton : styles.approveButton}
+                      onClick={() => handleCambiarRol(u)}
+                      aria-label={
+                        esAdminUser
+                          ? `Revocar rol de administrador a ${u.nombre}`
+                          : `Hacer administrador a ${u.nombre}`
+                      }
+                    >
+                      {esAdminUser ? '− Admin' : '+ Admin'}
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
+
+            {!usuariosLoading && !usuariosError && userTotal > 0 && (
+              <div className={styles.pagination}>
+                <span>
+                  Mostrando{" "}
+                  {((userPage - 1) * USERS_PER_PAGE) + 1} a{" "}
+                  {Math.min(userPage * USERS_PER_PAGE, userTotal)} de {userTotal} usuarios
+                </span>
+                <div className={styles.pageControls}>
+                  <button
+                    type="button"
+                    disabled={userPage === 1}
+                    onClick={() => cargarUsuarios(userPage - 1)}
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      userPage === Math.max(1, Math.ceil(userTotal / USERS_PER_PAGE))
+                    }
+                    onClick={() => cargarUsuarios(userPage + 1)}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {userMsg && <p className={styles.mensaje}>{userMsg}</p>}
+        </section>
+      )}
     </div>
   );
 }

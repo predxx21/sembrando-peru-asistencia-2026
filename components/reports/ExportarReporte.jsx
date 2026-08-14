@@ -50,10 +50,12 @@ export default function ExportReportModal({ isOpen, onClose, data }) {
   const filas = data || [];
 
   // Filtra las filas (voluntarios) según el rango de fecha elegido.
+  // Voluntarios sin última actividad (ultimaActividadISO === null) NO se incluyen
+  // en ningún rango temporal — quedan fuera del reporte.
   const filasFiltradas = useMemo(() => {
     const limite = limiteInferior(rango, new Date());
     return filas.filter((fila) => {
-      if (!fila.ultimaActividadISO) return true;
+      if (!fila.ultimaActividadISO) return false;
       return new Date(fila.ultimaActividadISO) >= limite;
     });
   }, [filas, rango]);

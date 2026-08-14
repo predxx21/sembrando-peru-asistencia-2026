@@ -34,6 +34,7 @@ export default function EditarPerfil() {
         setForm({
           nombre: body.profile.nombre || "",
           apellido: body.profile.apellido || "",
+          rol: body.profile.rol || "voluntario",
         });
         setEmail(user.email || "");
       } catch (err) {
@@ -137,6 +138,12 @@ export default function EditarPerfil() {
             <label>Correo Electrónico</label>
             <input value={email} disabled className={styles.disabled} />
             <span className={styles.hint}>El correo no se puede modificar</span>
+          </div>
+
+          <div className={styles.fieldFull}>
+            <label>Rol</label>
+            <span className={styles.rolBadge}>{form.rol}</span>
+            <span className={styles.hint}>El rol lo gestiona un administrador</span>
           </div>
         </div>
 

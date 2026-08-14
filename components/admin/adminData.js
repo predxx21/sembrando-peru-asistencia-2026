@@ -78,3 +78,41 @@ export async function reviewSubmission(id, estado, comentario) {
   const data = await res.json();
   return data.data;
 }
+
+// Lista voluntarios para la gestión de roles (sección "Gestión de usuarios").
+// Devuelve { usuarios, total, page, limit } para paginar en el servidor.
+export async function getUsuariosGestion({ page, limit, busqueda } = {}) {
+  const params = new URLSearchParams();
+  Object.entries({ page, limit, busqueda }).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') params.set(k, v);
+  });
+  const qs = params.toString();
+
+  const res = await fetchConToken(`/api/admin/usuarios${qs ? `?${qs}` : ''}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al obtener los usuarios');
+  }
+  const body = await res.json();
+  return {
+    usuarios: body.usuarios || [],
+    total: body.total ?? (body.usuarios || []).length,
+    page: body.page,
+    limit: body.limit,
+  };
+}
+
+// Cambia el rol de un usuario (solo admin). PATCH /api/admin/usuarios/:id
+export async function cambiarRolUsuario(id, rol) {
+  const res = await fetchConToken(`/api/admin/usuarios/${id}`, {
+    method: 'PATCH',
+    body: { rol },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al cambiar el rol.');
+  }
+
+  return res.json();
+}
