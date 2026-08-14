@@ -53,14 +53,14 @@ export default function Topbar() {
           {iniciales}
         </div>
         <span className={styles.userName}>{nombre || 'Cargando...'}</span>
-        <button
+        {/* <button
           type="button"
           className={styles.logoutButton}
           onClick={handleLogout}
           aria-label="Cerrar sesión"
         >
           Salir
-        </button>
+        </button> */}
       </div>
     </header>
   );

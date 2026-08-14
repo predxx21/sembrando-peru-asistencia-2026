@@ -1,7 +1,6 @@
 .container {
-  padding: 32px 24px 48px;
-  background: #f7faf5;
-  min-height: 100vh;
+  /* Sin padding ni background: el layout padre (.content) ya provee:
+   * background: #f8f9ff; min-height: 100vh; padding: 10px 24px 48px; */
 }
 
 .title {
@@ -228,7 +227,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 20px;
   color: #667281;
 }
 
@@ -261,13 +260,10 @@
   text-align: center;
   color: #d64545;
   font-size: 14px;
-  margin: 24px 0;
+  margin: 16px 0;
 }
 
 @media (max-width: 640px) {
-  .container {
-    padding: 24px 16px 40px;
-  }
   .grid {
     grid-template-columns: 1fr;
   }
@@ -278,4 +274,9 @@
   .save {
     width: 100%;
   }
+}
+
+.emailInput {
+  color: #197343;   
+  text-transform: lowercase;
 }

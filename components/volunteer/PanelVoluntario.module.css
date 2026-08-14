@@ -37,7 +37,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin: 32px 0;
 }
@@ -174,30 +174,24 @@
 
 .evidenceColumn {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   align-content: start;
 }
 
 .guideCard {
-  overflow: hidden;
   background: #197343;
   border-radius: 12px;
   color: white;
   box-shadow: 0 8px 15px #0002;
 }
 
-.guideCardImage {
-  height: 160px;
-  background: linear-gradient(135deg, #cdeedd, #6fae86);
-}
-
 .guideCardBody {
-  padding: 24px;
+  padding: 40px 30px 40px;
 }
 
 .guideCardBody h3 {
   font-size: 20px;
-  margin: 0 0 8px;
+  margin: 0 0 20px;
 }
 
 .guideCardBody p {
@@ -226,37 +220,6 @@
   font-size: 13px;
 }
 
-.tagsCard {
-  background: #e7f4ec;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.tagsCard > span {
-  color: #667281;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.tagsCard div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.tagsCard i {
-  background: #8fd6ae;
-  border-radius: 99px;
-  color: #145c34;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  padding: 4px 10px;
-}
-
 @media (max-width: 900px) {
   .welcome {
     align-items: flex-start;
@@ -275,5 +238,11 @@
   .activityRow span:nth-child(4),
   .activityRow span:nth-child(5) {
     display: none;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -61,7 +61,7 @@ export default function EditarPerfil() {
     event.preventDefault();
 
     if (!form.nombre.trim() || !form.apellido.trim()) {
-      setMensaje("El nombre y el apellido son obligatorios.");
+      setMensaje("Los nombres y los apellidos son obligatorios.");
       return;
     }
 
@@ -117,7 +117,7 @@ export default function EditarPerfil() {
       <form className={styles.card} onSubmit={handleSubmit}>
         <div className={styles.grid}>
           <div className={styles.field}>
-            <label htmlFor="nombre">Nombre</label>
+            <label htmlFor="nombre">Nombres</label>
             <input
               id="nombre"
               name="nombre"
@@ -129,7 +129,7 @@ export default function EditarPerfil() {
           </div>
 
           <div className={styles.field}>
-            <label htmlFor="apellido">Apellido</label>
+            <label htmlFor="apellido">Apellidos</label>
             <input
               id="apellido"
               name="apellido"
@@ -142,7 +142,9 @@ export default function EditarPerfil() {
 
           <div className={styles.fieldFull}>
             <label>Correo Electrónico</label>
-            <input value={email} disabled className={styles.disabled} />
+            <span className={`${styles.rolBadge} ${styles.emailInput}`}>
+              {email}
+            </span>
             <span className={styles.hint}> El correo no se puede modificar</span>
           </div>
 
