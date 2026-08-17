@@ -116,3 +116,58 @@ export async function cambiarRolUsuario(id, rol) {
 
   return res.json();
 }
+
+// Lista voluntarios para vista read-only /administracion/usuarios
+// Devuelve { usuarios, total, page, limit } para paginar en el servidor.
+export async function getUsuariosLista({ page, limit, busqueda } = {}) {
+  const params = new URLSearchParams();
+  Object.entries({ page, limit, busqueda }).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') params.set(k, v);
+  });
+  const qs = params.toString();
+
+  const res = await fetchConToken(`/api/admin/usuarios${qs ? `?${qs}` : ''}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al obtener los usuarios');
+  }
+  const body = await res.json();
+  return {
+    usuarios: body.usuarios || [],
+    total: body.total ?? (body.usuarios || []).length,
+    page: body.page,
+    limit: body.limit,
+  };
+}
+
+// Historial completo de auditoría con paginación y filtros.
+// GET /api/admin/auditoria?page=&limit=&busqueda=&estado=&desde=&hasta=
+export async function getAuditoriaCompleta({
+  page = 1,
+  limit = 20,
+  busqueda,
+  estado,
+  desde,
+  hasta,
+} = {}) {
+  const params = new URLSearchParams();
+  Object.entries({ page, limit, busqueda, estado, desde, hasta }).forEach(
+    ([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params.set(k, v);
+    }
+  );
+  const qs = params.toString();
+
+  const res = await fetchConToken(`/api/admin/auditoria${qs ? `?${qs}` : ''}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Error al obtener la auditoría');
+  }
+  const body = await res.json();
+  return {
+    auditoria: body.auditoria || [],
+    total: body.total ?? (body.auditoria || []).length,
+    page: body.page,
+    limit: body.limit,
+  };
+}

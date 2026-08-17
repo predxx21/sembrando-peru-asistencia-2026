@@ -31,7 +31,7 @@ export default function AuditLog({ entries }) {
       ) : (
         <p>No hay registros de auditoría.</p>
       )}
-      <Link href="/reportes" className={styles.auditLink}>
+      <Link href="/administracion/auditoria" className={styles.auditLink}>
         Ver Historial Completo
       </Link>
     </article>

@@ -14,6 +14,9 @@ export default function WeeklyVolumeChart({ data, maxVolume }) {
               <div
                 className={styles.chartBar}
                 style={{ height: `${(item.value / maxVolume) * 100}%` }}
+                title={`${item.value} ${item.value === 1 ? "envío" : "envíos"}`}
+                role="img"
+                aria-label={`${item.value} ${item.value === 1 ? "envío" : "envíos"} el ${item.day}`}
               />
               <span>{item.day}</span>
             </div>

@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
-import { listarUsuarios } from '@/lib/db/usuarios';
+import { obtenerAuditoriaCompleta } from '@/lib/db/estadisticas';
 import { getCached, setCached } from '@/lib/cache';
 
-// Lista de voluntarios para la sección "Gestión de usuarios" del panel de
-// administración (exclusivo de admin). Valida sesión y rol=admin, y devuelve
-// id, nombre, apellido, email y rol paginados.
+// GET /api/admin/auditoria - Historial completo de auditoría con paginación y filtros
+// Query params: page, limit, busqueda, estado (aprobado|rechazado), desde, hasta (ISO strings)
 //
-// Caché 30 s: la lista solo cambia si se da de alta un usuario o se edita el
-// rol (ambas invalidan TODA la caché en sus escrituras). La clave incluye los
-// filtros (page, limit, busqueda) para que cada combinación tenga su entrada.
-const CACHE_TTL_MS = 30 * 1000;
+// Caché 60 s: la auditoría solo cambia al aprobar/rechazar (invalida TODA la caché).
+// La clave incluye TODOS los filtros para servir cada combinación desde memoria.
+const CACHE_TTL_MS = 60 * 1000;
 
 export async function GET(request) {
   const user = await getUserFromRequest(request);
@@ -32,23 +30,33 @@ export async function GET(request) {
   const page = Number(searchParams.get('page')) || 1;
   const limit = Number(searchParams.get('limit')) || 20;
   const busqueda = searchParams.get('busqueda') || undefined;
+  const estado = searchParams.get('estado') || undefined;
+  const desde = searchParams.get('desde') || undefined;
+  const hasta = searchParams.get('hasta') || undefined;
 
-  const cacheKey = `admin:usuarios:${searchParams.toString()}`;
+  const cacheKey = `admin:auditoria:${searchParams.toString()}`;
   const cacheado = getCached(cacheKey);
   if (cacheado) {
     return NextResponse.json(cacheado);
   }
 
-  const { usuarios, total, error } = await listarUsuarios({ page, limit, busqueda });
+  const { data: auditoria, total, error } = await obtenerAuditoriaCompleta({
+    page,
+    limit,
+    busqueda,
+    estado,
+    desde,
+    hasta,
+  });
 
   if (error) {
     return NextResponse.json(
-      { error: 'No se pudieron obtener los usuarios.' },
+      { error: 'No se pudo obtener el historial de auditoría.' },
       { status: 500 }
     );
   }
 
-  const body = { usuarios, total, page, limit };
+  const body = { auditoria, total, page, limit };
   setCached(cacheKey, body, CACHE_TTL_MS);
 
   return NextResponse.json(body);
