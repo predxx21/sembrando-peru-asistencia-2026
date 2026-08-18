@@ -15,7 +15,7 @@ export default function HistoryDashboard({ activities }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 6;
 
   // Filtros
   const filtered = activities.filter((act) => {
@@ -30,14 +30,6 @@ export default function HistoryDashboard({ activities }) {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-  // Estadísticas
-  const totalHours = activities.reduce((sum, a) => sum + a.hours, 0);
-  const approvedHours = activities
-    .filter((a) => a.status === "aprobado")
-    .reduce((sum, a) => sum + a.hours, 0);
-  const pendingCount = activities.filter((a) => a.status === "pendiente").length;
-  const rejectedCount = activities.filter((a) => a.status === "rechazado").length;
 
   // Al cambiar de filtros (búsqueda o estado), volver a la primera página: si
   // no, se puede quedar en una página que quedó fuera de rango y la lista
@@ -55,26 +47,6 @@ export default function HistoryDashboard({ activities }) {
           <p>Revisa todas tus contribuciones a la fundación.</p>
         </div>
       </header>
-
-      {/* Stats */}
-      <section className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Total Horas</span>
-          <div className={styles.statValue}>{totalHours}h</div>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Aprobadas</span>
-          <div className={styles.statValue}>{approvedHours}h</div>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Pendientes</span>
-          <div className={styles.statValue}>{pendingCount}</div>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Rechazadas</span>
-          <div className={styles.statValue}>{rejectedCount}</div>
-        </div>
-      </section>
 
       {/* Filtros */}
       <div className={styles.filtersBar}>

@@ -7,7 +7,7 @@ import { calcularHoras } from '@/lib/utils/horas';
 import { comprimirImagen, superaBytes } from '@/lib/utils/imagen';
 import styles from './RegistrarHoras.module.css';
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 // Límite de tamaño por evidencia (5 MB) y meta mensual de horas aprobadas.
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const META_MENSUAL = 30;
@@ -80,17 +80,24 @@ export default function FormularioHoras() {
   }
 
   // Valida tipo y tamaño (5 MB en bruto), luego comprime la imagen antes de
-  // subirla: reescala a ~1600px y re-codifica a JPEG. Con eso se usa menos
-  // storage y el visor de evidencia descarga un archivo mucho menor.
+  // subirla: reescala a ~1600px y re-codifica (JPEG o PNG si hay transparencia).
+  // Con eso se usa menos storage y el visor de evidencia descarga un archivo mucho menor.
   async function pickFile(selected) {
-    if (!ACCEPTED_TYPES.includes(selected.type)) return;
+    if (!ACCEPTED_TYPES.includes(selected.type)) {
+      setFileError('Formato no soportado. Solo se permiten imágenes JPEG, PNG o WebP.');
+      return;
+    }
     if (superaBytes(selected.size, MAX_FILE_SIZE)) {
-      setFileError('El archivo supera los 5 MB. Usa una imagen o PDF más pequeño.');
+      setFileError('El archivo supera los 5 MB. Usa una imagen más pequeña.');
       return;
     }
     setFileError('');
-    const preparado = await comprimirImagen(selected);
-    setFile(preparado);
+    try {
+      const preparado = await comprimirImagen(selected);
+      setFile(preparado);
+    } catch (err) {
+      setFileError(err.message || 'Error al procesar la imagen.');
+    }
   }
 
   async function handleFileChange(event) {
@@ -278,7 +285,7 @@ export default function FormularioHoras() {
         </div>
 
         <div className={styles.field}>
-          <label>Adjuntar Evidencia (Imágenes o PDF)</label>
+          <label>Adjuntar Evidencia (Imágenes)</label>
 
           <div
             className={`${styles.dropzone} ${
@@ -291,12 +298,12 @@ export default function FormularioHoras() {
           >
             <div className={styles.dropzoneIcon}>⇪</div>
             <strong>Arrastra archivos aquí o haz clic</strong>
-            <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, PDF.</span>
+            <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, WebP.</span>
 
             <input
               id="evidenciaInput"
               type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
+              accept=".jpg,.jpeg,.png,.webp"
               className={styles.hiddenInput}
               onChange={handleFileChange}
             />

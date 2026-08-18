@@ -79,6 +79,21 @@
   overflow: hidden;
 }
 
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.tableHeader h2 {
+  color: #26384b;
+  font-size: 16px;
+  margin: 0;
+}
+
 .tableRow {
   display: grid;
   grid-template-columns: 1.6fr 1fr 0.8fr 1.4fr 1.6fr;
@@ -399,5 +414,51 @@
 .errorMessage {
   color: #d64545;
   padding: 12px;
+  text-align: center;
+}
+
+/* ===== Sección Gestión de Usuarios ===== */
+.usersCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+}
+
+.usersTitle {
+  color: #26384b;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.usersSubtitle {
+  color: #667281;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+/* Buscador dentro del encabezado de tabla (Gestión de Usuarios). */
+.tableHeader .searchField {
+  min-width: 240px;
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+
+.rolBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: #cdeedd;
+  color: #145c34;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.mensaje {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
   text-align: center;
 }

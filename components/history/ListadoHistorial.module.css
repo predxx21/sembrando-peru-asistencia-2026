@@ -1,7 +1,7 @@
 /* ===== Página ===== */
 .historyPage {
   width: 100%;
-  padding: 0 0 24px;
+  padding: 0 0 0;
 }
 
 /* ===== Header ===== */
@@ -19,37 +19,6 @@
 .pageHeader p {
   color: #667281;
   margin: 0;
-}
-
-/* ===== Estadísticas ===== */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.statCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 18px 20px;
-}
-
-.statLabel {
-  display: block;
-  color: #667281;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.statValue {
-  color: #197343;
-  font-size: 30px;
-  font-weight: 700;
-  margin-top: 6px;
 }
 
 /* ===== Filtros ===== */
@@ -97,7 +66,7 @@
 /* ===== Lista de tarjetas ===== */
 .listContainer {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -166,13 +135,6 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 6px;
-}
-
-.activityDescription {
-  color: #4a5a6a;
-  font-size: 14px;
-  margin: 0 0 14px;
-  line-height: 1.5;
 }
 
 .activityMeta {
@@ -290,13 +252,13 @@
 
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+  .listContainer {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .statsGrid {
+  .listContainer {
     grid-template-columns: 1fr;
   }
   .filtersBar {

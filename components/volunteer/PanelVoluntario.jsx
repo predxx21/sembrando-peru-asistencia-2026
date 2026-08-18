@@ -58,9 +58,10 @@ export default function VolunteerDashboard() {
   const pendingHours = activities
     .filter((a) => a.status === "pendiente")
     .reduce((total, a) => total + a.hours, 0);
+  const rejectedCount = activities.filter((a) => a.status === "rechazado").length;
 
   // La API ya devuelve los registros ordenados de más reciente a más antiguo.
-  const recent = activities.slice(0, 4);
+  const recent = activities.slice(0, 3);
 
   return (
     <div className={styles.dashboard}>
@@ -70,8 +71,7 @@ export default function VolunteerDashboard() {
           <h1>Bienvenido de nuevo{nombre ? `, ${nombre}` : ""}</h1>
 
           <p>
-            Aquí tienes un resumen de tus contribuciones de
-            voluntariado.
+            Aquí tienes un resumen de tus contribuciones de voluntariado.
           </p>
         </div>
       </header>
@@ -109,6 +109,17 @@ export default function VolunteerDashboard() {
           <h2>{pendingHours.toFixed(1)}</h2>
 
           <p>Esperando revisión del coordinador</p>
+        </article>
+
+        <article className={styles.statCard}>
+          <div className={styles.statCardHead}>
+            <span>Rechazadas</span>
+            <b>✕</b>
+          </div>
+
+          <h2>{rejectedCount}</h2>
+
+          <p>Actividades que debes corregir</p>
         </article>
       </section>
 
@@ -174,15 +185,11 @@ export default function VolunteerDashboard() {
           <h2>Guía de Evidencia</h2>
 
           <article className={styles.guideCard}>
-            <div className={styles.guideCardImage} />
-
             <div className={styles.guideCardBody}>
               <h3>Consejo de Registro</h3>
 
               <p>
-                Adjunta siempre una foto de tu planilla o una
-                firma de tu supervisor para una aprobación más
-                rápida.
+                Toma una captura de tu pantalla de tu ingreso mostrando la fecha y hora.
               </p>
 
               <Link href="/formulario-horas" className={styles.guideButton}>

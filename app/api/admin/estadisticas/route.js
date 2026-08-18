@@ -12,7 +12,10 @@ import { getCached, setCached } from '@/lib/cache';
 // Los datos cambian poco (solo al aprobar/rechazar o registrar), así que se
 // cachean 60 s en memoria: al recargar la página el endpoint responde en
 // milisegundos sin pisar la BD. Las escrituras invalidan la caché.
-const CACHE_KEY = 'admin:estadisticas';
+//
+// NOTA: La auditoría se filtra por el revisor logeado (revisorId = profile.id),
+// así que cada admin ve SOLO sus propias revisiones. La caché usa clave
+// compuesta por el profileId para aislar por admin.
 const CACHE_TTL_MS = 60 * 1000;
 
 export async function GET(request) {
@@ -30,12 +33,15 @@ export async function GET(request) {
     );
   }
 
-  const cacheado = getCached(CACHE_KEY);
+  const cacheKey = `admin:estadisticas:${profile.id}`;
+  const cacheado = getCached(cacheKey);
   if (cacheado) {
     return NextResponse.json({ data: cacheado });
   }
 
-  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard();
+  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard({
+    revisorId: profile.id,
+  });
 
   if (error) {
     return NextResponse.json(
@@ -45,7 +51,7 @@ export async function GET(request) {
   }
 
   const data = { stats, tendencia, auditoria };
-  setCached(CACHE_KEY, data, CACHE_TTL_MS);
+  setCached(cacheKey, data, CACHE_TTL_MS);
 
   return NextResponse.json({ data });
 }

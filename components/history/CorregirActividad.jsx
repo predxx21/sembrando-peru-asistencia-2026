@@ -32,16 +32,23 @@ export default function CorrectionForm({ activity }) {
 
   // Valida tipo y tamaño (5 MB), luego comprime la imagen antes de reenviarla.
   async function pickFile(file) {
-    const accepted = ["image/jpeg", "image/png", "application/pdf"];
-    if (!accepted.includes(file.type)) return;
-
-    if (superaBytes(file.size, MAX_FILE_SIZE)) {
-      setMensaje("❌ El archivo supera los 5 MB. Usa una imagen o PDF más pequeño.");
+    const accepted = ["image/jpeg", "image/png", "image/webp"];
+    if (!accepted.includes(file.type)) {
+      setMensaje("Formato no soportado. Solo se permiten imágenes JPEG, PNG o WebP.");
       return;
     }
 
-    const preparado = await comprimirImagen(file);
-    setNewFile(preparado);
+    if (superaBytes(file.size, MAX_FILE_SIZE)) {
+      setMensaje("El archivo supera los 5 MB. Usa una imagen más pequeña.");
+      return;
+    }
+
+    try {
+      const preparado = await comprimirImagen(file);
+      setNewFile(preparado);
+    } catch (err) {
+      setMensaje(err.message || "Error al procesar la imagen.");
+    }
   }
 
   async function handleFileChange(event) {
@@ -74,12 +81,12 @@ export default function CorrectionForm({ activity }) {
     event.preventDefault();
 
     if (!fecha || !horaInicio || !horaFin || !descripcion) {
-      setMensaje("❌ Completa todos los campos obligatorios.");
+      setMensaje("Completa todos los campos obligatorios.");
       return;
     }
 
     if (calculatedHours <= 0) {
-      setMensaje("❌ La hora de fin debe ser mayor que la hora de inicio.");
+      setMensaje("La hora de fin debe ser mayor que la hora de inicio.");
       return;
     }
 
@@ -141,7 +148,7 @@ export default function CorrectionForm({ activity }) {
       router.push("/historial");
     } catch (err) {
       console.error("Error al corregir el registro:", err);
-      setMensaje("❌ " + (err.message || "No se pudo guardar la corrección."));
+      setMensaje("" + (err.message || "No se pudo guardar la corrección."));
     } finally {
       setSaving(false);
     }
@@ -170,7 +177,7 @@ export default function CorrectionForm({ activity }) {
           <p>&quot;{activity.coordinatorComment}&quot;</p>
           {activity.reviewedBy && (
             <span className={styles.reviewedBy}>
-              👤 Revisado por: {activity.reviewedBy}
+              Revisado por: {activity.reviewedBy}
             </span>
           )}
         </div>
@@ -254,12 +261,12 @@ export default function CorrectionForm({ activity }) {
             >
               <div className={styles.dropzoneIcon}>⬆</div>
               <strong>Subir nueva evidencia</strong>
-              <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, PDF.</span>
+              <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, WebP.</span>
 
               <input
                 id="newEvidenceInput"
                 type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
+                accept=".jpg,.jpeg,.png,.webp"
                 className={styles.hiddenInput}
                 onChange={handleFileChange}
               />
@@ -299,8 +306,7 @@ export default function CorrectionForm({ activity }) {
               <strong>Importante</strong>
               <p>
                 Al reenviar este registro, pasará a una nueva revisión por
-                parte de la coordinación. Recibirás una notificación una vez
-                sea aprobado.
+                parte de la coordinación.
               </p>
             </div>
           </article>
