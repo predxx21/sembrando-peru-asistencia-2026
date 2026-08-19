@@ -387,6 +387,16 @@
   text-decoration: underline;
 }
 
+.errorMessage {
+  color: #d64545;
+  padding: 12px;
+  text-align: center;
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE: TABLET (≤ 1100px) ===== */
+/* ============================================================ */
+
 @media (max-width: 1100px) {
   .tableRow {
     grid-template-columns: 1.6fr 1fr 0.8fr 1.6fr;
@@ -401,23 +411,186 @@
   }
 }
 
+/* ============================================================ */
+/* ===== RESPONSIVE: MÓVIL (≤ 700px) ===== */
+/* ============================================================ */
+
 @media (max-width: 700px) {
+  /* ---- HEADER: buscador + botón en misma fila ---- */
+  .headerControls {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .searchField {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+
+  .filterButton {
+    order: 2;
+    flex: 0 0 auto;
+  }
+
+  .dateRange {
+    order: 3;
+    flex: 0 0 100%;
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+    margin-top: 4px; /* pequeño separador */
+  }
+
+  .dateRange input {
+    flex: 1 1 auto;
+    min-width: 60px;
+    width: auto;
+  }
+
+  /* ---- TABLA: convertir a tarjetas ---- */
+  .tableRow span:nth-child(4) {
+    display: none;
+  }
+
   .tableRow {
-    grid-template-columns: 1.6fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background: white;
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    padding: 18px 20px; /* más padding interno */
+    margin-bottom: 16px; /* más separación entre tarjetas */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    gap: 8px 0; /* separación vertical entre filas */
+    min-height: auto;
+  }
+
+  .tableRow:last-of-type {
+    margin-bottom: 0;
+  }
+
+  .tableRowHead {
+    display: none !important;
+  }
+
+  /* ---- FILA 1: Nombre + Horas ---- */
+  .volunteerCell {
+    order: 1;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+  }
+
+  .volunteerCell strong {
+    font-size: 16px;
   }
 
   .tableRow span:nth-child(3) {
-    display: none;
+    order: 1;
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-size: 16px;
+    font-weight: 600;
+    color: #197343;
+    display: block !important;
+  }
+
+  /* ---- FILA 2: Tipo (badge) ---- */
+  .mobileType {
+    order: 2;
+    flex: 0 0 100%;
+    margin-top: 2px;
+  }
+
+  .mobileType .typeBadge {
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 99px;
+    background: #cdeedd;
+    color: #145c34;
+    font-weight: 600;
+  }
+
+  /* ---- FILA 3: Descripción ---- */
+  .mobileDescription {
+    order: 3;
+    flex: 0 0 100%;
+    font-size: 14px;
+    color: #4c5a68;
+    line-height: 1.5;
+    margin: 4px 0 2px;
+    display: block !important;
+  }
+
+  /* ---- FILA 4: Fecha ---- */
+  .tableRow span:nth-child(2) {
+    order: 4;
+    flex: 0 0 100%;
+    font-size: 14px;
+    color: #667281;
+  }
+
+  /* ---- FILA 5: Acciones (separada, sin línea) ---- */
+  .actionsCell {
+    order: 5;
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-top: 16px;   /* Espacio extra para que parezca separado */
+    padding-top: 0;      /* Sin padding superior innecesario */
+  }
+
+  .actionsCell .approveButton,
+  .actionsCell .rejectButton {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .actionsCell .evidenceButton {
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+
+  /* ---- PAGINACIÓN: separada como tarjeta independiente ---- */
+  .pagination {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-top: 20px !important;
+    padding: 16px 20px !important;
+    background: white !important;
+    border: 1px solid #dfe4ea !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+  }
+
+  .tableCard {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .pageControls {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 }
+/* ============================================================ */
+/* ===== GESTIÓN DE USUARIOS (sección existente) ===== */
+/* ============================================================ */
 
-.errorMessage {
-  color: #d64545;
-  padding: 12px;
-  text-align: center;
-}
-
-/* ===== Sección Gestión de Usuarios ===== */
 .usersCard {
   background: white;
   border: 1px solid #dfe4ea;
@@ -438,7 +611,6 @@
   font-size: 13px;
 }
 
-/* Buscador dentro del encabezado de tabla (Gestión de Usuarios). */
 .tableHeader .searchField {
   min-width: 240px;
   flex: 1 1 240px;
@@ -461,4 +633,14 @@
   font-size: 13px;
   font-weight: 600;
   text-align: center;
+}
+
+/* ============================================================ */
+/* ===== CLASES PARA MÓVIL (visibles solo en móvil) ===== */
+/* ============================================================ */
+
+/* Por defecto ocultos en escritorio, se muestran en móvil con el media query */
+.mobileType,
+.mobileDescription {
+  display: none;
 }

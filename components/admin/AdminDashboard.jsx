@@ -194,6 +194,7 @@ export default function AdminDashboard() {
         )}
         {submissions.map((item) => (
           <div className={styles.tableRow} key={item.id}>
+            {/* Voluntario */}
             <span className={styles.volunteerCell}>
               <i className={styles.avatar} style={{ background: item.avatarColor }}>
                 {item.initials}
@@ -203,11 +204,27 @@ export default function AdminDashboard() {
                 <small>ID: #{item.id}</small>
               </span>
             </span>
+
+            {/* Fecha */}
             <span>{item.date}</span>
+
+            {/* Duración */}
             <span>{item.duration}</span>
+
+            {/* Evidencia (solo escritorio) */}
             <span className={styles.evidenceCell}>
               📷 {item.evidenceFileName}
             </span>
+
+            {/*Tipo (visible en móvil) */}
+            <span className={styles.mobileType}>
+              <i className={styles.typeBadge}>{item.type}</i>
+            </span>
+
+            {/* Descripción (se ocultará en móvil) */}
+            <span className={styles.mobileDescription}>{item.description}</span>
+
+            {/* Acciones */}
             <span className={styles.actionsCell}>
               <button
                 type="button"
