@@ -220,6 +220,14 @@
   font-size: 13px;
 }
 
+/* ===== TABLET / PANTALLAS MEDIANAS ===== */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ===== TABLET PEQUEÑA / MÓVIL GRANDE ===== */
 @media (max-width: 900px) {
   .welcome {
     align-items: flex-start;
@@ -241,8 +249,179 @@
   }
 }
 
-@media (max-width: 1100px) and (min-width: 901px) {
+/* ===== MÓVIL PEQUEÑO (diseño tipo tarjetas horizontales) ===== */
+@media (max-width: 700px) {
+  /* ---- Header ---- */
+  .welcome h1 {
+    font-size: 22px;
+  }
+  .welcome p {
+    font-size: 14px;
+  }
+  .primaryButton {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* ---- Stats: 2 columnas ---- */
   .stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .statCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+  }
+  .statCardHead {
+    order: 2;
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .statCardHead b {
+    display: none;
+  }
+  .statCard h2 {
+    font-size: 24px;
+    margin: 0;
+    order: 1;
+  }
+  .statCard p {
+    display: none;
+  }
+
+  /* ===== ACTIVIDAD RECIENTE: TARJETAS SEPARADAS ===== */
+  .portalGrid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Quitar el contenedor común: sin borde, sin fondo, sin padding */
+  .tableCard {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Ocultar encabezado de la tabla */
+  .activityRowHead {
+    display: none !important;
+  }
+
+  /* Cada fila es una tarjeta independiente */
+  .activityRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background: white;
+    border: 1px solid #dfe4ea;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    gap: 4px 12px;
+  }
+  .activityRow:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ---- TÍTULO Y BADGE EN LA MISMA LÍNEA ---- */
+  .activityRow span:nth-child(2) {
+    order: 1;
+    flex: 1 1 auto;
+    font-size: 18px;
+    font-weight: 600;
+    color: #26384b;
+    display: flex;
+    flex-direction: column;
+  }
+  .activityRow span:nth-child(2) strong {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .activityRow span:nth-child(4) {
+    order: 1;
+    display: block !important;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .badge {
+    display: inline-block !important;
+    font-size: 12px;
+    padding: 4px 14px;
+    border-radius: 99px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .badgeSuccess {
+    background: #e5f8ee;
+    color: #197343;
+  }
+  .badgePending {
+    background: #fff3d6;
+    color: #a67c27;
+  }
+  .badgeRejected {
+    background: #fdecec;
+    color: #d64545;
+  }
+
+  /* ---- FECHA (línea separada) ---- */
+  .activityRow span:first-child {
+    order: 2;
+    flex: 0 0 100%;
+    font-size: 14px;
+    color: #667281;
+  }
+
+  /* ---- HORAS (línea separada) ---- */
+  .activityRow span:nth-child(3) {
+    order: 3;
+    flex: 0 0 100%;
+    font-size: 14px;
+    color: #667281;
+    font-weight: 500;
+  }
+
+  /* ---- TIPO DE ACTIVIDAD (opcional) ---- */
+  .activityRow span:nth-child(2) small {
+    display: block;
+    font-size: 13px;
+    color: #667281;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  /* Ocultar enlace "Ver" */
+  .activityRow span:nth-child(5) {
+    display: none;
+  }
+
+  /* ---- Guía de evidencia ---- */
+  .evidenceColumn {
+    order: 2;
+    margin-top: 20px;
+  }
+  .sectionTitle {
+    flex-direction: row;
+    align-items: center;
+  }
+  .sectionTitle h2 {
+    font-size: 18px;
+  }
+  .sectionTitle span {
+    font-size: 14px;
+  }
+  .loadingText {
+    font-size: 13px;
+    padding: 12px 16px;
   }
 }
