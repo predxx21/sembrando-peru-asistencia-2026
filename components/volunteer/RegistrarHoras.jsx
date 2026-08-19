@@ -355,8 +355,7 @@ export default function FormularioHoras() {
             <h3>Información Importante</h3>
             <p>
               Recuerda que todas las horas deben ser validadas por un
-              coordinador. Adjuntar fotos o capturas de pantalla agiliza el
-              proceso de auditoría.
+              coordinador.
             </p>
           </div>
         </article>
@@ -367,11 +366,7 @@ export default function FormularioHoras() {
             <h3>Tu Historial</h3>
             <p>
               {horasMes > 0
-                ? `Llevas ${horasMes} horas aprobadas este mes. ${
-                    META_MENSUAL - horasMes > 0
-                      ? `Te faltan ${META_MENSUAL - horasMes} horas para tu meta mensual de ${META_MENSUAL}.`
-                      : '¡Meta mensual cumplida!'
-                  }`
+                ? `Llevas ${horasMes} horas aprobadas este mes.`
                 : 'Aún no tienes horas aprobadas este mes. Registra tus actividades para acumular horas.'}
             </p>
           </div>
