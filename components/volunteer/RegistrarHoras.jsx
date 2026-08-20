@@ -183,20 +183,34 @@ export default function FormularioHoras() {
       throw new Error('Error al subir la evidencia: ' + uploadError.message);
     }
 
-    // 3. Guardar el registro en la API (con token). El servidor recalcula
-    //    las horas a partir de horaInicio/horaFin (no confía en el cliente).
+    // ============================================================
+    // 🔧 NORMALIZACIÓN DE FECHA Y HORAS (para evitar errores de formato)
+    // ============================================================
+    // Fecha: eliminar espacios, asegurar YYYY-MM-DD
+    const fechaNormalizada = fecha.trim();
+    // Horas: eliminar espacios y quitar segundos si los hay (ej. "14:30:00" → "14:30")
+    const horaInicioNormalizada = horaInicio.trim().split(':').slice(0, 2).join(':');
+    const horaFinNormalizada = horaFin.trim().split(':').slice(0, 2).join(':');
+
+    console.log('📦 Enviando datos normalizados:', {
+      fecha: fechaNormalizada,
+      horaInicio: horaInicioNormalizada,
+      horaFin: horaFinNormalizada,
+      descripcion,
+      evidenciaUrl: fileName,
+    });
+
+    // 3. Guardar el registro en la API (con token)
     const response = await fetch('/api/registros', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      // El servidor obtiene el userId del token (Authorization); no se manda
-      // en el body. userId aquí solo se usa para la carpeta del Storage.
       body: JSON.stringify({
-        fecha,
-        horaInicio,
-        horaFin,
+        fecha: fechaNormalizada,
+        horaInicio: horaInicioNormalizada,
+        horaFin: horaFinNormalizada,
         descripcion,
         evidenciaUrl: fileName,
       }),
