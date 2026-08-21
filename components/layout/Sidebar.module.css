@@ -1,3 +1,59 @@
+/* ============================================================
+   OVERLAY (solo móvil)
+   ============================================================ */
+.overlay {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 49;
+}
+
+.overlayVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 769px) {
+  .overlay {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   DRAWER (contenedor móvil)
+   ============================================================ */
+.drawer {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .drawer {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    pointer-events: none;
+    overflow: hidden; /* recorta el sidebar cuando está oculto */
+  }
+  .drawer.open {
+    pointer-events: auto;
+  }
+  .drawer.open .sidebar {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================
+   SIDEBAR (base)
+   ============================================================ */
 .sidebar {
   background: white;
   border-right: 1px solid #dfe4ea;
@@ -5,8 +61,38 @@
   flex-direction: column;
   gap: 16px;
   padding: 16px;
+
+  /* Valores para móvil: fixed y oculto por defecto (deslizable) */
+  position: fixed;
+  top: 64px;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 51;
+  overflow-y: auto;
 }
 
+/* Desktop (>768px): sidebar fijo, sin drawer, siempre visible */
+@media (min-width: 769px) {
+  .sidebar {
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    transform: none;
+    box-shadow: none;
+    width: 256px;
+    max-width: none;
+    border-right: 1px solid #dfe4ea;
+  }
+}
+
+/* ============================================================
+   RESTO DE ESTILOS (sin cambios)
+   ============================================================ */
 .sidebarBrand {
   display: grid;
   gap: 2px;

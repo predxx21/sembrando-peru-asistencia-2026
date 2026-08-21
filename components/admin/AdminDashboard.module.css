@@ -13,13 +13,13 @@
 .pageHeader h1 {
   color: #26384b;
   font-size: 28px;
-  margin: 0 0 4px;
+  margin: 0 0 0px;
 }
 
 .pageHeader p {
   color: #667281;
   margin: 0;
-  max-width: 420px;
+  padding: 15px 0px 15px ;
 }
 
 .headerControls {

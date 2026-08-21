@@ -8,7 +8,7 @@ import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import styles from "./AdminDashboard.module.css";
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 6;
 
 export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -141,6 +141,42 @@ export default function AdminDashboard() {
 
   const maxVolume = Math.max(...weeklyVolume.map((d) => d.value), 1);
 
+  function getPaginationRange(currentPage, totalPages, maxVisible = 5) {
+  if (totalPages <= maxVisible) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const half = Math.floor(maxVisible / 2);
+  let start = currentPage - half;
+  let end = currentPage + half;
+
+  if (start < 1) {
+    start = 1;
+    end = maxVisible;
+  }
+  if (end > totalPages) {
+    end = totalPages;
+    start = totalPages - maxVisible + 1;
+  }
+
+  const pages = [];
+  if (start > 1) {
+    pages.push(1);
+    if (start > 2) pages.push('...');
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (end < totalPages) {
+    if (end < totalPages - 1) pages.push('...');
+    pages.push(totalPages);
+  }
+
+  return pages;
+  }
+
   return (
     <div className={styles.adminPage}>
       <header className={styles.pageHeader}>
@@ -265,16 +301,21 @@ export default function AdminDashboard() {
               >
                 Anterior
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pagina) => (
+
+              {getPaginationRange(page, totalPages, 3).map((pagina, index) => (
                 <button
                   type="button"
-                  key={pagina}
-                  className={pagina === page ? styles.pageActive : ""}
-                  onClick={() => cargarRegistros(pagina)}
+                  key={index}
+                  className={pagina === page ? styles.pageActive : ''}
+                  onClick={() => {
+                    if (pagina !== '...') cargarRegistros(pagina);
+                  }}
+                  disabled={pagina === '...'}
                 >
                   {pagina}
                 </button>
               ))}
+
               <button
                 type="button"
                 disabled={page === totalPages}
