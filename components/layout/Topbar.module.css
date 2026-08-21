@@ -62,7 +62,7 @@
   background: rgba(255, 255, 255, 0.28);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .topbar {
     padding: 0 16px;
     font-size: 14px;
@@ -90,5 +90,26 @@
   .userArea {
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+.menuButton {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .menuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

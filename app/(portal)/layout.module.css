@@ -1,20 +1,21 @@
 .portal {
   display: grid;
   grid-template: 64px 1fr / 256px 1fr;
-  min-height: 100vh;
+  height: 100vh;          /* ← min-height → height */
+  overflow: hidden;        /* ← evita scroll en la grid */
   background: #f8f9ff;
 }
 
 .content {
   padding: 24px 24px 48px;
+  overflow-y: auto;        /* ← contenido scrollable */
   overflow-x: hidden;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .portal {
     grid-template: 64px 1fr / 1fr;
   }
-
   .content {
     padding: 24px 16px 40px;
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { getUsuarioActual, isAdminRoute } from '@/lib/auth/sesion';
@@ -10,10 +10,17 @@ import { getUsuarioActual, isAdminRoute } from '@/lib/auth/sesion';
 //   - No admin en /admin* o /reportes → redirige a /principal.
 // Se monta una sola vez en el layout del portal y expone el rol vía
 // useRol() para que el Sidebar oculte/muestre secciones según el perfil.
-const PortalAuthContext = createContext({ rol: null });
+//
+// También expone estado de UI del sidebar (drawer móvil) vía useSidebar().
+const PortalAuthContext = createContext({ rol: null, sidebarOpen: false, toggleSidebar: () => {}, closeSidebar: () => {} });
 
 export function useRol() {
   return useContext(PortalAuthContext).rol;
+}
+
+export function useSidebar() {
+  const { sidebarOpen, toggleSidebar, closeSidebar } = useContext(PortalAuthContext);
+  return { sidebarOpen, toggleSidebar, closeSidebar };
 }
 
 export default function PortalAuthProvider({ children }) {
@@ -21,6 +28,21 @@ export default function PortalAuthProvider({ children }) {
   const pathname = usePathname();
   const [rol, setRol] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Auto-cerrar sidebar al redimensionar a desktop (≥769px) para evitar overlay residual
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 769 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [sidebarOpen]);
+
+  const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   useEffect(() => {
     let active = true;
@@ -71,7 +93,7 @@ export default function PortalAuthProvider({ children }) {
   if (loading || !rol) return null;
 
   return (
-    <PortalAuthContext.Provider value={{ rol }}>
+    <PortalAuthContext.Provider value={{ rol, sidebarOpen, toggleSidebar, closeSidebar }}>
       {children}
     </PortalAuthContext.Provider>
   );

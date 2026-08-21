@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { useSidebar } from './PortalAuthProvider';
 import styles from './Topbar.module.css';
 
 export default function Topbar() {
   const router = useRouter();
   const [nombre, setNombre] = useState('');
+  const { sidebarOpen, toggleSidebar } = useSidebar();
 
   useEffect(() => {
     async function cargarUsuario() {
@@ -44,6 +46,18 @@ export default function Topbar() {
 
   return (
     <header className={styles.topbar}>
+      <button
+        id="sidebar-menu-button"
+        type="button"
+        className={styles.menuButton}
+        onClick={toggleSidebar}
+        aria-expanded={sidebarOpen}
+        aria-controls="sidebar-drawer"
+        aria-label={sidebarOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+      >
+        {sidebarOpen ? '✕' : '☰'}
+      </button>
+
       <strong className={styles.brand}>
         Sistema Web de Control de Asistencia y Evidencias
       </strong>
