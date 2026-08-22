@@ -2,7 +2,7 @@
 //
 // Reutiliza lib/api/client.js (token + fetch autenticado) y los helpers de
 // fechas de lib/utils/fecha.js en vez de duplicarlos.
-import { fetchConToken, nombreEvidencia } from '@/lib/api/client';
+import { fetchConToken } from '@/lib/api/client';
 import { formatFechaEs } from '@/lib/utils/fecha';
 
 async function fetchRegistros() {
@@ -29,9 +29,6 @@ function mapActivity(row) {
     endTime: row.horaFin,
     hours: row.horas,
     status: row.estado,
-    // Nombre del archivo de evidencia (la URL firmada se obtiene por separado
-    // con getEvidenciaSignedUrl porque el bucket es privado).
-    evidenceFileName: nombreEvidencia(row.evidenciaUrl),
     coordinatorComment: row.comentarioRevision || '',
     reviewedBy: row.revisor ? row.revisor.nombre : '',
   };

@@ -7,7 +7,7 @@ import {
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
-import { esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
+import { esFechaValida, esHoraValida } from '@/lib/utils/validar';
 
 // Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
 // o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
@@ -42,20 +42,13 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
-  // La evidencia debe vivir en la carpeta del usuario en el bucket privado
-  // (`evidencias/<userId>/…`). Sin esta validación, cualquiera podría adjuntar
-  // la ruta de un archivo ajeno y pedir luego su signed URL (IDOR).
-  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
-    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
-  }
-
   const { data, error } = await guardarRegistroAsistencia({
     profileId: profile.id,
     fecha: body.fecha,
     horaInicio: body.horaInicio,
     horaFin: body.horaFin,
     descripcion: body.descripcion,
-    evidenciaUrl: body.evidenciaUrl,
+    // evidenciaUrl eliminada: ya no se usan evidencias (cronómetro)
   });
 
   if (error) {
@@ -70,7 +63,7 @@ export async function POST(request) {
 
 // GET: Listar registros.
 //
-// Filtros opcionales (query params): estado, busqueda, desde, hasta.
+// Filtros opcionales (query params): estado, busqueda, desde, hasta, area.
 // Alcance:
 //   - scope=mine      → solo los del usuario actual (cualquier rol). Lo usa
 //                       el historial para que el admin vea ÚNICAMENTE lo suyo.
@@ -96,6 +89,7 @@ export async function GET(request) {
 
   const desde = searchParams.get('desde') || undefined;
   const hasta = searchParams.get('hasta') || undefined;
+  const area = searchParams.get('area') || undefined; // NUEVO: filtro por área
   if ((desde && !esFechaValida(desde)) || (hasta && !esFechaValida(hasta))) {
     return NextResponse.json(
       { error: 'Rango de fechas inválido. Usa el formato AAAA-MM-DD.' },
@@ -108,6 +102,7 @@ export async function GET(request) {
     busqueda: searchParams.get('busqueda') || undefined,
     desde,
     hasta,
+    area, // NUEVO: pasar filtro de área
     page,
     limit,
   };

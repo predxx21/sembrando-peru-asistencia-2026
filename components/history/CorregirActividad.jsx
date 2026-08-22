@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { calcularHoras } from "@/lib/utils/horas";
-import { comprimirImagen, superaBytes } from "@/lib/utils/imagen";
 import styles from "./CorregirActividad.module.css";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export default function CorrectionForm({ activity }) {
   const router = useRouter();
@@ -19,9 +16,6 @@ export default function CorrectionForm({ activity }) {
   const [horaInicio, setHoraInicio] = useState(activity.startTime);
   const [horaFin, setHoraFin] = useState(activity.endTime);
   const [descripcion, setDescripcion] = useState(activity.description);
-  const [oldFileDismissed, setOldFileDismissed] = useState(false);
-  const [newFile, setNewFile] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
@@ -29,53 +23,6 @@ export default function CorrectionForm({ activity }) {
     () => calcularHoras(horaInicio, horaFin),
     [horaInicio, horaFin]
   );
-
-  // Valida tipo y tamaño (5 MB), luego comprime la imagen antes de reenviarla.
-  async function pickFile(file) {
-    const accepted = ["image/jpeg", "image/png", "image/webp"];
-    if (!accepted.includes(file.type)) {
-      setMensaje("Formato no soportado. Solo se permiten imágenes JPEG, PNG o WebP.");
-      return;
-    }
-
-    if (superaBytes(file.size, MAX_FILE_SIZE)) {
-      setMensaje("El archivo supera los 5 MB. Usa una imagen más pequeña.");
-      return;
-    }
-
-    try {
-      const preparado = await comprimirImagen(file);
-      setNewFile(preparado);
-    } catch (err) {
-      setMensaje(err.message || "Error al procesar la imagen.");
-    }
-  }
-
-  async function handleFileChange(event) {
-    const file = event.target.files[0];
-    if (file) await pickFile(file);
-    event.target.value = "";
-  }
-
-  async function handleDrop(event) {
-    event.preventDefault();
-    setIsDragging(false);
-    const file = event.dataTransfer.files[0];
-    if (file) await pickFile(file);
-  }
-
-  function handleDragOver(event) {
-    event.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave() {
-    setIsDragging(false);
-  }
-
-  function removeNewFile() {
-    setNewFile(null);
-  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -102,29 +49,6 @@ export default function CorrectionForm({ activity }) {
         throw new Error("No hay sesión activa. Inicia sesión nuevamente.");
       }
 
-      // Si el voluntario adjuntó una evidencia nueva, subirla a Storage
-      // (bucket privado) y guardar su ruta. Si no, se conserva la anterior.
-      let evidenciaUrl;
-      if (newFile) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          throw new Error("No se pudo obtener el usuario autenticado.");
-        }
-
-        const fileExt = newFile.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("evidencias")
-          .upload(fileName, newFile);
-
-        if (uploadError) {
-          throw new Error("Error al subir la evidencia: " + uploadError.message);
-        }
-
-        evidenciaUrl = fileName;
-      }
-
       const res = await fetch(`/api/registros/${activity.id}/corregir`, {
         method: "PATCH",
         headers: {
@@ -136,7 +60,6 @@ export default function CorrectionForm({ activity }) {
           horaInicio,
           horaFin,
           descripcion,
-          evidenciaUrl,
         }),
       });
 
@@ -174,7 +97,7 @@ export default function CorrectionForm({ activity }) {
 
         <div>
           <span className={styles.commentLabel}>Comentario del Coordinador</span>
-          <p>&quot;{activity.coordinatorComment}&quot;</p>
+          <p>"{activity.coordinatorComment}"</p>
           {activity.reviewedBy && (
             <span className={styles.reviewedBy}>
               Revisado por: {activity.reviewedBy}
@@ -225,67 +148,6 @@ export default function CorrectionForm({ activity }) {
               value={descripcion}
               onChange={(event) => setDescripcion(event.target.value)}
             />
-          </div>
-
-          <div className={styles.field}>
-            <label>Evidencia Fotográfica / Documento</label>
-
-            {!oldFileDismissed && (
-              <div className={styles.oldFileRow}>
-                <i className={styles.oldFileIcon}>🚫🖼</i>
-
-                <div className={styles.oldFileInfo}>
-                  <strong>{activity.evidenceFileName}</strong>
-                  <span>Archivo anterior rechazado por el coordinador.</span>
-                </div>
-
-                <button
-                  type="button"
-                  className={styles.oldFileRemove}
-                  onClick={() => setOldFileDismissed(true)}
-                  aria-label="Quitar archivo anterior"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            <div
-              className={`${styles.dropzone} ${
-                isDragging ? styles.dropzoneActive : ""
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => document.getElementById("newEvidenceInput").click()}
-            >
-              <div className={styles.dropzoneIcon}>⬆</div>
-              <strong>Subir nueva evidencia</strong>
-              <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, WebP.</span>
-
-              <input
-                id="newEvidenceInput"
-                type="file"
-                accept=".jpg,.jpeg,.png,.webp"
-                className={styles.hiddenInput}
-                onChange={handleFileChange}
-              />
-            </div>
-
-            {newFile && (
-              <ul className={styles.fileList}>
-                <li>
-                  <span>{newFile.name}</span>
-                  <button
-                    type="button"
-                    onClick={removeNewFile}
-                    aria-label="Quitar archivo"
-                  >
-                    ✕
-                  </button>
-                </li>
-              </ul>
-            )}
           </div>
         </div>
 

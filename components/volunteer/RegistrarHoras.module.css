@@ -22,155 +22,33 @@
   border: 1px solid #dfe4ea;
   border-radius: 12px;
   padding: 32px;
-  display: grid;
-  gap: 24px;
 }
 
-.fieldsRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
   gap: 16px;
 }
 
-.field {
-  display: grid;
-  gap: 8px;
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #dfe4ea;
+  border-top-color: #197343;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.field label {
-  color: #26384b;
-  font-size: 14px;
-  font-weight: 600;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.field input,
-.field textarea {
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  background: #f8f9ff;
-  padding: 11px 14px;
-  font-size: 14px;
-  color: #26384b;
-  font-family: inherit;
-}
-
-.field input:focus,
-.field textarea:focus {
-  outline: 2px solid #197343;
-  outline-offset: 1px;
-}
-
-.field textarea {
-  resize: vertical;
-}
-
-.dropzone {
-  border: 2px dashed #c3cedb;
-  border-radius: 12px;
-  background: #f8f9ff;
-  padding: 40px 24px;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-align: center;
-  cursor: pointer;
-}
-
-.dropzoneActive {
-  border-color: #197343;
-  background: #e7f4ec;
-}
-
-.dropzoneIcon {
-  font-size: 28px;
-  color: #197343;
-}
-
-.dropzone strong {
-  color: #197343;
-  font-size: 15px;
-}
-
-.dropzone span {
+.loadingText {
   color: #667281;
-  font-size: 12px;
-}
-
-.hiddenInput {
-  display: none;
-}
-
-.fileError {
-  margin: 10px 0 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: #fdecec;
-  border: 1px solid #f3c1c1;
-  color: #d64545;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.fileList {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.fileList li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f4f6f9;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #26384b;
-}
-
-.fileList button {
-  border: 0;
-  background: transparent;
-  color: #667281;
-  cursor: pointer;
   font-size: 14px;
-}
-
-.formActions {
-  display: flex;
-  gap: 12px;
-}
-
-.primaryButton {
-  border: 0;
-  border-radius: 8px;
-  background: #197343;
-  color: white;
-  padding: 11px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.primaryButton:hover {
-  background: #125a33;
-}
-
-.secondaryButton {
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  background: white;
-  color: #26384b;
-  padding: 11px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondaryButton:hover {
-  background: #f4f6f9;
 }
 
 .infoGrid {
@@ -234,31 +112,6 @@
 /* ===== RESPONSIVE ===== */
 /* ============================================================ */
 
-@media (max-width: 900px) {
-  .fieldsRow {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .fieldsRow .field:first-child {
-    grid-column: 1 / -1;
-  }
-
-  .fieldsRow .field:nth-child(2),
-  .fieldsRow .field:nth-child(3) {
-    grid-column: auto;
-  }
-
-  .infoGrid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .formCard {
-    padding: 24px;
-  }
-}
-
 @media (max-width: 640px) {
   .pageHeader h1 {
     font-size: 22px;
@@ -269,45 +122,11 @@
   }
 
   .formCard {
-    padding: 18px 16px;
-    gap: 18px;
-  }
-
-  .dropzone {
-    padding: 30px 16px;
-  }
-
-  .dropzoneIcon {
-    font-size: 24px;
-  }
-
-  .dropzone strong {
-    font-size: 14px;
-  }
-
-  .dropzone span {
-    font-size: 11px;
-  }
-
-  .formActions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .primaryButton,
-  .secondaryButton {
-    width: 100%;
-    text-align: center;
-    padding: 13px 16px;
-  }
-
-  .field input,
-  .field textarea {
-    font-size: 16px;
-    padding: 12px 14px;
+    padding: 20px 16px;
   }
 
   .infoGrid {
+    grid-template-columns: 1fr;
     gap: 12px;
     margin-top: 20px;
   }

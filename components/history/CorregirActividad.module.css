@@ -145,127 +145,6 @@
   resize: vertical;
 }
 
-.oldFileRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #fdecec;
-  border: 1px dashed #f0b8b8;
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-
-.oldFileIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: #fbdada;
-  color: #c62828;
-  font-size: 14px;
-  font-style: normal;
-  flex-shrink: 0;
-}
-
-.oldFileInfo {
-  flex: 1;
-  display: grid;
-  gap: 2px;
-}
-
-.oldFileInfo strong {
-  color: #26384b;
-  font-size: 13px;
-}
-
-.oldFileInfo span {
-  color: #c62828;
-  font-size: 12px;
-}
-
-.oldFileRemove {
-  border: 0;
-  background: transparent;
-  color: #c62828;
-  cursor: pointer;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.dropzone {
-  border: 2px dashed #c3cedb;
-  border-radius: 12px;
-  background: #f8f9ff;
-  padding: 32px 24px;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  text-align: center;
-  cursor: pointer;
-  margin-top: 12px;
-}
-
-.dropzoneActive {
-  border-color: #197343;
-  background: #e7f4ec;
-}
-
-.dropzoneIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #e7f4ec;
-  color: #197343;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-bottom: 4px;
-}
-
-.dropzone strong {
-  color: #26384b;
-  font-size: 15px;
-}
-
-.dropzone span {
-  color: #667281;
-  font-size: 12px;
-}
-
-.hiddenInput {
-  display: none;
-}
-
-.fileList {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.fileList li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f4f6f9;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #26384b;
-}
-
-.fileList button {
-  border: 0;
-  background: transparent;
-  color: #667281;
-  cursor: pointer;
-  font-size: 14px;
-}
-
 .sidePanel {
   display: grid;
   gap: 16px;
@@ -307,17 +186,6 @@
 .summaryRow strong {
   color: #197343;
   font-size: 18px;
-}
-
-.typeBadge {
-  display: inline-block;
-  background: #cdeedd;
-  color: #145c34;
-  border-radius: 99px;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  padding: 4px 10px;
 }
 
 .infoCard {
@@ -412,9 +280,5 @@
 
   .formCard {
     padding: 20px;
-  }
-
-  .oldFileRow {
-    flex-wrap: wrap;
   }
 }

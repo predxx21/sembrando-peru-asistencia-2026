@@ -180,16 +180,17 @@ export default function VolunteerDashboard() {
           </div>
         </div>
 
-        {/* Guía de evidencia */}
+        {/* Guía de registro */}
         <aside className={styles.evidenceColumn}>
-          <h2>Guía de Evidencia</h2>
+          <h2>Guía de Registro</h2>
 
           <article className={styles.guideCard}>
             <div className={styles.guideCardBody}>
               <h3>Consejo de Registro</h3>
 
               <p>
-                Toma una captura de tu pantalla de tu ingreso mostrando la fecha y hora.
+                Usa el cronómetro al iniciar y terminar tu jornada de voluntariado.
+                El sistema registrará automáticamente las horas trabajadas.
               </p>
 
               <Link href="/formulario-horas" className={styles.guideButton}>

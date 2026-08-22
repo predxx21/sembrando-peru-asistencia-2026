@@ -31,11 +31,12 @@ model Profile {
   nombre        String
   apellido      String
   rol           Rol                @default(voluntario)
+  area          String?            // NUEVO: Área del voluntario
   fechaCreacion DateTime           @default(now())
-  
+
   registros     RegistroAsistencia[]
   registrosRevisados RegistroAsistencia[] @relation("revisor")
-  
+
   @@map("profiles")
 }
 
@@ -43,15 +44,19 @@ model RegistroAsistencia {
   id                Int              @id @default(autoincrement())
   profileId         String
   profile           Profile          @relation(fields: [profileId], references: [id])
-  
+
   fecha             DateTime
-  horaInicio        String           // Se guarda como "HH:MM" en texto
+  horaInicio        String           // "HH:MM" - hora legible para display
   horaFin           String
   horas             Float
   descripcion       String
-  evidenciaUrl      String?
-  estado            EstadoRegistro   @default(pendiente)
-  
+  evidenciaUrl      String?          // CAMBIO: Opcional (nullable) - mantener para registros legacy
+  estado            EstadoRegistro   @default(aprobado) // CAMBIO: Aprobado por defecto
+
+  // NUEVO: Para cronómetro activo
+  sesionActiva      Boolean          @default(false)
+  horaInicioReal    DateTime?        // Timestamp exacto cuando presionó "Iniciar"
+
   comentarioRevision String?
   revisorId         String?
   revisor           Profile?         @relation("revisor", fields: [revisorId], references: [id])
@@ -63,5 +68,6 @@ model RegistroAsistencia {
   @@index([fecha])
   @@index([fechaRevision])
   @@index([estado, fecha])
+  @@index([profileId, sesionActiva]) // NUEVO: Para buscar sesión activa
   @@map("registroasistencia")
 }

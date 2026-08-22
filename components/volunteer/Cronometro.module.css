@@ -1,0 +1,138 @@
+.container {
+  width: 100%;
+}
+
+.timerCard,
+.inicioCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 32px;
+  display: grid;
+  gap: 24px;
+  text-align: center;
+}
+
+.timerLabel {
+  color: #667281;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timer {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', monospace;
+  font-size: 64px;
+  font-weight: 600;
+  color: #197343;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.descripcionActiva {
+  color: #26384b;
+  font-size: 15px;
+  margin: 8px 0 16px;
+  padding: 12px;
+  background: #f4f6f9;
+  border-radius: 8px;
+}
+
+.descripcionInput {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #f8f9ff;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #26384b;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.descripcionInput:focus {
+  outline: 2px solid #197343;
+  outline-offset: 1px;
+}
+
+.iniciarButton,
+.terminarButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.iniciarButton {
+  background: #197343;
+  color: white;
+}
+
+.iniciarButton:hover:not(:disabled) {
+  background: #125a33;
+}
+
+.terminarButton {
+  background: #d64545;
+  color: white;
+}
+
+.terminarButton:hover:not(:disabled) {
+  background: #b83838;
+}
+
+.iniciarButton:disabled,
+.terminarButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fdecec;
+  border: 1px solid #f3c1c1;
+  color: #d64545;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE ===== */
+/* ============================================================ */
+
+@media (max-width: 640px) {
+  .timerCard,
+  .inicioCard {
+    padding: 24px 20px;
+    gap: 20px;
+  }
+
+  .timer {
+    font-size: 48px;
+  }
+
+  .descripcionInput {
+    font-size: 16px;
+    padding: 14px;
+    min-height: 100px;
+  }
+
+  .iniciarButton,
+  .terminarButton {
+    font-size: 15px;
+    padding: 14px 20px;
+  }
+
+  .descripcionActiva {
+    font-size: 14px;
+  }
+}

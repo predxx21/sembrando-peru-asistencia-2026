@@ -3,12 +3,12 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
 import { invalidateCache } from '@/lib/cache';
-import { esEnteroPositivo, esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
+import { esEnteroPositivo, esFechaValida, esHoraValida } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
 // es solo para admins (aprobar/rechazar). Aquí el dueño del registro edita
-// su propia evidencia y vuelve a quedar 'pendiente'.
+// su propia jornada y vuelve a quedar 'pendiente'.
 export async function PATCH(request, context) {
   const user = await getUserFromRequest(request);
 
@@ -46,14 +46,6 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'No tienes permiso para corregir este registro.' }, { status: 403 });
   }
 
-  // La evidencia nueva debe vivir en la carpeta del usuario en el bucket
-  // privado (`evidencias/<userId>/…`); si no se manda una, se conserva la del
-  // registro original, que ya pertenece a este perfil. Sin la validación,
-  // cualquiera podría adjuntar la ruta de un archivo ajeno (IDOR).
-  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
-    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
-  }
-
   // Solo se corrige un registro que haya sido rechazado.
   if (registro.estado !== 'rechazado') {
     return NextResponse.json(
@@ -69,7 +61,7 @@ export async function PATCH(request, context) {
     horaInicio: body.horaInicio,
     horaFin: body.horaFin,
     descripcion: body.descripcion,
-    evidenciaUrl: body.evidenciaUrl || registro.evidenciaUrl,
+    evidenciaUrl: registro.evidenciaUrl, // Mantener evidencia legacy si existe
   });
 
   if (error) {

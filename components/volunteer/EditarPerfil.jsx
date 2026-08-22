@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { fetchConToken } from "@/lib/api/client";
+import { AREAS } from '@/lib/constantes';
 import styles from "./EditarPerfil.module.css";
 
 export default function EditarPerfil() {
@@ -34,6 +35,7 @@ export default function EditarPerfil() {
           nombre: body.profile.nombre || "",
           apellido: body.profile.apellido || "",
           rol: body.profile.rol || "voluntario",
+          area: body.profile.area || "",
         });
         setEmail(user.email || "");
       } catch (err) {
@@ -70,19 +72,21 @@ export default function EditarPerfil() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error("No hay sesión activa.");
+      if (!session?.access_token) throw new Error("No hay sesión activa.");
+
+      const payload = {
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        area: form.area || null,
+      };
 
       const res = await fetch("/api/auth/perfil", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          nombre: form.nombre.trim(),
-          apellido: form.apellido.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -90,87 +94,102 @@ export default function EditarPerfil() {
         throw new Error(body.error || "No se pudo actualizar el perfil.");
       }
 
-      // Redirige a /principal tras mostrar confirmación breve.
-      setMensaje("Perfil actualizado correctamente.");
-      setTimeout(() => router.push("/principal"), 1200);
+      setMensaje("✅ Perfil actualizado correctamente.");
+      setTimeout(() => router.push("/formulario-horas"), 1500);
     } catch (err) {
-      console.error("Error al actualizar perfil:", err);
-      setMensaje("Error: " + (err.message || "No se pudo actualizar el perfil."));
+      setMensaje("❌ " + (err.message || "No se pudo actualizar el perfil."));
     } finally {
       setSaving(false);
     }
   }
 
-  if (loading) return (
-    <div className={styles.loadingContainer}>
-      <div className={styles.loadingSpinner} aria-hidden="true"></div>
-      <p className={styles.loadingText}>Cargando perfil...</p>
-    </div>
-  );
-  if (!form) return <p className={styles.errorContainer}>No hay datos para mostrar.</p>;
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner} aria-hidden="true"></div>
+        <p className={styles.loadingText}>Cargando perfil...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Editar Perfil</h1>
-      <p className={styles.subtitle}>Actualiza tu información personal</p>
+    <div className={styles.page}>
+      <header className={styles.pageHeader}>
+        <h1>Editar Perfil</h1>
+        <p>Actualiza tu información personal y área de voluntariado.</p>
+      </header>
 
-      <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.grid}>
-          <div className={styles.field}>
-            <label htmlFor="nombre">Nombres</label>
-            <input
-              id="nombre"
-              name="nombre"
-              value={form.nombre}
-              onChange={handleChange}
-              disabled={saving}
-              required
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="apellido">Apellidos</label>
-            <input
-              id="apellido"
-              name="apellido"
-              value={form.apellido}
-              onChange={handleChange}
-              disabled={saving}
-              required
-            />
-          </div>
-
-          <div className={styles.fieldFull}>
-            <label>Correo Electrónico</label>
-            <span className={`${styles.rolBadge} ${styles.emailInput}`}>
-              {email}
-            </span>
-            <span className={styles.hint}> El correo no se puede modificar</span>
-          </div>
-
-          <div className={styles.fieldFull}>
-            <label>Rol</label>
-            <span className={styles.rolBadge}>{form.rol}</span>
-            <span className={styles.hint}> El rol lo gestiona un administrador</span>
-          </div>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <div className={styles.field}>
+          <label htmlFor="nombre">Nombres *</label>
+          <input
+            id="nombre"
+            name="nombre"
+            type="text"
+            value={form?.nombre || ""}
+            onChange={handleChange}
+            required
+            autoComplete="given-name"
+          />
         </div>
 
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.cancel}
-            onClick={() => router.push("/principal")}
-            disabled={saving}
-          >
-            Cancelar
-          </button>
+        <div className={styles.field}>
+          <label htmlFor="apellido">Apellidos *</label>
+          <input
+            id="apellido"
+            name="apellido"
+            type="text"
+            value={form?.apellido || ""}
+            onChange={handleChange}
+            required
+            autoComplete="family-name"
+          />
+        </div>
 
-          <button type="submit" className={styles.save} disabled={saving}>
-            {saving ? "Guardando..." : "Guardar Cambios"}
-          </button>
+        <div className={styles.field}>
+          <label htmlFor="area">Área de Voluntariado</label>
+          <select
+            id="area"
+            name="area"
+            value={form?.area || ""}
+            onChange={handleChange}
+          >
+            <option value="">Seleccionar área</option>
+            {AREAS.map((area) => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor="email">Email (solo lectura)</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            readOnly
+            disabled
+          />
+        </div>
+
+        <div className={styles.field}>
+          <label htmlFor="rol">Rol (solo lectura)</label>
+          <input
+            id="rol"
+            type="text"
+            value={form?.rol || ""}
+            readOnly
+            disabled
+          />
         </div>
 
         {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
+
+        <button type="submit" className={styles.saveButton} disabled={saving}>
+          {saving ? "Guardando..." : "Guardar Cambios"}
+        </button>
       </form>
     </div>
   );

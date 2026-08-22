@@ -97,9 +97,9 @@ export default function HistoryDashboard({ activities }) {
                 <div className={styles.cardActions}>
                   <Link
                     href={`/historial/${activity.id}`}
-                    className={styles.evidenceButton}
+                    className={styles.detalleButton}
                   >
-                    Ver Evidencia
+                    Ver Detalle
                   </Link>
                   {activity.status === "rechazado" && (
                     <Link
