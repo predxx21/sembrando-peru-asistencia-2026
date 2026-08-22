@@ -61,7 +61,6 @@ export async function PATCH(request, context) {
     horaInicio: body.horaInicio,
     horaFin: body.horaFin,
     descripcion: body.descripcion,
-    evidenciaUrl: registro.evidenciaUrl, // Mantener evidencia legacy si existe
   });
 
   if (error) {

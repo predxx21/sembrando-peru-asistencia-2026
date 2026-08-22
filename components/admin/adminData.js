@@ -33,6 +33,7 @@ async function fetchRegistros(filtros = {}) {
 function mapActivity(row) {
   return {
     id: row.id,
+    profileId: row.profileId, // NUEVO: necesario para deshabilitar auto-auditoría en UI
     name: row.profile?.nombre || 'Voluntario',
     initials: row.profile?.nombre
       ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '')

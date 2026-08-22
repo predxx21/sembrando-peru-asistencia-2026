@@ -394,6 +394,381 @@
 }
 
 /* ============================================================ */
+/* ===== NUEVOS ESTILOS PARA ADMIN DASHBOARD (CRONÓMETRO) ===== */
+/* ============================================================ */
+
+.dashboard {
+  width: 100%;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.pageHeader h1 {
+  color: #26384b;
+  font-size: 28px;
+  margin: 0 0 0px;
+}
+
+.pageHeader p {
+  color: #667281;
+  margin: 0;
+  padding: 15px 0px 15px ;
+}
+
+.filtersSection {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.filtersRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.filterLabel {
+  color: #667281;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filterInput {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #26384b;
+  background: white;
+  font-family: inherit;
+}
+
+.filterInput:focus {
+  outline: none;
+  border-color: #197343;
+  box-shadow: 0 0 0 3px rgba(25, 115, 67, 0.15);
+}
+
+.dataError {
+  color: #d64545;
+  font-size: 13px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.tableSection {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #dfe4ea;
+}
+
+.table th {
+  background: #e7f4ec;
+  color: #667281;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.emptyRow {
+  text-align: center;
+  color: #667281;
+  padding: 40px 20px !important;
+}
+
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.areaBadge {
+  display: inline-block;
+  background: #cdeedd;
+  color: #145c34;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.noArea {
+  color: #b7c0cb;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.durationCell {
+  font-weight: 500;
+  color: #26384b;
+}
+
+.alertBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fff3cd;
+  color: #856404;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.statusBadge.aprobado {
+  background: #cdeedd;
+  color: #145c34;
+}
+
+.statusBadge.rechazado {
+  background: #fdecec;
+  color: #a52828;
+}
+
+.statusBadge.pendiente {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.actionsCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.auditButton {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #f4f6f9;
+  color: #d64545;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.auditButton:hover {
+  background: #fdecec;
+  border-color: #d64545;
+}
+
+.disabledAction {
+  color: #b7c0cb;
+  font-style: italic;
+  font-size: 13px;
+  padding: 8px 14px;
+}
+
+.approveButton {
+  border: 1px solid #2f9e6f;
+  border-radius: 8px;
+  background: white;
+  color: #2f9e6f;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.approveButton:hover {
+  background: #e5f8ee;
+}
+
+.rejectButton {
+  border: 1px solid #d64545;
+  border-radius: 8px;
+  background: white;
+  color: #d64545;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.rejectButton:hover {
+  background: #fdecec;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+  border-top: 1px solid #dfe4ea;
+}
+
+.pageButton {
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: white;
+  color: #26384b;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #f4f6f9;
+}
+
+.pageButton:disabled {
+  color: #b7c0cb;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  color: #667281;
+  font-size: 13px;
+}
+
+.chartsSection {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #667281;
+  gap: 16px;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #dfe4ea;
+  border-top-color: #197343;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE: TABLET (≤ 1100px) ===== */
+/* ============================================================ */
+
+@media (max-width: 1100px) {
+  .chartsSection {
+    grid-template-columns: 1fr;
+  }
+
+  .filtersRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE: MÓVIL (≤ 700px) ===== */
+/* ============================================================ */
+
+@media (max-width: 700px) {
+  .pageHeader h1 {
+    font-size: 22px;
+  }
+
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    display: none;
+  }
+
+  .filtersSection {
+    padding: 16px;
+  }
+
+  .filterGroup {
+    min-width: 0;
+  }
+}
+
+/* ============================================================ */
 /* ===== RESPONSIVE: TABLET (≤ 1100px) ===== */
 /* ============================================================ */
 

@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   const [areaFilter, setAreaFilter] = useState(""); // NUEVO: filtro por área
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // NUEVO: para deshabilitar auto-auditoría
 
   // Estado para tendencia y auditoría (los 4 cards de métricas se movieron
   // a la página de Reportes).
@@ -31,6 +32,30 @@ export default function AdminDashboard() {
   const isFirstRender = useRef(true);
 
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+  // Obtener profileId del usuario actual al montar
+  useEffect(() => {
+    async function getProfileId() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      try {
+        const res = await fetch('/api/auth/perfil', {
+          cache: 'no-store',
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const body = await res.json();
+          if (body.profile?.id) {
+            setCurrentUserProfileId(body.profile.id);
+          }
+        }
+      } catch (err) {
+        console.error('Error obteniendo profileId:', err);
+      }
+    }
+    getProfileId();
+  }, []);
 
   // Cargar tendencia y auditoría en UNA sola petición. El endpoint sigue
   // devolviendo también las stats, pero ya no se muestran aquí.
@@ -47,8 +72,9 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error('Error al cargar la tendencia.');
 
       const body = await res.json();
-      if (body.weeklyVolume) setWeeklyVolume(body.weeklyVolume);
-      if (body.auditLog) setAuditLog(body.auditLog);
+      // Fallback defensivo: asegurar que siempre sean arrays
+      setWeeklyVolume(body.data?.tendencia ?? []);
+      setAuditLog(body.data?.auditoria ?? []);
     } catch (err) {
       console.error('Error cargando tendencias:', err);
     }
@@ -140,6 +166,11 @@ export default function AdminDashboard() {
       );
     }
     return null;
+  };
+
+  // NUEVO: Verificar si el registro pertenece al admin actual
+  const esRegistroPropio = (profileId) => {
+    return currentUserProfileId && profileId === currentUserProfileId;
   };
 
   // Aprobar / Rechazar desde la tabla (auditoría)
@@ -260,76 +291,87 @@ export default function AdminDashboard() {
                   </td>
                 </tr>
               ) : (
-                submissions.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <div className={styles.userCell}>
-                        <span className={styles.avatar} style={{ backgroundColor: s.avatarColor }}>
-                          {s.initials}
+                submissions.map((s) => {
+                  const esPropio = esRegistroPropio(s.profileId);
+                  return (
+                    <tr key={s.id}>
+                      <td>
+                        <div className={styles.userCell}>
+                          <span className={styles.avatar} style={{ backgroundColor: s.avatarColor }}>
+                            {s.initials}
+                          </span>
+                          <span>{s.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {s.area ? (
+                          <span className={styles.areaBadge}>{s.area}</span>
+                        ) : (
+                          <span className={styles.noArea}>—</span>
+                        )}
+                      </td>
+                      <td>{s.date}</td>
+                      <td className={styles.durationCell}>
+                        {s.duration}
+                        {getAnomaliaBadge(s.horas)}
+                      </td>
+                      <td>
+                        <span className={`${styles.statusBadge} ${styles[s.status]}`}>
+                          {s.status === 'aprobado' && '✅ Aprobado'}
+                          {s.status === 'rechazado' && '❌ Rechazado'}
+                          {s.status === 'pendiente' && '⏳ Pendiente'}
                         </span>
-                        <span>{s.name}</span>
-                      </div>
-                    </td>
-                    <td>
-                      {s.area ? (
-                        <span className={styles.areaBadge}>{s.area}</span>
-                      ) : (
-                        <span className={styles.noArea}>—</span>
-                      )}
-                    </td>
-                    <td>{s.date}</td>
-                    <td className={styles.durationCell}>
-                      {s.duration}
-                      {getAnomaliaBadge(s.horas)}
-                    </td>
-                    <td>
-                      <span className={`${styles.statusBadge} ${styles[s.status]}`}>
-                        {s.status === 'aprobado' && '✅ Aprobado'}
-                        {s.status === 'rechazado' && '❌ Rechazado'}
-                        {s.status === 'pendiente' && '⏳ Pendiente'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={styles.actionsCell}>
-                        {/* Botón de auditoría - permite cambiar estado de cualquier registro */}
-                        {s.status === 'aprobado' && (
-                          <button
-                            className={styles.auditButton}
-                            onClick={() => revisar(s.id, 'rechazado', s.description)}
-                            title="Rechazar (auditoría)"
-                          >
-                            ❌ Rechazar
-                          </button>
-                        )}
-                        {s.status === 'rechazado' && (
-                          <button
-                            className={styles.auditButton}
-                            onClick={() => revisar(s.id, 'aprobado', s.description)}
-                            title="Aprobar (auditoría)"
-                          >
-                            ✅ Aprobar
-                          </button>
-                        )}
-                        {s.status === 'pendiente' && (
-                          <>
-                            <button
-                              className={styles.approveButton}
-                              onClick={() => revisar(s.id, 'aprobado', s.description)}
-                            >
-                              ✅ Aprobar
-                            </button>
-                            <button
-                              className={styles.rejectButton}
-                              onClick={() => revisar(s.id, 'rechazado', s.description)}
-                            >
-                              ❌ Rechazar
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td>
+                        <div className={styles.actionsCell}>
+                          {esPropio ? (
+                            <span className={styles.disabledAction} title="No puedes auditar tu propio registro (conflicto de interés)">
+                              —
+                            </span>
+                          ) : (
+                            <>
+                              {/* Botón de auditoría - permite cambiar estado de cualquier registro */}
+                              {s.status === 'aprobado' && (
+                                <button
+                                  className={styles.auditButton}
+                                  onClick={() => revisar(s.id, 'rechazado', s.description)}
+                                  title="Rechazar (auditoría)"
+                                >
+                                  ❌ Rechazar
+                                </button>
+                              )}
+                              {s.status === 'rechazado' && (
+                                <button
+                                  className={styles.auditButton}
+                                  onClick={() => revisar(s.id, 'aprobado', s.description)}
+                                  title="Aprobar (auditoría)"
+                                >
+                                  ✅ Aprobar
+                                </button>
+                              )}
+                              {s.status === 'pendiente' && (
+                                <>
+                                  <button
+                                    className={styles.approveButton}
+                                    onClick={() => revisar(s.id, 'aprobado', s.description)}
+                                  >
+                                    ✅ Aprobar
+                                  </button>
+                                  <button
+                                    className={styles.rejectButton}
+                                    onClick={() => revisar(s.id, 'rechazado', s.description)}
+                                  >
+                                    ❌ Rechazar
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

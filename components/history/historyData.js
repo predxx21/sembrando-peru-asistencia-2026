@@ -31,6 +31,9 @@ function mapActivity(row) {
     status: row.estado,
     coordinatorComment: row.comentarioRevision || '',
     reviewedBy: row.revisor ? row.revisor.nombre : '',
+    reviewedAt: row.fechaRevision,
+    // NUEVO: Campos del cronómetro
+    horaInicioReal: row.horaInicioReal,
   };
 }
 
