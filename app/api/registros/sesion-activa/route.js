@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerSesionActiva, iniciarSesionCronometro, terminarSesionCronometro } from '@/lib/db/registro';
+import { invalidateCache } from '@/lib/cache';
 
 // GET: Obtener sesión activa actual
 export async function GET(request) {
@@ -65,6 +66,9 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No se pudo iniciar la sesión.' }, { status: 500 });
   }
 
+  // El voluntario inició sesión: el historial y stats cambian.
+  invalidateCache();
+
   return NextResponse.json({ data });
 }
 
@@ -86,6 +90,9 @@ export async function PATCH(request) {
     const status = error.status || 500;
     return NextResponse.json({ error: error.message }, { status });
   }
+
+  // El voluntario terminó sesión: se creó un registro, invalida caché.
+  invalidateCache();
 
   return NextResponse.json({ data });
 }

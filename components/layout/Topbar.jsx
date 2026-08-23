@@ -59,7 +59,7 @@ export default function Topbar() {
       </button>
 
       <strong className={styles.brand}>
-        Sistema Web de Control de Asistencia y Evidencias
+        Sistema Web de Control de Asistencia
       </strong>
 
       <div className={styles.userArea}>

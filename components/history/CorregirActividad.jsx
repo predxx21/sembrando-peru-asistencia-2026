@@ -173,7 +173,7 @@ export default function CorrectionForm({ activity }) {
             </div>
           </article>
 
-          <div className={styles.sideImage}>
+          <div className={styles.decorativeImage}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/bosque-sembrando-peru.jpg"

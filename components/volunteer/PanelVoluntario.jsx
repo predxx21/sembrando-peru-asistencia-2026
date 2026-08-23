@@ -33,7 +33,7 @@ export default function VolunteerDashboard() {
 
         if (cancelled) return;
         setNombre(perfil?.profile?.nombre || "");
-        setArea(perfil?.profile?.area || "");
+        setArea(perfil?.profile?.area?.nombre || "");
 
         const historial = await getHistoryActivities();
         if (!cancelled) setActivities(historial);
@@ -187,7 +187,7 @@ export default function VolunteerDashboard() {
         </div>
 
         {/* Guía de registro */}
-        <aside className={styles.evidenceColumn}>
+        <aside className={styles.guideColumn}>
           <h2>Guía de Registro</h2>
 
           <article className={styles.guideCard}>

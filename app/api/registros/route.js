@@ -44,7 +44,7 @@ export async function POST(request) {
 
   // El área es obligatoria: si falta, el filtro por área del panel admin no
   // funciona (los registros sin área no aparecen al filtrar).
-  if (!profile.area) {
+  if (!profile.areaId) {
     return NextResponse.json(
       { error: 'Debes asignar un área en tu perfil antes de registrar horas.' },
       { status: 400 }

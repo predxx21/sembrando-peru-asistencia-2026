@@ -216,14 +216,14 @@
   line-height: 1.5;
 }
 
-.sideImage {
+.decorativeImage {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #dfe4ea;
   height: 160px;
 }
 
-.sideImage img {
+.decorativeImage img {
   width: 100%;
   height: 100%;
   object-fit: cover;

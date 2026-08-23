@@ -103,8 +103,7 @@
   margin-bottom: 12px;
 }
 
-.sectionTitle h2,
-.evidenceColumn > h2 {
+.sectionTitle h2 {
   color: #26384b;
   font-size: 20px;
   margin: 0;
@@ -120,6 +119,12 @@
   border: 1px solid #dfe4ea;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.guideColumn {
+  display: grid;
+  gap: 20px;
+  align-content: start;
 }
 
 .activityRow {
@@ -181,47 +186,6 @@
 .badgeRejected {
   background: #ffc9c0;
   color: #9b2c1f;
-}
-
-.evidenceColumn {
-  display: grid;
-  gap: 20px;
-  align-content: start;
-}
-
-.guideCard {
-  background: #197343;
-  border-radius: 12px;
-  color: white;
-  box-shadow: 0 8px 15px #0002;
-}
-
-.guideCardBody {
-  padding: 40px 30px 40px;
-}
-
-.guideCardBody h3 {
-  font-size: 20px;
-  margin: 0 0 20px;
-}
-
-.guideCardBody p {
-  line-height: 1.5;
-  margin: 0 0 18px;
-}
-
-.guideCardBody .guideButton {
-  display: block;
-  width: 100%;
-  border: 1px solid #ffffff33;
-  border-radius: 8px;
-  background: #ffffff1a;
-  color: white;
-  text-align: center;
-  text-decoration: none;
-  padding: 10px;
-  cursor: pointer;
-  box-sizing: border-box;
 }
 
 .loadingText {
@@ -416,20 +380,9 @@
     display: none;
   }
 
-  /* ---- Guía de evidencia ---- */
-  .evidenceColumn {
-    order: 2;
-    margin-top: 20px;
-  }
   .sectionTitle {
     flex-direction: row;
     align-items: center;
-  }
-  .sectionTitle h2 {
-    font-size: 18px;
-  }
-  .sectionTitle span {
-    font-size: 14px;
   }
   .loadingText {
     font-size: 13px;

@@ -47,7 +47,8 @@ function mapActivity(row) {
     horas: row.horas,
     status: row.estado,
     description: row.descripcion,
-    area: row.profile?.area || null,
+    areaId: row.profile?.areaId || null,
+    area: row.profile?.area?.nombre || null,
   };
 }
 

@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
-import { AREAS, UMBRALES } from '@/lib/constantes';
+import { UMBRALES } from '@/lib/constantes';
+import { fetchConToken } from "@/lib/api/client";
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 6;
@@ -18,6 +19,7 @@ export default function AdminDashboard() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [areaFilter, setAreaFilter] = useState(""); // NUEVO: filtro por área
+  const [areas, setAreas] = useState([]); // Lista de áreas para el select
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // NUEVO: para deshabilitar auto-auditoría
@@ -33,25 +35,34 @@ export default function AdminDashboard() {
 
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
-  // Obtener profileId del usuario actual al montar
+  // Obtener profileId del usuario actual y áreas disponibles al montar
   useEffect(() => {
     async function getProfileId() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
       try {
-        const res = await fetch('/api/auth/perfil', {
-          cache: 'no-store',
-          headers: { 'Authorization': `Bearer ${session.access_token}` },
-        });
-        if (res.ok) {
-          const body = await res.json();
+        const [perfilRes, areasRes] = await Promise.all([
+          fetch('/api/auth/perfil', {
+            cache: 'no-store',
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+          }),
+          fetchConToken('/api/areas'),
+        ]);
+
+        if (perfilRes.ok) {
+          const body = await perfilRes.json();
           if (body.profile?.id) {
             setCurrentUserProfileId(body.profile.id);
           }
         }
+
+        if (areasRes.ok) {
+          const areasBody = await areasRes.json();
+          setAreas(areasBody.areas || []);
+        }
       } catch (err) {
-        console.error('Error obteniendo profileId:', err);
+        console.error('Error obteniendo perfil/áreas:', err);
       }
     }
     getProfileId();
@@ -253,7 +264,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* NUEVO: Filtro por área */}
+          {/* NUEVO: Filtro por área (dinámico desde BD) */}
           <div className={styles.filterGroup}>
             <label htmlFor="areaFilter" className={styles.filterLabel}>Área</label>
             <select
@@ -263,8 +274,8 @@ export default function AdminDashboard() {
               className={styles.filterInput}
             >
               <option value="">Todas las áreas</option>
-              {AREAS.map((area) => (
-                <option key={area} value={area}>{area}</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>{area.nombre}</option>
               ))}
             </select>
           </div>

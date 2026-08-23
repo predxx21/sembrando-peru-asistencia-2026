@@ -4,18 +4,18 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { fetchConToken } from "@/lib/api/client";
-import { AREAS } from '@/lib/constantes';
 import styles from "./EditarPerfil.module.css";
 
 export default function EditarPerfil() {
   const router = useRouter();
   const [form, setForm] = useState(null);
+  const [areas, setAreas] = useState([]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  // Carga el perfil real (nombre/apellido) desde /api/auth/perfil.
+  // Carga el perfil real (nombre/apellido) y áreas disponibles.
   useEffect(() => {
     let cancelled = false;
 
@@ -24,19 +24,25 @@ export default function EditarPerfil() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No hay sesión activa.");
 
-        const res = await fetchConToken("/api/auth/perfil");
-        const body = await res.json().catch(() => null);
+        const [perfilRes, areasRes] = await Promise.all([
+          fetchConToken("/api/auth/perfil"),
+          fetchConToken("/api/areas"),
+        ]);
+
+        const perfilBody = await perfilRes.json().catch(() => null);
+        const areasBody = await areasRes.json().catch(() => null);
 
         if (cancelled) return;
 
-        if (!body?.profile) throw new Error("No se encontró tu perfil.");
+        if (!perfilBody?.profile) throw new Error("No se encontró tu perfil.");
 
         setForm({
-          nombre: body.profile.nombre || "",
-          apellido: body.profile.apellido || "",
-          rol: body.profile.rol || "voluntario",
-          area: body.profile.area || "",
+          nombre: perfilBody.profile.nombre || "",
+          apellido: perfilBody.profile.apellido || "",
+          rol: perfilBody.profile.rol || "voluntario",
+          areaId: perfilBody.profile.areaId || "",
         });
+        setAreas(areasBody?.areas || []);
         setEmail(user.email || "");
       } catch (err) {
         if (!cancelled) {
@@ -67,7 +73,7 @@ export default function EditarPerfil() {
       return;
     }
 
-    if (!form.area?.trim()) {
+    if (!form.areaId) {
       setMensaje("El área de voluntariado es obligatoria.");
       return;
     }
@@ -82,7 +88,7 @@ export default function EditarPerfil() {
       const payload = {
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
-        area: form.area || null,
+        areaId: form.areaId || null,
       };
 
       const res = await fetch("/api/auth/perfil", {
@@ -152,18 +158,18 @@ export default function EditarPerfil() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="area">Área de Voluntariado *</label>
+          <label htmlFor="areaId">Área de Voluntariado *</label>
           <select
-            id="area"
-            name="area"
-            value={form?.area || ""}
+            id="areaId"
+            name="areaId"
+            value={form?.areaId || ""}
             onChange={handleChange}
             required
           >
             <option value="">Seleccionar área</option>
-            {AREAS.map((area) => (
-              <option key={area} value={area}>
-                {area}
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.nombre}
               </option>
             ))}
           </select>

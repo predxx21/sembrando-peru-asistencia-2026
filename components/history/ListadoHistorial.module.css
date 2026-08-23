@@ -168,7 +168,6 @@
   gap: 10px;
 }
 
-.evidenceButton,
 .detailButton,
 .corregirButton {
   border: 0;
@@ -180,14 +179,6 @@
   text-decoration: none;
   display: inline-block;
   transition: background 0.15s;
-}
-
-.evidenceButton {
-  background: #197343;
-  color: white;
-}
-.evidenceButton:hover {
-  background: #125a33;
 }
 
 .detailButton {
@@ -204,6 +195,18 @@
 }
 .corregirButton:hover {
   background: #b83636;
+}
+
+/* Comentario de rechazo en tarjeta */
+.rejectionComment {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #f3c1c1;
+  border-radius: 8px;
+  color: #9b2c1f;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 /* ===== Paginación ===== */
