@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { calcularHoras } from "@/lib/utils/horas";
+import { esHoraFinMayorAInicio } from "@/lib/utils/validar";
 import styles from "./CorregirActividad.module.css";
 
 export default function CorrectionForm({ activity }) {
@@ -32,7 +33,8 @@ export default function CorrectionForm({ activity }) {
       return;
     }
 
-    if (calculatedHours <= 0) {
+    // A-1, A-2: validar hora fin > hora inicio (acepta cruce medianoche)
+    if (!esHoraFinMayorAInicio(horaInicio, horaFin)) {
       setMensaje("La hora de fin debe ser mayor que la hora de inicio.");
       return;
     }
@@ -181,9 +183,17 @@ export default function CorrectionForm({ activity }) {
             />
           </div>
 
-          <button type="submit" className={styles.submitButton} disabled={saving}>
-            {saving ? "Enviando..." : "▷ Guardar y Reenviar"}
-          </button>
+          {/* A-6: bloquear si el cronómetro está corriendo */}
+          {activity.sesionActiva ? (
+            <div className={styles.blockedNotice}>
+              ⚠️ No puedes corregir este registro mientras el cronómetro está en curso.
+              Finaliza la sesión activa primero.
+            </div>
+          ) : (
+            <button type="submit" className={styles.submitButton} disabled={saving}>
+              {saving ? "Enviando..." : "▷ Guardar y Reenviar"}
+            </button>
+          )}
 
           {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
 

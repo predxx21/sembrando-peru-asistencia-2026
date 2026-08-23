@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
-import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { getCached, setCached, invalidateCacheByPrefix } from '@/lib/cache';
 import { esEnteroPositivo } from '@/lib/utils/validar';
 
 // Caché corta del detalle.
@@ -130,7 +130,10 @@ export async function PATCH(request, context) {
   }
 
   // Auditoría cambia el listado y las estadísticas.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
+  invalidateCacheByPrefix('admin:auditoria:');
+  invalidateCacheByPrefix('admin:reportes');
 
   return NextResponse.json({ data: registro });
 }

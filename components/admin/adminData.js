@@ -53,10 +53,11 @@ function mapActivity(row) {
 }
 
 // Trae la página actual con filtros aplicados EN EL SERVIDOR
-// (búsqueda por nombre, rango de fechas, área). Devuelve { items, total }.
+// (búsqueda por nombre, rango de fechas, área, estado). Devuelve { items, total }.
+// A-5: estado es opcional. Si no se pasa, el backend usa null (todos los estados).
 export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta, area, estado } = {}) {
   const { items, total } = await fetchRegistros({
-    estado: estado || 'pendiente',
+    estado: estado || undefined,
     page,
     limit,
     busqueda,

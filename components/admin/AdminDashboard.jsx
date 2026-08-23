@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   const [dateTo, setDateTo] = useState("");
   const [areaFilter, setAreaFilter] = useState(""); // NUEVO: filtro por área
   const [areas, setAreas] = useState([]); // Lista de áreas para el select
+  const [estadoFilter, setEstadoFilter] = useState("pendiente"); // A-5: filtro de estado
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // NUEVO: para deshabilitar auto-auditoría
@@ -102,7 +103,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const res = await getPendingSubmissions({ limit: ITEMS_PER_PAGE, estado: 'pendiente' });
+      const res = await getPendingSubmissions({ limit: ITEMS_PER_PAGE, estado: estadoFilter });
       if (res) {
         setSubmissions(res.items);
         setTotal(res.total);
@@ -119,7 +120,7 @@ export default function AdminDashboard() {
     cargarTendencias();
   }, []);
 
-  // Cargar con filtros (búsqueda, fechas, área) - se dispara cuando cambian los filtros
+  // Cargar con filtros (búsqueda, fechas, área, estado) - se dispara cuando cambian los filtros
   async function cargarConFiltros() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -132,6 +133,7 @@ export default function AdminDashboard() {
       desde: dateFrom || undefined,
       hasta: dateTo || undefined,
       area: areaFilter || undefined, // NUEVO
+      estado: estadoFilter || undefined, // A-5
     };
 
     try {
@@ -277,6 +279,22 @@ export default function AdminDashboard() {
               {areas.map((area) => (
                 <option key={area.id} value={area.id}>{area.nombre}</option>
               ))}
+            </select>
+          </div>
+
+          {/* A-5: Filtro por estado */}
+          <div className={styles.filterGroup}>
+            <label htmlFor="estadoFilter" className={styles.filterLabel}>Estado</label>
+            <select
+              id="estadoFilter"
+              value={estadoFilter}
+              onChange={(e) => setEstadoFilter(e.target.value)}
+              className={styles.filterInput}
+            >
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="">Todos</option>
             </select>
           </div>
         </div>

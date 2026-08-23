@@ -10,6 +10,7 @@ const STATUS_CONFIG = {
   aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
   pendiente: { label: ESTADO_LABEL.pendiente, className: "statusPending" },
   rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
+  en_curso: { label: "En curso", className: "statusInProgress" },
 };
 
 function getAnomaliaBadge(horas) {
@@ -20,6 +21,23 @@ function getAnomaliaBadge(horas) {
     return <span className={styles.alertBadge}>⚠ Jornada menor a 15min</span>;
   }
   return null;
+}
+
+// A-6: Badge "En curso" si el cronómetro está corriendo
+function getEstadoBadge(activity) {
+  if (activity.sesionActiva) {
+    return (
+      <span className={`${styles.statusPill} ${styles.statusInProgress}`}>
+        🟢 En curso
+      </span>
+    );
+  }
+  const status = STATUS_CONFIG[activity.status] || STATUS_CONFIG.pendiente;
+  return (
+    <span className={`${styles.statusPill} ${styles[status.className]}`}>
+      {status.label}
+    </span>
+  );
 }
 
 function formatearHoraLocal(fechaISO) {
@@ -47,9 +65,8 @@ export default function VerDetalle({ activity }) {
 
       <header className={styles.detailHeader}>
         <div className={styles.statusRow}>
-          <span className={`${styles.statusPill} ${styles[status.className]}`}>
-            {status.label}
-          </span>
+          {/* A-6: badge dinámico según sesionActiva */}
+          {getEstadoBadge(activity)}
           <span className={styles.activityDate}>{activity.date}</span>
         </div>
 
@@ -146,9 +163,8 @@ export default function VerDetalle({ activity }) {
             <div className={styles.infoRow}>
               <dt>Estado Actual</dt>
               <dd>
-                <span className={`${styles.statusPill} ${styles[status.className]}`}>
-                  {status.label}
-                </span>
+                {/* A-6: badge dinámico según sesionActiva */}
+                {getEstadoBadge(activity)}
               </dd>
             </div>
             {activity.reviewedAt && (

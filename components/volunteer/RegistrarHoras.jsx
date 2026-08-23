@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { fetchConToken } from '@/lib/api/client';
 import Cronometro from './Cronometro';
 import styles from './RegistrarHoras.module.css';
 
@@ -12,24 +12,19 @@ export default function FormularioHoras() {
   const [cargandoSesion, setCargandoSesion] = useState(true);
   const [horasMes, setHorasMes] = useState(0);
   const [mensaje, setMensaje] = useState('');
+  const [redirectEnabled, setRedirectEnabled] = useState(false);
 
   // Función para cargar la sesión activa (reutilizable)
   const cargarSesionActiva = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) return;
-
     try {
-      const res = await fetch('/api/registros/sesion-activa', {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const body = await res.json().catch(() => ({}));
+      const res = await fetchConToken('/api/registros/sesion-activa');
       if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
       if (body.data) {
         setSesion(body.data);
       }
     } catch {
-      // Silencioso
+      // Silencioso: fetchConToken ya maneja 401 → redirect a login
     } finally {
       setCargandoSesion(false);
     }
@@ -54,22 +49,15 @@ export default function FormularioHoras() {
     return () => window.removeEventListener('focus', onFocus);
   }, [cargarSesionActiva]);
 
-  // Carga las horas aprobadas del mes
+  // Carga las horas aprobadas del mes (desde el historial del usuario)
   useEffect(() => {
     let active = true;
 
     async function cargarHorasMes() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
       try {
-        const res = await fetch('/api/registros?scope=mine', {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const body = await res.json().catch(() => ({}));
+        const res = await fetchConToken('/api/registros?scope=mine&estado=aprobado');
         if (!res.ok) return;
-
+        const body = await res.json();
         const ahora = new Date();
         const año = ahora.getUTCFullYear();
         const mes = ahora.getUTCMonth();
@@ -96,45 +84,24 @@ export default function FormularioHoras() {
   }, []);
 
   const handleIniciar = async (descripcion) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
-
-    const res = await fetch('/api/registros/sesion-activa', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ descripcion }),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || 'Error al iniciar la sesión.');
+    try {
+      const res = await fetchConToken('/api/registros/sesion-activa', {
+        method: 'POST',
+        body: { descripcion },
+      });
+      const body = await res.json();
+      setSesion(body.data);
+      setMensaje('✅ Jornada iniciada. El cronómetro está en marcha.');
+      return body.data;
+    } catch (err) {
+      throw new Error(err.message || 'Error al iniciar la sesión.');
     }
-
-    const body = await res.json();
-    setSesion(body.data);
-    setMensaje('✅ Jornada iniciada. El cronómetro está en marcha.');
-    return body.data;
   };
 
   const handleTerminar = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) {
-      setMensaje('❌ Sesión expirada. Inicia sesión nuevamente.');
-      return;
-    }
-
     try {
-      const res = await fetch('/api/registros/sesion-activa', {
+      const res = await fetchConToken('/api/registros/sesion-activa', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
       });
 
       if (!res.ok) {
@@ -142,14 +109,12 @@ export default function FormularioHoras() {
         throw new Error(body.error || 'Error al terminar la jornada.');
       }
 
-      // Éxito
+      // Éxito: mostrar confirmación con botón para ver historial
+      // (en lugar de redirect automático que podría perderse si se cierra la pestaña)
+      setRedirectEnabled(true);
       setSesion(null);
       setMensaje('✅ Jornada finalizada. Horas registradas automáticamente.');
-      setTimeout(() => {
-        router.push('/historial');
-      }, 3000);
     } catch (err) {
-      // ❌ No resetear, mostrar error y permitir reintentar
       setMensaje(`❌ ${err.message}. Intenta de nuevo.`);
       // No reseteamos sesion, el cronómetro sigue activo
     }
@@ -182,6 +147,17 @@ export default function FormularioHoras() {
         />
 
         {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
+
+        {redirectEnabled && (
+          <div className={styles.redirectBox}>
+            <button
+              className={styles.redirectButton}
+              onClick={() => router.push('/historial')}
+            >
+              Ver mi historial →
+            </button>
+          </div>
+        )}
       </div>
 
       <section className={styles.infoGrid}>

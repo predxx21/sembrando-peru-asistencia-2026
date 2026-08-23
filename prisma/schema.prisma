@@ -65,7 +65,7 @@ model RegistroAsistencia {
   horas             Float
   descripcion       String
   evidenciaUrl      String?          // CAMBIO: Opcional (nullable) - mantener para registros legacy
-  estado            EstadoRegistro   @default(aprobado) // CAMBIO: Aprobado por defecto
+  estado            EstadoRegistro   @default(pendiente)
 
   // NUEVO: Para cronómetro activo
   sesionActiva      Boolean          @default(false)

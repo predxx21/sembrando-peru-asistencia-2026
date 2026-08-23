@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerSesionActiva, iniciarSesionCronometro, terminarSesionCronometro } from '@/lib/db/registro';
-import { invalidateCache } from '@/lib/cache';
+import { invalidateCacheByPrefix } from '@/lib/cache';
 
 // GET: Obtener sesión activa actual
 export async function GET(request) {
@@ -67,7 +67,7 @@ export async function POST(request) {
   }
 
   // El voluntario inició sesión: el historial y stats cambian.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
 
   return NextResponse.json({ data });
 }
@@ -92,7 +92,9 @@ export async function PATCH(request) {
   }
 
   // El voluntario terminó sesión: se creó un registro, invalida caché.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
+  invalidateCacheByPrefix('admin:reportes');
 
   return NextResponse.json({ data });
 }

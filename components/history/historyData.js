@@ -34,6 +34,7 @@ function mapActivity(row) {
     reviewedAt: row.fechaRevision,
     // NUEVO: Campos del cronómetro
     horaInicioReal: row.horaInicioReal,
+    sesionActiva: row.sesionActiva || false, // A-6
     areaId: row.profile?.areaId || null,
     area: row.profile?.area?.nombre || null,
   };

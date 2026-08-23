@@ -6,16 +6,15 @@ import {
   obtenerRegistrosPorUsuario,
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
-import { getCached, setCached, invalidateCache } from '@/lib/cache';
-import { esFechaValida, esHoraValida } from '@/lib/utils/validar';
+import { getCached, setCached, invalidateCacheByPrefix } from '@/lib/cache';
+import { esFechaValida, esHoraValida, esHoraFinMayorAInicio, esUUIDValido } from '@/lib/utils/validar';
 
 // Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
 // o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
 // combinación (scope=mine, estado, paginación, búsqueda, rango) tiene su
-// propia entrada. Las escrituras invalidan TODA la caché, así el TTL solo
-// aplica entre escrituras — cuando los datos están igual, es seguro servir la
-// lista 30 s sin volver a la BD.
+// propia entrada. Las escrituras invalidan las claves con prefijo 'registros:'.
 const CACHE_TTL_MS = 30 * 1000;
+const CACHE_KEY_PREFIX = 'registros:';
 
 // POST: Crear un registro de asistencia
 export async function POST(request) {
@@ -33,6 +32,14 @@ export async function POST(request) {
   if (!esFechaValida(body.fecha) || !esHoraValida(body.horaInicio) || !esHoraValida(body.horaFin)) {
     return NextResponse.json(
       { error: 'Fecha u horas inválidas. Usa AAAA-MM-DD para la fecha y HH:MM para las horas.' },
+      { status: 400 }
+    );
+  }
+
+  // La hora de fin debe ser posterior a la de inicio (acepta cruce medianoche).
+  if (!esHoraFinMayorAInicio(body.horaInicio, body.horaFin)) {
+    return NextResponse.json(
+      { error: 'La hora de fin debe ser posterior a la de inicio.' },
       { status: 400 }
     );
   }
@@ -65,7 +72,9 @@ export async function POST(request) {
   }
 
   // Un registro nuevo cambia listados, estadísticas y reportes.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
+  invalidateCacheByPrefix('admin:reportes');
 
   return NextResponse.json({ data });
 }
@@ -101,7 +110,8 @@ export async function GET(request) {
   const page = parseInt(searchParams.get('page')) || 1;
   const limit = parseInt(searchParams.get('limit')) || 10;
 
-  let filtroProfileId = profileIdParam ? parseInt(profileIdParam) : undefined;
+  // A-4: profileId es UUID (string), no entero. Validar con esUUIDValido.
+  let filtroProfileId = profileIdParam || undefined;
 
   // Si es voluntario, forzar su propio profileId
   if (profile.rol !== 'admin') {
@@ -112,8 +122,8 @@ export async function GET(request) {
     filtroProfileId = profile.id;
   }
 
-  // Si es admin pero envió profileId inválido
-  if (filtroProfileId && isNaN(filtroProfileId)) {
+  // Si es admin pero envió profileId inválido (no UUID)
+  if (filtroProfileId && !esUUIDValido(filtroProfileId)) {
     return NextResponse.json({ error: 'profileId inválido' }, { status: 400 });
   }
 
@@ -128,10 +138,19 @@ export async function GET(request) {
     limit,
   };
 
+  // Cache por combinación de filtros (clave con prefijo para invalidación granular)
+  const cacheKey = `${CACHE_KEY_PREFIX}${request.nextUrl.searchParams.toString()}`;
+  const cacheado = getCached(cacheKey);
+  if (cacheado) {
+    return NextResponse.json(cacheado);
+  }
+
   const { data, total, error } = await obtenerTodosLosRegistros(filtros);
   if (error) {
     return NextResponse.json({ error: 'Error al obtener registros' }, { status: 500 });
   }
 
-  return NextResponse.json({ data, total });
+  const body = { data, total };
+  setCached(cacheKey, body, CACHE_TTL_MS);
+  return NextResponse.json(body);
 }

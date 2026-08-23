@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
-import { invalidateCache } from '@/lib/cache';
-import { esEnteroPositivo, esFechaValida, esHoraValida } from '@/lib/utils/validar';
+import { invalidateCacheByPrefix } from '@/lib/cache';
+import { esEnteroPositivo, esFechaValida, esHoraValida, esUUIDValido } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
 // por el voluntario. Es independiente del PATCH de /api/registros/[id], que
@@ -46,6 +46,11 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'No tienes permiso para corregir este registro.' }, { status: 403 });
   }
 
+  // A-4: Si el body trae profileId (no debería), validarlo como UUID
+  if (body?.profileId && !esUUIDValido(body.profileId)) {
+    return NextResponse.json({ error: 'profileId inválido.' }, { status: 400 });
+  }
+
   // Solo se corrige un registro que haya sido rechazado.
   if (registro.estado !== 'rechazado') {
     return NextResponse.json(
@@ -68,7 +73,10 @@ export async function PATCH(request, context) {
   }
 
   // El reenvío devuelve el registro a 'pendiente': cambia el listado y stats.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
+  invalidateCacheByPrefix('admin:auditoria:');
+  invalidateCacheByPrefix('admin:reportes');
 
   return NextResponse.json({ data: actualizado });
 }
