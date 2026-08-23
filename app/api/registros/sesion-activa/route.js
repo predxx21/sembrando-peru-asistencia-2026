@@ -20,6 +20,14 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Error al obtener sesión.' }, { status: 500 });
   }
 
+  // ✅ Añadir duracionActual calculada en el servidor
+  if (data) {
+    const ahora = new Date();
+    const inicio = new Date(data.horaInicioReal);
+    const diff = Math.max(0, (ahora - inicio) / 1000);
+    data.duracionActual = Math.round(diff * 10) / 10;
+  }
+
   return NextResponse.json({ data });
 }
 
@@ -72,11 +80,11 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
-  // ⚠️ CORREGIDO: Solo pasamos profileId, la función busca la sesión activa internamente
   const { data, error } = await terminarSesionCronometro({ profileId: profile.id });
 
   if (error) {
-    return NextResponse.json({ error: error.message || 'No se pudo terminar la sesión.' }, { status: 500 });
+    const status = error.status || 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 
   return NextResponse.json({ data });

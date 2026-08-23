@@ -42,6 +42,15 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
+  // El área es obligatoria: si falta, el filtro por área del panel admin no
+  // funciona (los registros sin área no aparecen al filtrar).
+  if (!profile.area) {
+    return NextResponse.json(
+      { error: 'Debes asignar un área en tu perfil antes de registrar horas.' },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await guardarRegistroAsistencia({
     profileId: profile.id,
     fecha: body.fecha,
@@ -73,71 +82,56 @@ export async function POST(request) {
 export async function GET(request) {
   const user = await getUserFromRequest(request);
   if (!user) {
-    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
-  const { profile, error: perfilError } = await getPerfilByUserId(user.id);
-  if (perfilError || !profile) {
-    return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
+  const { profile } = await getPerfilByUserId(user.id);
+  if (!profile) {
+    return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const pageRaw = Number(searchParams.get('page'));
-  const limitRaw = Number(searchParams.get('limit'));
-  const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : null;
-  const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : null;
+  const searchParams = request.nextUrl.searchParams;
+  const scope = searchParams.get('scope');
+  const profileIdParam = searchParams.get('profileId');
+  const estado = searchParams.get('estado');
+  const busqueda = searchParams.get('busqueda');
+  const desde = searchParams.get('desde');
+  const hasta = searchParams.get('hasta');
+  const area = searchParams.get('area');
+  const page = parseInt(searchParams.get('page')) || 1;
+  const limit = parseInt(searchParams.get('limit')) || 10;
 
-  const desde = searchParams.get('desde') || undefined;
-  const hasta = searchParams.get('hasta') || undefined;
-  const area = searchParams.get('area') || undefined; // NUEVO: filtro por área
-  if ((desde && !esFechaValida(desde)) || (hasta && !esFechaValida(hasta))) {
-    return NextResponse.json(
-      { error: 'Rango de fechas inválido. Usa el formato AAAA-MM-DD.' },
-      { status: 400 }
-    );
+  let filtroProfileId = profileIdParam ? parseInt(profileIdParam) : undefined;
+
+  // Si es voluntario, forzar su propio profileId
+  if (profile.rol !== 'admin') {
+    filtroProfileId = profile.id;
+  }
+  // Si scope=mine, siempre usar su propio profileId (incluso para admin)
+  if (scope === 'mine') {
+    filtroProfileId = profile.id;
+  }
+
+  // Si es admin pero envió profileId inválido
+  if (filtroProfileId && isNaN(filtroProfileId)) {
+    return NextResponse.json({ error: 'profileId inválido' }, { status: 400 });
   }
 
   const filtros = {
-    estado: searchParams.get('estado') || undefined,
-    busqueda: searchParams.get('busqueda') || undefined,
+    profileId: filtroProfileId,
+    estado,
+    busqueda,
     desde,
     hasta,
-    area, // NUEVO: pasar filtro de área
+    area,
     page,
     limit,
   };
 
-  const scope = searchParams.get('scope') === 'mine' ? 'mine' : null;
-
-  // Caché por usuario + filtros: recargar la página devuelve la lista casi
-  // al instante si no hubo escrituras en los últimos 30 s.
-  const cacheKey = `registros:${profile.id}:${searchParams.toString()}`;
-  const cacheado = getCached(cacheKey);
-  if (cacheado) {
-    return NextResponse.json(cacheado);
+  const { data, total, error } = await obtenerTodosLosRegistros(filtros);
+  if (error) {
+    return NextResponse.json({ error: 'Error al obtener registros' }, { status: 500 });
   }
 
-  let result;
-  if (scope === 'mine') {
-    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
-  } else if (profile.rol === 'admin') {
-    result = await obtenerTodosLosRegistros(filtros);
-  } else {
-    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
-  }
-
-  if (result.error) {
-    return NextResponse.json({ error: 'No se pudieron obtener los registros.' }, { status: 500 });
-  }
-
-  const body = { data: result.data };
-  if (page && limit) {
-    body.total = result.total;
-    body.page = page;
-    body.limit = limit;
-  }
-
-  setCached(cacheKey, body, CACHE_TTL_MS);
-
-  return NextResponse.json(body);
+  return NextResponse.json({ data, total });
 }

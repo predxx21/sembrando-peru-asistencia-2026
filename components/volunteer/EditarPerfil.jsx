@@ -67,6 +67,11 @@ export default function EditarPerfil() {
       return;
     }
 
+    if (!form.area?.trim()) {
+      setMensaje("El área de voluntariado es obligatoria.");
+      return;
+    }
+
     setSaving(true);
     setMensaje("");
 
@@ -147,12 +152,13 @@ export default function EditarPerfil() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="area">Área de Voluntariado</label>
+          <label htmlFor="area">Área de Voluntariado *</label>
           <select
             id="area"
             name="area"
             value={form?.area || ""}
             onChange={handleChange}
+            required
           >
             <option value="">Seleccionar área</option>
             {AREAS.map((area) => (

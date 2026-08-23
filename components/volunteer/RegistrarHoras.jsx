@@ -1,13 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { fetchConToken } from '@/lib/api/client';
 import Cronometro from './Cronometro';
 import styles from './RegistrarHoras.module.css';
-
-const META_MENSUAL = 30;
 
 export default function FormularioHoras() {
   const router = useRouter();
@@ -16,37 +13,46 @@ export default function FormularioHoras() {
   const [horasMes, setHorasMes] = useState(0);
   const [mensaje, setMensaje] = useState('');
 
+  // Función para cargar la sesión activa (reutilizable)
+  const cargarSesionActiva = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+
+    try {
+      const res = await fetch('/api/registros/sesion-activa', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      if (body.data) {
+        setSesion(body.data);
+      }
+    } catch {
+      // Silencioso
+    } finally {
+      setCargandoSesion(false);
+    }
+  }, []);
+
   // Cargar sesión activa al montar
   useEffect(() => {
     let active = true;
-
-    async function cargarSesionActiva() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
-      try {
-        const res = await fetch('/api/registros/sesion-activa', {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) return;
-
-        if (active && body.data) {
-          setSesion(body.data);
-        }
-      } catch {
-        // Silencioso: no bloquea si falla
-      } finally {
-        if (active) setCargandoSesion(false);
-      }
-    }
-
-    cargarSesionActiva();
-    return () => {
-      active = false;
+    const load = async () => {
+      if (active) await cargarSesionActiva();
     };
-  }, []);
+    load();
+    return () => { active = false; };
+  }, [cargarSesionActiva]);
+
+  // Recargar al recuperar el foco de la pestaña (para sincronizar entre pestañas)
+  useEffect(() => {
+    const onFocus = () => {
+      cargarSesionActiva();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [cargarSesionActiva]);
 
   // Carga las horas aprobadas del mes
   useEffect(() => {
@@ -65,11 +71,12 @@ export default function FormularioHoras() {
         if (!res.ok) return;
 
         const ahora = new Date();
+        const año = ahora.getUTCFullYear();
+        const mes = ahora.getUTCMonth();
+
         const total = (body.data || []).reduce((sum, r) => {
           const fecha = new Date(r.fecha);
-          const enEsteMes =
-            fecha.getMonth() === ahora.getMonth() &&
-            fecha.getFullYear() === ahora.getFullYear();
+          const enEsteMes = fecha.getUTCMonth() === mes && fecha.getUTCFullYear() === año;
           if (r.estado === 'aprobado' && enEsteMes) {
             return sum + (Number(r.horas) || 0);
           }
@@ -116,26 +123,36 @@ export default function FormularioHoras() {
   const handleTerminar = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    if (!token) throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
-
-    const res = await fetch('/api/registros/sesion-activa', {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || 'Error al terminar la sesión.');
+    if (!token) {
+      setMensaje('❌ Sesión expirada. Inicia sesión nuevamente.');
+      return;
     }
 
-    setSesion(null);
-    setMensaje('✅ Jornada finalizada. Horas registradas automáticamente.');
-    setTimeout(() => {
-      router.push('/historial');
-    }, 3000);
+    try {
+      const res = await fetch('/api/registros/sesion-activa', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Error al terminar la jornada.');
+      }
+
+      // Éxito
+      setSesion(null);
+      setMensaje('✅ Jornada finalizada. Horas registradas automáticamente.');
+      setTimeout(() => {
+        router.push('/historial');
+      }, 3000);
+    } catch (err) {
+      // ❌ No resetear, mostrar error y permitir reintentar
+      setMensaje(`❌ ${err.message}. Intenta de nuevo.`);
+      // No reseteamos sesion, el cronómetro sigue activo
+    }
   };
 
   if (cargandoSesion) {

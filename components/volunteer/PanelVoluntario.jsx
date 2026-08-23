@@ -15,6 +15,7 @@ const STATUS_CONFIG = {
 
 export default function VolunteerDashboard() {
   const [nombre, setNombre] = useState("");
+  const [area, setArea] = useState("");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +33,7 @@ export default function VolunteerDashboard() {
 
         if (cancelled) return;
         setNombre(perfil?.profile?.nombre || "");
+        setArea(perfil?.profile?.area || "");
 
         const historial = await getHistoryActivities();
         if (!cancelled) setActivities(historial);
@@ -73,6 +75,10 @@ export default function VolunteerDashboard() {
           <p>
             Aquí tienes un resumen de tus contribuciones de voluntariado.
           </p>
+
+          {area && (
+            <span className={styles.areaBadge}>{area}</span>
+          )}
         </div>
       </header>
 

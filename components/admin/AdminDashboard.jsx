@@ -100,9 +100,13 @@ export default function AdminDashboard() {
       setDataError(err.message || 'No se pudieron cargar los registros.');
     } finally {
       setLoading(false);
-      cargarTendencias();
     }
   }
+
+  // Cargar tendencias y auditoría (separado para evitar doble llamada en error)
+  useEffect(() => {
+    cargarTendencias();
+  }, []);
 
   // Cargar con filtros (búsqueda, fechas, área) - se dispara cuando cambian los filtros
   async function cargarConFiltros() {

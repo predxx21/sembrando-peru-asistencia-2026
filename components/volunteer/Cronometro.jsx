@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './Cronometro.module.css';
 
 export default function Cronometro({ sesionInicial, onIniciar, onTerminar }) {
@@ -10,20 +10,51 @@ export default function Cronometro({ sesionInicial, onIniciar, onTerminar }) {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
-  // Calcular segundos transcurridos desde horaInicioReal
-  useEffect(() => {
-    if (!sesion?.horaInicioReal) return;
+  const tiempoBaseRef = useRef(0);
+  const inicioPerformanceRef = useRef(0);
 
-    const inicio = new Date(sesion.horaInicioReal).getTime();
+  const actualizarTiempoBase = (sesionActual) => {
+    if (!sesionActual) {
+      tiempoBaseRef.current = 0;
+      inicioPerformanceRef.current = performance.now();
+      setSegundos(0);
+      return;
+    }
 
-    const intervalo = setInterval(() => {
+    // Si el backend envía duracionActual, lo usamos directamente
+    if (sesionActual.duracionActual !== undefined && sesionActual.duracionActual !== null) {
+      tiempoBaseRef.current = sesionActual.duracionActual;
+    } else {
+      // Fallback: calcular con Date.now() una sola vez al inicio
+      const inicio = new Date(sesionActual.horaInicioReal).getTime();
       const ahora = Date.now();
-      const diff = Math.floor((ahora - inicio) / 1000);
-      setSegundos(Math.max(0, diff));
+      const diff = Math.max(0, (ahora - inicio) / 1000);
+      tiempoBaseRef.current = diff;
+    }
+
+    inicioPerformanceRef.current = performance.now();
+    setSegundos(Math.round(tiempoBaseRef.current));
+  };
+
+  useEffect(() => {
+    actualizarTiempoBase(sesion);
+  }, [sesion]);
+
+  useEffect(() => {
+    if (!sesion) {
+      setSegundos(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const ahora = performance.now();
+      const diff = (ahora - inicioPerformanceRef.current) / 1000;
+      const total = tiempoBaseRef.current + diff;
+      setSegundos(Math.round(total));
     }, 1000);
 
-    return () => clearInterval(intervalo);
-  }, [sesion?.horaInicioReal]);
+    return () => clearInterval(interval);
+  }, [sesion]);
 
   const formatearTiempo = (s) => {
     const h = Math.floor(s / 3600);
