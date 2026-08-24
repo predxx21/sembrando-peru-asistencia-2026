@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
 import { registerUser } from '@/lib/auth/register';
 import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
+import styles from './RegisterScreen.module.css';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function RegisterScreen() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const form = event.target; // ✅ usar event.target en vez de currentTarget
+    const form = event.target;
     const formData = new FormData(form);
 
     const nombre = String(formData.get('nombre')).trim();
@@ -54,8 +55,6 @@ export default function RegisterScreen() {
         return;
       }
 
-      // Si el registro inicia sesión automáticamente, redirigir según el rol
-      // (los nuevos usuarios son voluntario → /principal).
       if (data?.session) {
         const rol = await obtenerRolActual();
         router.push(rutaPorRol(rol));
@@ -63,9 +62,9 @@ export default function RegisterScreen() {
       }
 
       setMessage('Cuenta creada. Revisa tu correo electrónico para confirmar tu registro.');
-      form.reset(); // ✅ usar form.reset() en vez de currentTarget.reset()
+      form.reset();
     } catch (err) {
-      console.error('Error en registro:', err); // ✅ Ver el error real
+      console.error('Error en registro:', err);
       setMessage('No se pudo conectar con Supabase. Inténtalo nuevamente.');
     } finally {
       setIsSubmitting(false);
@@ -73,9 +72,9 @@ export default function RegisterScreen() {
   }
 
   return (
-    <main className="register-page">
-      <header className="register-navbar">
-        <Link className="nav-brand" href="/" aria-label="Ir al inicio">
+    <main className={styles['register-page']}>
+      <header className={styles['register-navbar']}>
+        <Link className={styles['nav-brand']} href="/" aria-label="Ir al inicio">
           <img
             src="/images/sembrando-peru-logo.jfif"
             alt="Logo de Sembrando Perú"
@@ -87,19 +86,19 @@ export default function RegisterScreen() {
         </p>
       </header>
 
-      <section className="register-content">
-        <form className="register-card" onSubmit={handleSubmit}>
+      <section className={styles['register-content']}>
+        <form className={styles['register-card']} onSubmit={handleSubmit}>
           <img
-            className="register-logo"
+            className={styles['register-logo']}
             src="/images/sembrando-peru-logo.jfif"
             alt="Sembrando Perú"
           />
           <h1>Crea tu cuenta</h1>
-          <p className="register-subtitle">
+          <p className={styles['register-subtitle']}>
             Únete a la plataforma de gestión ambiental y asistencia comunitaria.
           </p>
 
-          <div className="register-name-row">
+          <div className={styles['register-name-row']}>
             <div>
               <label htmlFor="nombre">Nombre</label>
               <input
@@ -133,7 +132,7 @@ export default function RegisterScreen() {
             placeholder="nombre@sembrandoperu.org"
           />
 
-          <div className="password-grid">
+          <div className={styles['password-grid']}>
             <div>
               <label htmlFor="password">Contraseña</label>
               <input
@@ -158,25 +157,25 @@ export default function RegisterScreen() {
             </div>
           </div>
 
-          <label className="terms">
+          <label className={styles['terms']}>
             <input type="checkbox" required />
             Acepto los <a href="#terms">Términos y condiciones</a> y la{' '}
             <a href="#privacy">Política de privacidad</a> de Sembrando Perú.
           </label>
 
-          <button className="create-account" type="submit" disabled={isSubmitting}>
+          <button className={styles['create-account']} type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
 
           {message && (
-            <p className="register-message" role="status">
+            <p className={styles['register-message']} role="status">
               {message}
             </p>
           )}
         </form>
       </section>
 
-      <footer className="register-footer">
+      <footer className={styles['register-footer']}>
         © 2026 Sembrando Perú. Todos los derechos reservados.
       </footer>
     </main>

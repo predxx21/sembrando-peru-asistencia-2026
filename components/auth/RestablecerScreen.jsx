@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { restablecerContrasena } from '@/lib/auth/restablecer';
 import LoginVisual from './LoginVisual';
+import styles from './RestablecerScreen.module.css';
 
 export default function RestablecerScreen() {
   const router = useRouter();
@@ -41,7 +42,6 @@ export default function RestablecerScreen() {
         return;
       }
 
-      // Limpiar el hash de la URL para no exponer el token
       window.history.replaceState(null, '', window.location.pathname);
     }
 
@@ -89,15 +89,15 @@ export default function RestablecerScreen() {
 
   if (!tokenValido) {
     return (
-      <main className="page-shell">
-        <section className="login-card">
+      <main className={styles['page-shell']}>
+        <section className={styles['login-card']}>
           <LoginVisual />
 
-          <section className="form-panel" aria-labelledby="welcome-title">
-            <div className="form-content">
+          <section className={styles['form-panel']} aria-labelledby="welcome-title">
+            <div className={styles['form-content']}>
               <header>
                 <img
-                  className="login-brand-logo"
+                  className={styles['login-brand-logo']}
                   src="/images/sembrando-peru-logo.jfif"
                   alt="Logo de Sembrando Perú"
                 />
@@ -105,11 +105,11 @@ export default function RestablecerScreen() {
                 <p>Ingresa tu nueva contraseña.</p>
               </header>
 
-              <p className="message" role="status" style={{ color: '#c00' }}>
+              <p className={styles['message']} role="status" style={{ color: '#c00' }}>
                 {message}
               </p>
 
-              <p className="register">
+              <p className={styles['register']}>
                 <a href="/olvide-contrasena" style={{ color: '#176c43', fontWeight: 700 }}>
                   Solicitar nuevo enlace
                 </a>
@@ -128,15 +128,15 @@ export default function RestablecerScreen() {
   }
 
   return (
-    <main className="page-shell">
-      <section className="login-card">
+    <main className={styles['page-shell']}>
+      <section className={styles['login-card']}>
         <LoginVisual />
 
-        <section className="form-panel" aria-labelledby="welcome-title">
-          <div className="form-content">
+        <section className={styles['form-panel']} aria-labelledby="welcome-title">
+          <div className={styles['form-content']}>
             <header>
               <img
-                className="login-brand-logo"
+                className={styles['login-brand-logo']}
                 src="/images/sembrando-peru-logo.jfif"
                 alt="Logo de Sembrando Perú"
               />
@@ -145,11 +145,11 @@ export default function RestablecerScreen() {
             </header>
 
             <form onSubmit={handleSubmit}>
-              <div className="password-grid">
+              <div className={styles['password-grid']}>
                 <div>
                   <label htmlFor="password">Nueva contraseña</label>
-                  <div className="input-wrap">
-                    <span className="input-icon lock" aria-hidden="true">��</span>
+                  <div className={styles['input-wrap']}>
+                    <span className={`${styles['input-icon']} ${styles['lock']}`} aria-hidden="true">♙</span>
                     <input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
@@ -161,19 +161,19 @@ export default function RestablecerScreen() {
                       autoComplete="new-password"
                     />
                     <button
-                      className="eye"
+                      className={styles['eye']}
                       type="button"
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      ��
+                      ◉
                     </button>
                   </div>
                 </div>
                 <div>
                   <label htmlFor="confirmPassword">Confirmar contraseña</label>
-                  <div className="input-wrap">
-                    <span className="input-icon lock" aria-hidden="true">��</span>
+                  <div className={styles['input-wrap']}>
+                    <span className={`${styles['input-icon']} ${styles['lock']}`} aria-hidden="true">♙</span>
                     <input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -185,26 +185,26 @@ export default function RestablecerScreen() {
                       autoComplete="new-password"
                     />
                     <button
-                      className="eye"
+                      className={styles['eye']}
                       type="button"
                       aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      ��
+                      ◉
                     </button>
                   </div>
                 </div>
               </div>
 
               <button
-                className="primary-button"
+                className={styles['primary-button']}
                 type="submit"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Actualizando...' : 'Actualizar contraseña'}
               </button>
 
-              {message && <p className="message" role="status">{message}</p>}
+              {message && <p className={styles['message']} role="status">{message}</p>}
             </form>
 
             <footer>
