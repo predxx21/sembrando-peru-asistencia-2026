@@ -7,6 +7,7 @@ import { isOrganizationEmail } from '@/lib/auth/email';
 import { loginUser } from '@/lib/auth/login';
 import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
 import LoginVisual from './LoginVisual';
+import styles from './LoginScreen.module.css';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -42,7 +43,6 @@ export default function LoginScreen() {
         return;
       }
 
-      // Redirigir según el rol: admin → administración, resto → principal.
       const rol = await obtenerRolActual();
       router.push(rutaPorRol(rol));
     } catch {
@@ -53,15 +53,15 @@ export default function LoginScreen() {
   }
 
   return (
-    <main className="page-shell">
-      <section className="login-card">
+    <main className={styles['page-shell']}>
+      <section className={styles['login-card']}>
         <LoginVisual />
 
-        <section className="form-panel" aria-labelledby="welcome-title">
-          <div className="form-content">
+        <section className={styles['form-panel']} aria-labelledby="welcome-title">
+          <div className={styles['form-content']}>
             <header>
               <img
-                className="login-brand-logo"
+                className={styles['login-brand-logo']}
                 src="/images/sembrando-peru-logo.jfif"
                 alt="Logo de Sembrando Perú"
               />
@@ -71,8 +71,8 @@ export default function LoginScreen() {
 
             <form onSubmit={handleSubmit}>
               <label htmlFor="email">Correo electrónico</label>
-              <div className="input-wrap">
-                <span className="input-icon" aria-hidden="true">✉</span>
+              <div className={styles['input-wrap']}>
+                <span className={styles['input-icon']} aria-hidden="true">✉</span>
                 <input
                   id="email"
                   type="email"
@@ -85,12 +85,12 @@ export default function LoginScreen() {
                 />
               </div>
 
-              <div className="password-label">
+              <div className={styles['password-label']}>
                 <label htmlFor="password">Contraseña</label>
                 <a href="/olvide-contrasena">¿Olvidaste tu contraseña?</a>
               </div>
-              <div className="input-wrap">
-                <span className="input-icon lock" aria-hidden="true">♙</span>
+              <div className={styles['input-wrap']}>
+                <span className={`${styles['input-icon']} ${styles['lock']}`} aria-hidden="true">♙</span>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -100,7 +100,7 @@ export default function LoginScreen() {
                   required
                 />
                 <button
-                  className="eye"
+                  className={styles['eye']}
                   type="button"
                   aria-label="Mostrar contraseña"
                   onClick={() => setShowPassword(!showPassword)}
@@ -109,30 +109,30 @@ export default function LoginScreen() {
                 </button>
               </div>
 
-              <label className="remember">
+              <label className={styles['remember']}>
                 <input type="checkbox" />
                 <span>Recordar sesión</span>
               </label>
 
               <button
-                className="primary-button"
+                className={styles['primary-button']}
                 type="submit"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
               </button>
 
-              {message && <p className="message" role="status">{message}</p>}
+              {message && <p className={styles['message']} role="status">{message}</p>}
             </form>
 
-            <p className="register">
+            <p className={styles['register']}>
               ¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link>
             </p>
 
-            <button className="access-button" type="button">
+            <button className={styles['access-button']} type="button">
               <span>♧</span> Solicitar acceso
             </button>
-            <p className="request-note">
+            <p className={styles['request-note']}>
               Para nuevas organizaciones que desean digitalizar su impacto social.
             </p>
           </div>

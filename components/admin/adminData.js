@@ -2,7 +2,7 @@
 //
 // Reutiliza lib/api/client.js (token + fetch autenticado) y los helpers de
 // fechas de lib/utils/fecha.js en vez de duplicarlos.
-import { fetchConToken, nombreEvidencia } from '@/lib/api/client';
+import { fetchConToken } from '@/lib/api/client';
 import { formatFechaEs } from '@/lib/utils/fecha';
 
 // Fetch de registros (listado pendiente) con filtros opcionales. `estado`,
@@ -33,6 +33,7 @@ async function fetchRegistros(filtros = {}) {
 function mapActivity(row) {
   return {
     id: row.id,
+    profileId: row.profileId, // NUEVO: necesario para deshabilitar auto-auditoría en UI
     name: row.profile?.nombre || 'Voluntario',
     initials: row.profile?.nombre
       ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '')
@@ -46,20 +47,23 @@ function mapActivity(row) {
     horas: row.horas,
     status: row.estado,
     description: row.descripcion,
-    evidenceFileName: nombreEvidencia(row.evidenciaUrl),
+    areaId: row.profile?.areaId || null,
+    area: row.profile?.area?.nombre || null,
   };
 }
 
-// Trae la página actual de pendientes con filtros aplicados EN EL SERVIDOR
-// (búsqueda por nombre y rango de fechas). Devuelve { items, total }.
-export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta } = {}) {
+// Trae la página actual con filtros aplicados EN EL SERVIDOR
+// (búsqueda por nombre, rango de fechas, área, estado). Devuelve { items, total }.
+// A-5: estado es opcional. Si no se pasa, el backend usa null (todos los estados).
+export async function getPendingSubmissions({ page, limit, busqueda, desde, hasta, area, estado } = {}) {
   const { items, total } = await fetchRegistros({
-    estado: 'pendiente',
+    estado: estado || undefined,
     page,
     limit,
     busqueda,
     desde,
     hasta,
+    area,
   });
   return { items: items.map(mapActivity), total };
 }
@@ -77,44 +81,6 @@ export async function reviewSubmission(id, estado, comentario) {
 
   const data = await res.json();
   return data.data;
-}
-
-// Lista voluntarios para la gestión de roles (sección "Gestión de usuarios").
-// Devuelve { usuarios, total, page, limit } para paginar en el servidor.
-export async function getUsuariosGestion({ page, limit, busqueda } = {}) {
-  const params = new URLSearchParams();
-  Object.entries({ page, limit, busqueda }).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== '') params.set(k, v);
-  });
-  const qs = params.toString();
-
-  const res = await fetchConToken(`/api/admin/usuarios${qs ? `?${qs}` : ''}`);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || 'Error al obtener los usuarios');
-  }
-  const body = await res.json();
-  return {
-    usuarios: body.usuarios || [],
-    total: body.total ?? (body.usuarios || []).length,
-    page: body.page,
-    limit: body.limit,
-  };
-}
-
-// Cambia el rol de un usuario (solo admin). PATCH /api/admin/usuarios/:id
-export async function cambiarRolUsuario(id, rol) {
-  const res = await fetchConToken(`/api/admin/usuarios/${id}`, {
-    method: 'PATCH',
-    body: { rol },
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || 'Error al cambiar el rol.');
-  }
-
-  return res.json();
 }
 
 // Historial completo de auditoría con paginación y filtros.

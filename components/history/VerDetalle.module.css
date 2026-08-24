@@ -1,0 +1,235 @@
+.detailPage {
+  width: 100%;
+  max-width: 720px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #667281;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.backLink:hover {
+  color: #26384b;
+}
+
+.detailHeader {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.statusApproved {
+  background: #d1f2e0;
+  color: #145c34;
+}
+
+.statusPending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusRejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.activityDate {
+  color: #667281;
+  font-size: 14px;
+}
+
+.activityTitle {
+  color: #26384b;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.activityMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hoursBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e7f4ec;
+  color: #197343;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.alertBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.detailGrid {
+  display: grid;
+  gap: 20px;
+}
+
+.detailCard {
+  background: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.detailCard h2 {
+  color: #26384b;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.infoList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.infoRow dt {
+  color: #667281;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.infoRow dd {
+  color: #26384b;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.exactTime {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-weight: 600;
+  color: #197343;
+}
+
+.durationValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #197343;
+}
+
+.description {
+  color: #2e3a5c;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.comment {
+  margin: 0 0 12px;
+  padding: 16px;
+  background: #f8f9ff;
+  border-left: 4px solid #3d6fbf;
+  border-radius: 0 8px 8px 0;
+  color: #2e3a5c;
+  font-size: 14px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.reviewedBy {
+  color: #667281;
+  font-size: 12px;
+  margin: 0;
+}
+
+.rejectedInfo {
+  color: #b91c1c;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 16px;
+  padding: 12px;
+  background: #fef2f2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+.corregirButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #d64545;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.corregirButton:hover {
+  background: #b33a3a;
+}
+
+@media (max-width: 600px) {
+  .infoRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .activityTitle {
+    font-size: 22px;
+  }
+
+  .detailCard {
+    padding: 18px;
+  }
+}

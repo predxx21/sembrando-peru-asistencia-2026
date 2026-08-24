@@ -50,7 +50,7 @@ export async function GET(request) {
   return NextResponse.json({ profile });
 }
 
-// PATCH: actualiza nombre/apellido del perfil del usuario autenticado.
+// PATCH: actualiza nombre/apellido/areaId del perfil del usuario autenticado.
 export async function PATCH(request) {
   const user = await getUserFromRequest(request);
 
@@ -67,6 +67,7 @@ export async function PATCH(request) {
     id: user.id,
     nombre: body.nombre.trim(),
     apellido: body.apellido.trim(),
+    areaId: body.areaId || null,
   });
 
   if (error) {

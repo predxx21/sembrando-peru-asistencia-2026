@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { getPendingSubmissions, reviewSubmission } from "./adminData";
 import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
+import { UMBRALES } from '@/lib/constantes';
+import { fetchConToken } from "@/lib/api/client";
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 6;
@@ -17,8 +18,12 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [areaFilter, setAreaFilter] = useState(""); // NUEVO: filtro por área
+  const [areas, setAreas] = useState([]); // Lista de áreas para el select
+  const [estadoFilter, setEstadoFilter] = useState("pendiente"); // A-5: filtro de estado
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // NUEVO: para deshabilitar auto-auditoría
 
   // Estado para tendencia y auditoría (los 4 cards de métricas se movieron
   // a la página de Reportes).
@@ -31,6 +36,39 @@ export default function AdminDashboard() {
 
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
+  // Obtener profileId del usuario actual y áreas disponibles al montar
+  useEffect(() => {
+    async function getProfileId() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      try {
+        const [perfilRes, areasRes] = await Promise.all([
+          fetch('/api/auth/perfil', {
+            cache: 'no-store',
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+          }),
+          fetchConToken('/api/areas'),
+        ]);
+
+        if (perfilRes.ok) {
+          const body = await perfilRes.json();
+          if (body.profile?.id) {
+            setCurrentUserProfileId(body.profile.id);
+          }
+        }
+
+        if (areasRes.ok) {
+          const areasBody = await areasRes.json();
+          setAreas(areasBody.areas || []);
+        }
+      } catch (err) {
+        console.error('Error obteniendo perfil/áreas:', err);
+      }
+    }
+    getProfileId();
+  }, []);
+
   // Cargar tendencia y auditoría en UNA sola petición. El endpoint sigue
   // devolviendo también las stats, pero ya no se muestran aquí.
   async function cargarTendencias() {
@@ -40,298 +78,366 @@ export default function AdminDashboard() {
 
     try {
       const res = await fetch('/api/admin/estadisticas', {
-        // no-store: que el navegador no guarde una copia propia; la frescura
-        // la decide la caché del servidor (lib/cache.js).
         cache: 'no-store',
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Error al cargar la tendencia.');
 
-      const { data } = await res.json();
-
-      if (Array.isArray(data?.tendencia)) {
-        setWeeklyVolume(data.tendencia);
-      }
-
-      if (Array.isArray(data?.auditoria)) {
-        setAuditLog(data.auditoria.map((item) => ({
-          id: item.id,
-          type: item.estado === 'aprobado' ? 'approved' : 'rejected',
-          label: `${item.estado === 'aprobado' ? 'Aprobado' : 'Rechazado'}: Registro #${item.id}`,
-          detail: `por ${item.revisor?.nombre || 'Coordinador'} • ${new Date(item.fechaRevision).toLocaleString('es-PE')}`,
-        })));
-      }
-    } catch (error) {
-      console.error('Error al cargar la tendencia:', error);
+      const body = await res.json();
+      // Fallback defensivo: asegurar que siempre sean arrays
+      setWeeklyVolume(body.data?.tendencia ?? []);
+      setAuditLog(body.data?.auditoria ?? []);
+    } catch (err) {
+      console.error('Error cargando tendencias:', err);
     }
   }
 
-  // Cargar la página actual de pendientes con los filtros aplicados en el
-  // servidor (búsqueda + rango de fechas + paginación).
-  async function cargarRegistros(pagina = page) {
+  // Cargar la primera página de registros (filtro pendiente por defecto)
+  async function cargarInicial() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      setDataError('No hay sesión activa.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
-      const { items, total: nuevoTotal } = await getPendingSubmissions({
-        page: pagina,
-        limit: ITEMS_PER_PAGE,
-        busqueda: search.trim() || undefined,
-        desde: dateFrom || undefined,
-        hasta: dateTo || undefined,
-      });
-      setSubmissions(items);
-      setTotal(nuevoTotal);
-      // Si la página quedó fuera de rango tras aplicar filtros, volver a la 1.
-      const maxPage = Math.max(1, Math.ceil(nuevoTotal / ITEMS_PER_PAGE));
-      setPage(pagina > maxPage ? maxPage : pagina);
-    } catch (error) {
-      setDataError(error.message || "No se pudieron cargar los registros.");
+      const res = await getPendingSubmissions({ limit: ITEMS_PER_PAGE, estado: estadoFilter });
+      if (res) {
+        setSubmissions(res.items);
+        setTotal(res.total);
+      }
+    } catch (err) {
+      setDataError(err.message || 'No se pudieron cargar los registros.');
     } finally {
       setLoading(false);
     }
   }
 
+  // Cargar tendencias y auditoría (separado para evitar doble llamada en error)
   useEffect(() => {
     cargarTendencias();
-    cargarRegistros(1);
   }, []);
 
-  // Recargar al cambiar filtros (búsqueda/rango), con debounce. No en el inicio.
+  // Cargar con filtros (búsqueda, fechas, área, estado) - se dispara cuando cambian los filtros
+  async function cargarConFiltros() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+
+    const filtros = {
+      page,
+      limit: ITEMS_PER_PAGE,
+      busqueda: search || undefined,
+      desde: dateFrom || undefined,
+      hasta: dateTo || undefined,
+      area: areaFilter || undefined, // NUEVO
+      estado: estadoFilter || undefined, // A-5
+    };
+
+    try {
+      const res = await getPendingSubmissions(filtros);
+      if (res) {
+        setSubmissions(res.items);
+        setTotal(res.total);
+      }
+    } catch (err) {
+      setDataError(err.message || 'No se pudieron cargar los registros.');
+    }
+  }
+
+  // Carga inicial
+  useEffect(() => {
+    cargarInicial();
+  }, []);
+
+  // Carga con filtros (pero NO en el primer render, para evitar doble llamada)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    const timer = setTimeout(() => cargarRegistros(1), 300);
-    return () => clearTimeout(timer);
-  }, [search, dateFrom, dateTo]);
+    // Resetear página al cambiar filtros
+    setPage(1);
+    cargarConFiltros();
+  }, [search, dateFrom, dateTo, areaFilter]);
 
-  // Aprobar con actualización optimista: se quita la fila de inmediato (sin
-  // recargar la tabla); si el PATCH falla, se vuelve a la página para resync.
-  async function handleApprove(id) {
-    setSubmissions((cur) => cur.filter((s) => s.id !== id));
-    setTotal((t) => Math.max(0, t - 1));
+  // Al cambiar de página
+  useEffect(() => {
+    if (!isFirstRender.current) {
+      cargarConFiltros();
+    }
+  }, [page]);
+
+  // Obtener badge de anomalía
+  const getAnomaliaBadge = (horas) => {
+    if (horas > UMBRALES.JORNADA_MAXIMA_HORAS) {
+      return (
+        <span className={styles.alertBadge}>⚠️ +8h</span>
+      );
+    }
+    if (horas < UMBRALES.JORNADA_MINIMA_MINUTOS / 60) {
+      return (
+        <span className={styles.alertBadge}>⚠️ {'<15min'}</span>
+      );
+    }
+    return null;
+  };
+
+  // NUEVO: Verificar si el registro pertenece al admin actual
+  const esRegistroPropio = (profileId) => {
+    return currentUserProfileId && profileId === currentUserProfileId;
+  };
+
+  // Aprobar / Rechazar desde la tabla (auditoría)
+  async function revisar(id, estado) {
+    const motivo = estado === 'rechazado'
+      ? prompt('Indica el motivo del rechazo (obligatorio):')
+      : 'Aprobado por el coordinador (auditoría).';
+
+    if (estado === 'rechazado' && !motivo?.trim()) {
+      return;
+    }
+
     try {
-      await reviewSubmission(id, "aprobado", "Aprobado por el coordinador.");
-    } catch (error) {
-      setDataError(error.message || "No se pudo aprobar el registro.");
-      cargarRegistros(page);
-      cargarTendencias();
+      await reviewSubmission(id, estado, motivo);
+      // Actualizar estado local sin recargar
+      setSubmissions((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: estado } : s))
+      );
+    } catch (err) {
+      alert('Error: ' + err.message);
     }
   }
 
-  // Rechazo: pide el motivo, actualiza optimista y, si falla, resync.
-  async function handleReject(id) {
-    const comentario = prompt('Motivo del rechazo:');
-    if (comentario === null) return;
-    setSubmissions((cur) => cur.filter((s) => s.id !== id));
-    setTotal((t) => Math.max(0, t - 1));
-    try {
-      await reviewSubmission(id, "rechazado", comentario);
-    } catch (error) {
-      setDataError(error.message || "No se pudo rechazar el registro.");
-      cargarRegistros(page);
-      cargarTendencias();
-    }
-  }
-
-  // Botón "≡ Filtros": re-aplica filtros desde la primera página.
-  function aplicarFiltros() {
-    cargarRegistros(1);
-  }
-
-  const maxVolume = Math.max(...weeklyVolume.map((d) => d.value), 1);
-
-  function getPaginationRange(currentPage, totalPages, maxVisible = 5) {
-  if (totalPages <= maxVisible) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  const half = Math.floor(maxVisible / 2);
-  let start = currentPage - half;
-  let end = currentPage + half;
-
-  if (start < 1) {
-    start = 1;
-    end = maxVisible;
-  }
-  if (end > totalPages) {
-    end = totalPages;
-    start = totalPages - maxVisible + 1;
-  }
-
-  const pages = [];
-  if (start > 1) {
-    pages.push(1);
-    if (start > 2) pages.push('...');
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  if (end < totalPages) {
-    if (end < totalPages - 1) pages.push('...');
-    pages.push(totalPages);
-  }
-
-  return pages;
+  if (loading) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner} aria-hidden="true"></div>
+        <p>Cargando panel...</p>
+      </div>
+    );
   }
 
   return (
-    <div className={styles.adminPage}>
+    <div className={styles.dashboard}>
       <header className={styles.pageHeader}>
         <div>
-          <h1>Revisión de Evidencias Pendientes</h1>
-          <p>Revisar y auditar las horas enviadas por la red de voluntarios.</p>
-        </div>
-        <div className={styles.headerControls}>
-          <div className={styles.searchField}>
-            <span>⌕</span>
-            <input
-              type="text"
-              placeholder="Buscar voluntario..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
-          <div className={styles.dateRange}>
-            <span>📅</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-            />
-            <span>al</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
-            />
-          </div>
-          <button type="button" className={styles.filterButton} onClick={aplicarFiltros}>
-            ≡ Filtros
-          </button>
+          <h1>Panel de Coordinación</h1>
+          <p>Revisa y audita las jornadas de voluntariado registradas.</p>
         </div>
       </header>
 
-      <div className={styles.tableCard}>
-        <div className={`${styles.tableRow} ${styles.tableRowHead}`}>
-          <span>Voluntario</span>
-          <span>Fecha de Actividad</span>
-          <span>Duración</span>
-          <span>Evidencia</span>
-          <span className={styles.actionsHead}>Acciones</span>
+      {/* Filtros */}
+      <section className={styles.filtersSection}>
+        <div className={styles.filtersRow}>
+          <div className={styles.filterGroup}>
+            <label htmlFor="search" className={styles.filterLabel}>Buscar</label>
+            <input
+              id="search"
+              type="text"
+              placeholder="Nombre, apellido o descripción..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="dateFrom" className={styles.filterLabel}>Desde</label>
+            <input
+              id="dateFrom"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label htmlFor="dateTo" className={styles.filterLabel}>Hasta</label>
+            <input
+              id="dateTo"
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className={styles.filterInput}
+            />
+          </div>
+
+          {/* NUEVO: Filtro por área (dinámico desde BD) */}
+          <div className={styles.filterGroup}>
+            <label htmlFor="areaFilter" className={styles.filterLabel}>Área</label>
+            <select
+              id="areaFilter"
+              value={areaFilter}
+              onChange={(e) => setAreaFilter(e.target.value)}
+              className={styles.filterInput}
+            >
+              <option value="">Todas las áreas</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>{area.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* A-5: Filtro por estado */}
+          <div className={styles.filterGroup}>
+            <label htmlFor="estadoFilter" className={styles.filterLabel}>Estado</label>
+            <select
+              id="estadoFilter"
+              value={estadoFilter}
+              onChange={(e) => setEstadoFilter(e.target.value)}
+              className={styles.filterInput}
+            >
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="">Todos</option>
+            </select>
+          </div>
         </div>
 
-        {loading && <p>Cargando registros...</p>}
-        {dataError && <p className={styles.errorMessage}>{dataError}</p>}
-        {!loading && !dataError && submissions.length === 0 && (
-          <p>No hay registros pendientes.</p>
+        {dataError && <p className={styles.dataError}>{dataError}</p>}
+      </section>
+
+      {/* Tabla de registros */}
+      <section className={styles.tableSection}>
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Voluntario</th>
+                <th>Área</th>
+                <th>Fecha</th>
+                <th>Duración</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {submissions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className={styles.emptyRow}>
+                    No hay registros para mostrar.
+                  </td>
+                </tr>
+              ) : (
+                submissions.map((s) => {
+                  const esPropio = esRegistroPropio(s.profileId);
+                  return (
+                    <tr key={s.id}>
+                      <td>
+                        <div className={styles.userCell}>
+                          <span className={styles.avatar} style={{ backgroundColor: s.avatarColor }}>
+                            {s.initials}
+                          </span>
+                          <span>{s.name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {s.area ? (
+                          <span className={styles.areaBadge}>{s.area}</span>
+                        ) : (
+                          <span className={styles.noArea}>—</span>
+                        )}
+                      </td>
+                      <td>{s.date}</td>
+                      <td className={styles.durationCell}>
+                        {s.duration}
+                        {getAnomaliaBadge(s.horas)}
+                      </td>
+                      <td>
+                        <span className={`${styles.statusBadge} ${styles[s.status]}`}>
+                          {s.status === 'aprobado' && '✅ Aprobado'}
+                          {s.status === 'rechazado' && '❌ Rechazado'}
+                          {s.status === 'pendiente' && '⏳ Pendiente'}
+                        </span>
+                      </td>
+                      <td>
+                        <div className={styles.actionsCell}>
+                          {esPropio ? (
+                            <span className={styles.disabledAction} title="No puedes auditar tu propio registro (conflicto de interés)">
+                              —
+                            </span>
+                          ) : (
+                            <>
+                              {/* Botón de auditoría - permite cambiar estado de cualquier registro */}
+                              {s.status === 'aprobado' && (
+                                <button
+                                  className={styles.auditButton}
+                                  onClick={() => revisar(s.id, 'rechazado', s.description)}
+                                  title="Rechazar (auditoría)"
+                                >
+                                  ❌ Rechazar
+                                </button>
+                              )}
+                              {s.status === 'rechazado' && (
+                                <button
+                                  className={styles.auditButton}
+                                  onClick={() => revisar(s.id, 'aprobado', s.description)}
+                                  title="Aprobar (auditoría)"
+                                >
+                                  ✅ Aprobar
+                                </button>
+                              )}
+                              {s.status === 'pendiente' && (
+                                <>
+                                  <button
+                                    className={styles.approveButton}
+                                    onClick={() => revisar(s.id, 'aprobado', s.description)}
+                                  >
+                                    ✅ Aprobar
+                                  </button>
+                                  <button
+                                    className={styles.rejectButton}
+                                    onClick={() => revisar(s.id, 'rechazado', s.description)}
+                                  >
+                                    ❌ Rechazar
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <nav className={styles.pagination}>
+            <button
+              className={styles.pageButton}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              « Anterior
+            </button>
+            <span className={styles.pageInfo}>
+              Página {page} de {totalPages} ({total} registros)
+            </span>
+            <button
+              className={styles.pageButton}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Siguiente »
+            </button>
+          </nav>
         )}
-        {submissions.map((item) => (
-          <div className={styles.tableRow} key={item.id}>
-            {/* Voluntario */}
-            <span className={styles.volunteerCell}>
-              <i className={styles.avatar} style={{ background: item.avatarColor }}>
-                {item.initials}
-              </i>
-              <span>
-                <strong>{item.name}</strong>
-                <small>ID: #{item.id}</small>
-              </span>
-            </span>
+      </section>
 
-            {/* Fecha */}
-            <span>{item.date}</span>
-
-            {/* Duración */}
-            <span>{item.duration}</span>
-
-            {/* Evidencia (solo escritorio) */}
-            <span className={styles.evidenceCell}>
-              📷 {item.evidenceFileName}
-            </span>
-
-            {/*Tipo (visible en móvil) */}
-            <span className={styles.mobileType}>
-              <i className={styles.typeBadge}>{item.type}</i>
-            </span>
-
-            {/* Descripción (se ocultará en móvil) */}
-            <span className={styles.mobileDescription}>{item.description}</span>
-
-            {/* Acciones */}
-            <span className={styles.actionsCell}>
-              <button
-                type="button"
-                className={styles.approveButton}
-                onClick={() => handleApprove(item.id)}
-                aria-label={`Aprobar ${item.name}`}
-              >
-                ✓
-              </button>
-              <button
-                type="button"
-                className={styles.rejectButton}
-                onClick={() => handleReject(item.id)}
-                aria-label={`Rechazar ${item.name}`}
-              >
-                ✕
-              </button>
-              <Link
-                href={`/administracion/${item.id}`}
-                className={styles.evidenceButton}
-              >
-                Ver Evidencia
-              </Link>
-            </span>
-          </div>
-        ))}
-
-        {!loading && !dataError && total > 0 && (
-          <div className={styles.pagination}>
-            <span>
-              Mostrando {((page - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(page * ITEMS_PER_PAGE, total)} de {total} entradas
-            </span>
-            <div className={styles.pageControls}>
-              <button
-                type="button"
-                disabled={page === 1}
-                onClick={() => cargarRegistros(page - 1)}
-              >
-                Anterior
-              </button>
-
-              {getPaginationRange(page, totalPages, 3).map((pagina, index) => (
-                <button
-                  type="button"
-                  key={index}
-                  className={pagina === page ? styles.pageActive : ''}
-                  onClick={() => {
-                    if (pagina !== '...') cargarRegistros(pagina);
-                  }}
-                  disabled={pagina === '...'}
-                >
-                  {pagina}
-                </button>
-              ))}
-
-              <button
-                type="button"
-                disabled={page === totalPages}
-                onClick={() => cargarRegistros(page + 1)}
-              >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <section className={styles.bottomGrid}>
-        <WeeklyVolumeChart data={weeklyVolume} maxVolume={maxVolume} />
-
-        <AuditLog entries={auditLog} />
+      {/* Tendencia semanal y auditoría */}
+      <section className={styles.chartsSection}>
+        <WeeklyVolumeChart data={weeklyVolume} />
+        <AuditLog items={auditLog} />
       </section>
     </div>
   );

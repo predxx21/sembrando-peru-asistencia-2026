@@ -1,0 +1,357 @@
+/* ============================================================
+   LOGIN Y PANTALLAS DE RECUPERACIÓN / RESTABLECIMIENTO
+   ============================================================ */
+.page-shell {
+  width: 100%;
+  height: 100vh;          /* ← altura fija, sin scroll en toda la página */
+  overflow: hidden;       /* ← evita scroll en la página */
+}
+
+.login-card {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  width: 100%;
+  height: 100vh;          /* ← altura fija */
+  background: #f8f9ff;
+}
+
+.visual-panel {
+  position: relative;
+  overflow: hidden;
+  background: #325446;
+}
+
+.visual-collage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 64% 36%;
+}
+
+.forest-image {
+  background: url('/images/bosque-sembrando-peru.jpg') center/cover;
+}
+
+.reforestation-image {
+  background: url('/images/reforestacion-sembrando-peru.jpg') 68% center/cover;
+}
+
+.collage-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, rgba(4, 38, 28, .72) 0%, rgba(6, 53, 34, .34) 45%, rgba(3, 25, 19, .52) 100%);
+}
+
+.brand-copy {
+  position: absolute;
+  z-index: 2;
+  top: 30px;
+  left: 34px;
+  width: min(440px, calc(100% - 60px));
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
+.brand-copy h1 {
+  margin: 0 0 5px;
+  font: 700 clamp(22px, 2.5vw, 30px)/1.15 var(--font-montserrat);
+  letter-spacing: -.8px;
+}
+
+.brand-copy p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 24px 24px;  /* ← padding reducido */
+  background: #f7faf5;
+  overflow-y: auto;         /* ← scroll interno solo en el formulario si es necesario */
+  gap: 16px;
+}
+
+.form-content {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  flex-shrink: 0;           /* ← evita que se encoja */
+}
+
+.form-content h2 {
+  margin: 0 0 4px;
+  color: #176c43;
+  font: 700 24px/1.25 var(--font-montserrat);
+  letter-spacing: -.55px;
+}
+
+.login-brand-logo {
+  display: block;
+  width: 130px;
+  height: auto;
+  margin: 0 auto 14px;
+  padding: 5px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(29, 86, 51, .12);
+}
+
+.form-content header > p {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.form-content label {
+  display: block;
+  color: #3c4a5d;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.input-wrap {
+  position: relative;
+  height: 38px;
+  margin-bottom: 12px;
+}
+
+.input-wrap input {
+  width: 100%;
+  height: 100%;
+  padding: 0 38px 0 34px;
+  border: 1px solid #cfd5df;
+  border-radius: var(--radius-sm);
+  outline: none;
+  color: #334155;
+  font-size: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.input-wrap input::placeholder {
+  color: #b7bdc8;
+  font-size: 13px;
+}
+
+.input-wrap input:focus {
+  border-color: #4b982f;
+  box-shadow: 0 0 0 3px rgba(75,152,47,.16);
+}
+
+.input-icon {
+  position: absolute;
+  z-index: 1;
+  top: 9px;
+  left: 10px;
+  color: #7f8b99;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.lock {
+  font-size: 17px;
+  transform: rotate(180deg);
+}
+
+.password-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.password-label a {
+  color: #167347;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.eye {
+  position: absolute;
+  right: 10px;
+  top: 7px;
+  border: 0;
+  background: transparent;
+  color: #828c99;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 14px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.remember input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #2e7d32;
+}
+
+.primary-button {
+  width: 100%;
+  height: 42px;
+  color: white;
+  background: var(--color-primary);
+  border: 1px solid #155f38;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.primary-button:hover {
+  background: var(--color-primary-hover);
+}
+
+.message {
+  margin: 8px 0 0;
+  color: #087052;
+  font-size: 12px;
+  text-align: center;
+}
+
+.register {
+  margin: 18px 0 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.register a {
+  color: #176c43;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.access-button {
+  display: block;
+  height: 30px;
+  margin: 0 auto;
+  padding: 0 16px;
+  color: #17886e;
+  background: white;
+  border: 1.5px solid #159178;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.access-button span {
+  font-size: 14px;
+  padding-right: 5px;
+}
+
+.request-note {
+  width: 240px;
+  margin: 6px auto 0;
+  color: #87909d;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.form-panel footer {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 14px;
+  border-top: 1px solid #e6e9ef;
+  margin-top: 4px;
+  flex-shrink: 0;           /* ← evita que se encoja */
+}
+
+.form-panel footer a {
+  color: #818a98;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+@media (max-width: 820px) {
+  .login-card {
+    grid-template-columns: 1fr;
+    height: 100vh;
+  }
+  .visual-panel {
+    min-height: 200px;
+    height: 200px;
+  }
+  .visual-collage {
+    grid-template-columns: 1fr 1fr;
+  }
+  .brand-copy {
+    top: 16px;
+    left: 20px;
+  }
+  .brand-copy h1 {
+    max-width: 280px;
+    font-size: 20px;
+  }
+  .form-panel {
+    padding: 24px 20px 20px;
+    justify-content: flex-start;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .form-content {
+    max-width: 100%;
+  }
+  .login-brand-logo {
+    width: 100px;
+  }
+  .form-panel footer {
+    padding-top: 12px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-panel {
+    padding: 16px 14px 14px;
+  }
+  .form-content h2 {
+    font-size: 20px;
+  }
+  .input-wrap input {
+    font-size: 16px;
+    padding: 0 36px 0 32px;
+  }
+  .primary-button {
+    font-size: 15px;
+    height: 46px;
+  }
+  .login-brand-logo {
+    width: 80px;
+    margin-bottom: 10px;
+  }
+  .form-content header > p {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .register {
+    font-size: 12px;
+    margin: 14px 0 8px;
+  }
+  .form-panel footer {
+    gap: 16px;
+    font-size: 10px;
+  }
+}

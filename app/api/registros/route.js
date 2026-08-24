@@ -6,16 +6,15 @@ import {
   obtenerRegistrosPorUsuario,
   obtenerTodosLosRegistros,
 } from '@/lib/db/registro';
-import { getCached, setCached, invalidateCache } from '@/lib/cache';
-import { esFechaValida, esHoraValida, esEvidenciaPropia } from '@/lib/utils/validar';
+import { getCached, setCached, invalidateCacheByPrefix } from '@/lib/cache';
+import { esFechaValida, esHoraValida, esHoraFinMayorAInicio, esUUIDValido } from '@/lib/utils/validar';
 
 // Listados de registros: TTL corto (30 s) porque cambian con cada aprobación
 // o nuevo registro. La clave incluye el usuario y TODOS los filtros, así cada
 // combinación (scope=mine, estado, paginación, búsqueda, rango) tiene su
-// propia entrada. Las escrituras invalidan TODA la caché, así el TTL solo
-// aplica entre escrituras — cuando los datos están igual, es seguro servir la
-// lista 30 s sin volver a la BD.
+// propia entrada. Las escrituras invalidan las claves con prefijo 'registros:'.
 const CACHE_TTL_MS = 30 * 1000;
+const CACHE_KEY_PREFIX = 'registros:';
 
 // POST: Crear un registro de asistencia
 export async function POST(request) {
@@ -37,16 +36,26 @@ export async function POST(request) {
     );
   }
 
+  // La hora de fin debe ser posterior a la de inicio (acepta cruce medianoche).
+  if (!esHoraFinMayorAInicio(body.horaInicio, body.horaFin)) {
+    return NextResponse.json(
+      { error: 'La hora de fin debe ser posterior a la de inicio.' },
+      { status: 400 }
+    );
+  }
+
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
   if (perfilError || !profile) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
-  // La evidencia debe vivir en la carpeta del usuario en el bucket privado
-  // (`evidencias/<userId>/…`). Sin esta validación, cualquiera podría adjuntar
-  // la ruta de un archivo ajeno y pedir luego su signed URL (IDOR).
-  if (body.evidenciaUrl && !esEvidenciaPropia(body.evidenciaUrl, profile.id)) {
-    return NextResponse.json({ error: 'La evidencia no pertenece a tu cuenta.' }, { status: 400 });
+  // El área es obligatoria: si falta, el filtro por área del panel admin no
+  // funciona (los registros sin área no aparecen al filtrar).
+  if (!profile.areaId) {
+    return NextResponse.json(
+      { error: 'Debes asignar un área en tu perfil antes de registrar horas.' },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await guardarRegistroAsistencia({
@@ -55,7 +64,7 @@ export async function POST(request) {
     horaInicio: body.horaInicio,
     horaFin: body.horaFin,
     descripcion: body.descripcion,
-    evidenciaUrl: body.evidenciaUrl,
+    // evidenciaUrl eliminada: ya no se usan evidencias (cronómetro)
   });
 
   if (error) {
@@ -63,14 +72,16 @@ export async function POST(request) {
   }
 
   // Un registro nuevo cambia listados, estadísticas y reportes.
-  invalidateCache();
+  invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
+  invalidateCacheByPrefix('admin:reportes');
 
   return NextResponse.json({ data });
 }
 
 // GET: Listar registros.
 //
-// Filtros opcionales (query params): estado, busqueda, desde, hasta.
+// Filtros opcionales (query params): estado, busqueda, desde, hasta, area.
 // Alcance:
 //   - scope=mine      → solo los del usuario actual (cualquier rol). Lo usa
 //                       el historial para que el admin vea ÚNICAMENTE lo suyo.
@@ -80,69 +91,66 @@ export async function POST(request) {
 export async function GET(request) {
   const user = await getUserFromRequest(request);
   if (!user) {
-    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   }
 
-  const { profile, error: perfilError } = await getPerfilByUserId(user.id);
-  if (perfilError || !profile) {
-    return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
+  const { profile } = await getPerfilByUserId(user.id);
+  if (!profile) {
+    return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const pageRaw = Number(searchParams.get('page'));
-  const limitRaw = Number(searchParams.get('limit'));
-  const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : null;
-  const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : null;
+  const searchParams = request.nextUrl.searchParams;
+  const scope = searchParams.get('scope');
+  const profileIdParam = searchParams.get('profileId');
+  const estado = searchParams.get('estado');
+  const busqueda = searchParams.get('busqueda');
+  const desde = searchParams.get('desde');
+  const hasta = searchParams.get('hasta');
+  const area = searchParams.get('area');
+  const page = parseInt(searchParams.get('page')) || 1;
+  const limit = parseInt(searchParams.get('limit')) || 10;
 
-  const desde = searchParams.get('desde') || undefined;
-  const hasta = searchParams.get('hasta') || undefined;
-  if ((desde && !esFechaValida(desde)) || (hasta && !esFechaValida(hasta))) {
-    return NextResponse.json(
-      { error: 'Rango de fechas inválido. Usa el formato AAAA-MM-DD.' },
-      { status: 400 }
-    );
+  // A-4: profileId es UUID (string), no entero. Validar con esUUIDValido.
+  let filtroProfileId = profileIdParam || undefined;
+
+  // Si es voluntario, forzar su propio profileId
+  if (profile.rol !== 'admin') {
+    filtroProfileId = profile.id;
+  }
+  // Si scope=mine, siempre usar su propio profileId (incluso para admin)
+  if (scope === 'mine') {
+    filtroProfileId = profile.id;
+  }
+
+  // Si es admin pero envió profileId inválido (no UUID)
+  if (filtroProfileId && !esUUIDValido(filtroProfileId)) {
+    return NextResponse.json({ error: 'profileId inválido' }, { status: 400 });
   }
 
   const filtros = {
-    estado: searchParams.get('estado') || undefined,
-    busqueda: searchParams.get('busqueda') || undefined,
+    profileId: filtroProfileId,
+    estado,
+    busqueda,
     desde,
     hasta,
+    area,
     page,
     limit,
   };
 
-  const scope = searchParams.get('scope') === 'mine' ? 'mine' : null;
-
-  // Caché por usuario + filtros: recargar la página devuelve la lista casi
-  // al instante si no hubo escrituras en los últimos 30 s.
-  const cacheKey = `registros:${profile.id}:${searchParams.toString()}`;
+  // Cache por combinación de filtros (clave con prefijo para invalidación granular)
+  const cacheKey = `${CACHE_KEY_PREFIX}${request.nextUrl.searchParams.toString()}`;
   const cacheado = getCached(cacheKey);
   if (cacheado) {
     return NextResponse.json(cacheado);
   }
 
-  let result;
-  if (scope === 'mine') {
-    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
-  } else if (profile.rol === 'admin') {
-    result = await obtenerTodosLosRegistros(filtros);
-  } else {
-    result = await obtenerRegistrosPorUsuario(profile.id, filtros);
+  const { data, total, error } = await obtenerTodosLosRegistros(filtros);
+  if (error) {
+    return NextResponse.json({ error: 'Error al obtener registros' }, { status: 500 });
   }
 
-  if (result.error) {
-    return NextResponse.json({ error: 'No se pudieron obtener los registros.' }, { status: 500 });
-  }
-
-  const body = { data: result.data };
-  if (page && limit) {
-    body.total = result.total;
-    body.page = page;
-    body.limit = limit;
-  }
-
+  const body = { data, total };
   setCached(cacheKey, body, CACHE_TTL_MS);
-
   return NextResponse.json(body);
 }

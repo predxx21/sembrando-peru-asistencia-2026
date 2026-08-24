@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
 import { solicitarRecuperacion } from '@/lib/auth/recuperar';
 import LoginVisual from './LoginVisual';
+import styles from './RecuperarScreen.module.css';
 
 export default function RecuperarScreen() {
   const [email, setEmail] = useState('');
@@ -40,15 +41,15 @@ export default function RecuperarScreen() {
   }
 
   return (
-    <main className="page-shell">
-      <section className="login-card">
+    <main className={styles['page-shell']}>
+      <section className={styles['login-card']}>
         <LoginVisual />
 
-        <section className="form-panel" aria-labelledby="welcome-title">
-          <div className="form-content">
+        <section className={styles['form-panel']} aria-labelledby="welcome-title">
+          <div className={styles['form-content']}>
             <header>
               <img
-                className="login-brand-logo"
+                className={styles['login-brand-logo']}
                 src="/images/sembrando-peru-logo.jfif"
                 alt="Logo de Sembrando Perú"
               />
@@ -58,8 +59,8 @@ export default function RecuperarScreen() {
 
             <form onSubmit={handleSubmit}>
               <label htmlFor="email">Correo electrónico</label>
-              <div className="input-wrap">
-                <span className="input-icon" aria-hidden="true">���</span>
+              <div className={styles['input-wrap']}>
+                <span className={styles['input-icon']} aria-hidden="true">✉</span>
                 <input
                   id="email"
                   type="email"
@@ -74,17 +75,17 @@ export default function RecuperarScreen() {
               </div>
 
               <button
-                className="primary-button"
+                className={styles['primary-button']}
                 type="submit"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Enviando...' : 'Enviar enlace'}
               </button>
 
-              {message && <p className="message" role="status">{message}</p>}
+              {message && <p className={styles['message']} role="status">{message}</p>}
             </form>
 
-            <p className="register">
+            <p className={styles['register']}>
               <Link href="/">Volver al inicio de sesión</Link>
             </p>
 

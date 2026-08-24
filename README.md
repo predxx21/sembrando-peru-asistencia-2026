@@ -1,7 +1,10 @@
 # Sistemas de Asistencia - Sembrando Perú
 
-Aplicación web para registro de asistencia/horas de voluntariado, con evidencias,
-validación de coordinadores y reportes. Next.js (App Router) + Prisma/PostgreSQL + Supabase Auth/Storage.
+Aplicación web para registro de asistencia/horas de voluntariado mediante cronómetro,
+validación de coordinadores y reportes. Next.js (App Router) + Prisma/PostgreSQL + Supabase Auth.
+
+📚 **[Documentación de Arquitectura](docs/ARQUITECTURA.md)** — Guía completa del sistema:
+modelo de datos, flujos, optimizaciones y convenciones.
 
 ## Puesta en marcha desde cero (para un compañero)
 
@@ -95,7 +98,7 @@ app/api/            Route Handlers (auth, registros, admin/reportes, ...)
 components/         UI: auth, layout (sidebar/topbar), volunteer, admin, history, reports
 lib/auth/           Helpers de sesión y registro/login
 lib/db/             Capa de datos con Prisma (perfil, registro, estadisticas, reportes)
-lib/supabase/       Clientes de Supabase (browser, servidor, storage)
+lib/supabase/       Clientes de Supabase (browser, servidor)
 lib/utils/          Funciones puras (horas, fechas, exportación, formatos) + tests
 prisma/             Schema para Postgres
 ```

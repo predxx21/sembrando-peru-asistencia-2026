@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import styles from "./ListadoHistorial.module.css";
 import { ESTADO_LABEL } from "@/lib/utils/estado";
+import Pagination from "@/components/reports/Pagination";
 
 const statusConfig = {
   aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
@@ -11,32 +12,38 @@ const statusConfig = {
   rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
+const ITEMS_PER_PAGE = 6;
+
 export default function HistoryDashboard({ activities }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
-  // Filtros
-  const filtered = activities.filter((act) => {
-    const matchSearch =
-      act.title.toLowerCase().includes(search.toLowerCase()) ||
-      act.description.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "todos" || act.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  // Filtros + paginación (memoizado para evitar recálculos)
+  const { filtered, totalPages, currentItems } = useMemo(() => {
+    const filtered = activities.filter((act) => {
+      const matchSearch =
+        act.title.toLowerCase().includes(search.toLowerCase()) ||
+        act.description.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = filterStatus === "todos" || act.status === filterStatus;
+      return matchSearch && matchStatus;
+    });
 
-  // Paginación
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filtered.slice(startIndex, startIndex + itemsPerPage);
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const currentItems = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Al cambiar de filtros (búsqueda o estado), volver a la primera página: si
-  // no, se puede quedar en una página que quedó fuera de rango y la lista
-  // aparece vacía aunque haya resultados.
+    return { filtered, totalPages, currentItems };
+  }, [activities, search, filterStatus, currentPage]);
+
+  // Al cambiar de filtros (búsqueda o estado), volver a la primera página
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterStatus]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className={styles.historyPage}>
@@ -51,14 +58,15 @@ export default function HistoryDashboard({ activities }) {
       {/* Filtros */}
       <div className={styles.filtersBar}>
         <div className={styles.searchField}>
-          <span>🔍</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
           <input
             type="text"
-            placeholder="Buscar actividad..."
+            placeholder="Buscar por título o descripción..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
         <select
           className={styles.filterSelect}
           value={filterStatus}
@@ -71,81 +79,75 @@ export default function HistoryDashboard({ activities }) {
         </select>
       </div>
 
-      {/* Lista de actividades */}
+      {/* Lista de tarjetas */}
       <div className={styles.listContainer}>
         {currentItems.length === 0 ? (
-          <p className={styles.emptyMessage}>No se encontraron actividades.</p>
+          <p className={styles.emptyMessage}>
+            {search || filterStatus !== "todos"
+              ? "No se encontraron actividades con esos filtros."
+              : "Aún no has registrado ninguna actividad. ¡Empieza hoy!"}
+          </p>
         ) : (
-          currentItems.map((activity) => {
-            const status = statusConfig[activity.status] || statusConfig.pendiente;
-            return (
-              <article key={activity.id} className={styles.activityCard}>
-                <div className={styles.cardHeader}>
-                  <span className={`${styles.statusPill} ${styles[status.className]}`}>
-                    {status.label}
-                  </span>
-                  <span className={styles.activityDate}>{activity.date}</span>
+          currentItems.map((act) => (
+            <article key={act.id} className={styles.activityCard}>
+              <div className={styles.cardHeader}>
+                <span
+                  className={`${styles.statusPill} ${styles[statusConfig[act.status].className]}`}
+                >
+                  {statusConfig[act.status].label}
+                </span>
+                <span className={styles.activityDate}>{act.date}</span>
+              </div>
+
+              <h2 className={styles.activityTitle}>{act.title}</h2>
+
+              <p className={styles.activityDescription}>{act.description}</p>
+
+              <div className={styles.cardMeta}>
+                <span className={styles.hoursBadge}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                  {act.hours} h
+                </span>
+                <span className={styles.activityArea}>
+                  {act.area || "—"}
+                </span>
+              </div>
+
+              {/* Mostrar comentario de rechazo si existe */}
+              {act.status === "rechazado" && act.coordinatorComment && (
+                <div className={styles.rejectionComment}>
+                  <strong>Motivo de rechazo:</strong> {act.coordinatorComment}
                 </div>
+              )}
 
-                {/* El título ya es la descripción: no repetirla dos veces. */}
-                <h3 className={styles.activityTitle}>{activity.title}</h3>
-
-                <div className={styles.activityMeta}>
-                  <span className={styles.hoursBadge}>{activity.hours} hrs</span>
-                </div>
-
-                <div className={styles.cardActions}>
+              <div className={styles.cardActions}>
+                <Link
+                  href={`/historial/${act.id}`}
+                  className={styles.detailButton}
+                >
+                  Ver Detalle
+                </Link>
+                {act.status === "rechazado" && (
                   <Link
-                    href={`/historial/${activity.id}`}
-                    className={styles.evidenceButton}
+                    href={`/registro-editar/${act.id}`}
+                    className={styles.corregirButton}
                   >
-                    Ver Evidencia
+                    Corregir
                   </Link>
-                  {activity.status === "rechazado" && (
-                    <Link
-                      href={`/registro-editar/${activity.id}`}
-                      className={styles.corregirButton}
-                    >
-                      Corregir
-                    </Link>
-                  )}
-                </div>
-              </article>
-            );
-          })
+                )}
+              </div>
+            </article>
+          ))
         )}
       </div>
 
-      {/* Paginación */}
+      {/* Paginación compacta: 1 2 ... penúltimo último */}
       {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <span>
-            Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filtered.length)} de {filtered.length} registros
-          </span>
-          <div className={styles.pageControls}>
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-            >
-              Anterior
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                className={p === currentPage ? styles.pageActive : ""}
-                onClick={() => setCurrentPage(p)}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

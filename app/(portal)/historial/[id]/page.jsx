@@ -1,10 +1,10 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import EvidenceViewer from '@/components/history/VerEvidencia';
+import VerDetalle from '@/components/history/VerDetalle';
 import ActivityLoader from '@/components/history/ActivityLoader';
 
-export default function HistorialEvidenciaPage() {
+export default function HistorialDetallePage() {
   const { id } = useParams();
-  return <ActivityLoader id={id}>{(activity) => <EvidenceViewer activity={activity} />}</ActivityLoader>;
+  return <ActivityLoader id={id}>{(activity) => <VerDetalle activity={activity} />}</ActivityLoader>;
 }

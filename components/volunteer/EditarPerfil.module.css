@@ -1,283 +1,165 @@
-.container {
-  /* Sin padding ni background: el layout padre (.content) ya provee:
-   * background: #f8f9ff; min-height: 100vh; padding: 10px 24px 48px; */
-   padding: 0;
+.page {
+  width: 100%;
 }
 
-.title {
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.pageHeader h1 {
+  color: #26384b;
   font-size: 28px;
-  font-weight: 700;
-  color: #26384b;
+  margin: 0 0 4px;
 }
 
-.subtitle {
+.pageHeader p {
   color: #667281;
-  margin-bottom: 20px;
+  margin: 0;
 }
 
-.card {
+.form {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
   border: 1px solid #dfe4ea;
-}
-
-/* FOTO */
-.sectionTop {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-}
-
-.desc {
-  font-size: 13px;
-  color: #667281;
-  margin: 5px 0 10px;
-}
-
-.photoActions {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-}
-
-.btnSecondary {
-  background: #eef2f6;
-  color: #26384b;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.delete {
-  color: #d64545;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-/* DIVIDER */
-.divider {
-  margin: 20px 0;
-  border-top: 1px solid #dfe4ea;
-}
-
-/* GRID */
-.grid {
+  border-radius: 12px;
+  padding: 32px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .field label {
-  font-size: 14px;
-  margin-bottom: 5px;
-  font-weight: 500;
   color: #26384b;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.field input {
-  padding: 10px 12px;
-  border-radius: 8px;
+.field input,
+.field select {
   border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  background: #f8f9ff;
+  padding: 11px 14px;
   font-size: 14px;
   color: #26384b;
+  font-family: inherit;
 }
 
-.field input:focus {
-  outline: none;
-  border-color: #197343;
-  box-shadow: 0 0 0 3px rgba(25, 115, 67, 0.12);
+.field input:focus,
+.field select:focus {
+  outline: 2px solid #197343;
+  outline-offset: 1px;
 }
 
-.disabled {
+.field input:disabled,
+.field input[readOnly],
+.field select:disabled {
   background: #f4f6f9;
   color: #667281;
+  cursor: not-allowed;
 }
 
-/* BIO */
-.fieldFull {
-  margin-top: 16px;
-}
-
-.rolBadge {
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: #e5f8ee;
-  color: #197343;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: capitalize;
-}
-
-.fieldFull textarea {
-  width: 100%;
-  height: 120px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #dfe4ea;
-  font-size: 14px;
-  color: #26384b;
-}
-
-.fieldFull textarea:focus {
-  outline: none;
-  border-color: #197343;
-  box-shadow: 0 0 0 3px rgba(25, 115, 67, 0.12);
-}
-
-/* TEXTO AYUDA */
-.hint {
-  font-size: 12px;
-  color: #667281;
-  margin-top: 4px;
-}
-
-/* SEGURIDAD */
-.security {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #e5f8ee;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-.btnPrimary {
-  background: #197343;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.btnPrimary:hover {
-  background: #125a33;
-}
-
-/* BOTONES */
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-  gap: 10px;
-}
-
-.cancel {
-  background: #eef2f6;
-  color: #26384b;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.cancel:hover {
-  background: #dfe4ea;
-}
-
-.save {
-  background: #197343;
-  color: white;
-  padding: 10px 18px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.save:hover {
-  background: #125a33;
-}
-
-.save:disabled {
-  opacity: 0.7;
-  cursor: wait;
-}
-
-.mensaje {
-  margin-top: 16px;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-  color: #197343;
-}
-
-/* Estados de carga y error (reutilizados de Loaders.module.css) */
 .loadingContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  color: #667281;
+  padding: 60px 24px;
+  gap: 16px;
 }
 
 .loadingSpinner {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 3px solid #dfe4ea;
   border-top-color: #197343;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 12px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .loadingText {
+  color: #667281;
   font-size: 14px;
-  font-weight: 500;
 }
 
-.errorContainer {
-  background: #fdecec;
-  border: 1px solid #f5c6c6;
+.mensaje {
+  margin-top: 4px;
+  padding: 12px;
   border-radius: 8px;
-  padding: 16px 20px;
+  font-weight: 500;
   text-align: center;
-  color: #d64545;
-  font-size: 14px;
-  margin: 16px 0;
+  background: #f8f9ff;
+  border: 1px solid #dfe4ea;
+  color: #26384b;
 }
+
+.mensaje:has(> .✅) {
+  background: #e5f8ee;
+  border-color: #197343;
+  color: #197343;
+}
+
+.mensaje:has(> .❌) {
+  background: #fdecec;
+  border-color: #d64545;
+  color: #d64545;
+}
+
+.saveButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 14px 28px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #197343;
+  color: white;
+  margin-top: 8px;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #125a33;
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE ===== */
+/* ============================================================ */
 
 @media (max-width: 640px) {
-  .grid {
-    grid-template-columns: 1fr;
+  .pageHeader h1 {
+    font-size: 22px;
   }
-  .actions {
-    flex-direction: column;
-  }
-  .cancel,
-  .save {
-    width: 100%;
-  }
-}
 
-.emailInput {
-  color: #197343;   
-  text-transform: lowercase;
+  .pageHeader p {
+    font-size: 14px;
+  }
+
+  .form {
+    padding: 20px 16px;
+    gap: 16px;
+  }
+
+  .field input,
+  .field select {
+    font-size: 16px;
+    padding: 14px;
+  }
+
+  .saveButton {
+    font-size: 15px;
+    padding: 14px 20px;
+  }
 }

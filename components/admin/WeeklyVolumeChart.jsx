@@ -4,6 +4,10 @@ import styles from "./AdminDashboard.module.css";
 
 // Gráfico de barras con el volumen de envíos por día de la última semana.
 export default function WeeklyVolumeChart({ data, maxVolume }) {
+  // Calcular maxVolume internamente si no se pasa (fallback defensivo)
+  const calculatedMaxVolume = Math.max(...data.map((d) => d.value), 1);
+  const effectiveMaxVolume = maxVolume ?? calculatedMaxVolume;
+
   return (
     <article className={styles.chartCard}>
       <h2>Tendencias de Volumen de Envíos</h2>
@@ -13,7 +17,7 @@ export default function WeeklyVolumeChart({ data, maxVolume }) {
             <div className={styles.chartBarColumn} key={`${item.day}-${index}`}>
               <div
                 className={styles.chartBar}
-                style={{ height: `${(item.value / maxVolume) * 100}%` }}
+                style={{ height: `${(item.value / effectiveMaxVolume) * 100}%` }}
                 title={`${item.value} ${item.value === 1 ? "envío" : "envíos"}`}
                 role="img"
                 aria-label={`${item.value} ${item.value === 1 ? "envío" : "envíos"} el ${item.day}`}

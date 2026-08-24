@@ -26,16 +26,31 @@ enum EstadoRegistro {
 }
 
 // ========== TABLAS ==========
+model Area {
+  id          String   @id @default(uuid())
+  nombre      String   @unique
+  descripcion String?
+  activa      Boolean  @default(true)
+  orden       Int      @default(0)
+  fechaCreacion DateTime @default(now())
+
+  perfiles    Profile[]
+
+  @@map("areas")
+}
+
 model Profile {
   id            String             @id @default(uuid())
   nombre        String
   apellido      String
   rol           Rol                @default(voluntario)
+  areaId        String?            // FK a Area (nullable para compatibilidad)
+  area          Area?              @relation(fields: [areaId], references: [id])
   fechaCreacion DateTime           @default(now())
-  
+
   registros     RegistroAsistencia[]
   registrosRevisados RegistroAsistencia[] @relation("revisor")
-  
+
   @@map("profiles")
 }
 
@@ -43,15 +58,19 @@ model RegistroAsistencia {
   id                Int              @id @default(autoincrement())
   profileId         String
   profile           Profile          @relation(fields: [profileId], references: [id])
-  
+
   fecha             DateTime
-  horaInicio        String           // Se guarda como "HH:MM" en texto
+  horaInicio        String           // "HH:MM" - hora legible para display
   horaFin           String
   horas             Float
   descripcion       String
-  evidenciaUrl      String?
+  evidenciaUrl      String?          // CAMBIO: Opcional (nullable) - mantener para registros legacy
   estado            EstadoRegistro   @default(pendiente)
-  
+
+  // NUEVO: Para cronómetro activo
+  sesionActiva      Boolean          @default(false)
+  horaInicioReal    DateTime?        // Timestamp exacto cuando presionó "Iniciar"
+
   comentarioRevision String?
   revisorId         String?
   revisor           Profile?         @relation("revisor", fields: [revisorId], references: [id])
@@ -63,5 +82,9 @@ model RegistroAsistencia {
   @@index([fecha])
   @@index([fechaRevision])
   @@index([estado, fecha])
+  @@index([profileId, sesionActiva]) // Para buscar sesión activa (CRÍTICO)
+  @@index([revisorId]) // Para auditoría por revisor
+  @@index([estado, fechaRevision]) // Para auditoría completa filtrada
+  @@index([profileId, estado]) // Para historial filtrado por estado
   @@map("registroasistencia")
 }

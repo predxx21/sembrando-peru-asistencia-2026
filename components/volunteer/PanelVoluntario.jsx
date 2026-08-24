@@ -15,6 +15,7 @@ const STATUS_CONFIG = {
 
 export default function VolunteerDashboard() {
   const [nombre, setNombre] = useState("");
+  const [area, setArea] = useState("");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +33,7 @@ export default function VolunteerDashboard() {
 
         if (cancelled) return;
         setNombre(perfil?.profile?.nombre || "");
+        setArea(perfil?.profile?.area?.nombre || "");
 
         const historial = await getHistoryActivities();
         if (!cancelled) setActivities(historial);
@@ -73,6 +75,10 @@ export default function VolunteerDashboard() {
           <p>
             Aquí tienes un resumen de tus contribuciones de voluntariado.
           </p>
+
+          {area && (
+            <span className={styles.areaBadge}>{area}</span>
+          )}
         </div>
       </header>
 
@@ -180,16 +186,17 @@ export default function VolunteerDashboard() {
           </div>
         </div>
 
-        {/* Guía de evidencia */}
-        <aside className={styles.evidenceColumn}>
-          <h2>Guía de Evidencia</h2>
+        {/* Guía de registro */}
+        <aside className={styles.guideColumn}>
+          <h2>Guía de Registro</h2>
 
           <article className={styles.guideCard}>
             <div className={styles.guideCardBody}>
               <h3>Consejo de Registro</h3>
 
               <p>
-                Toma una captura de tu pantalla de tu ingreso mostrando la fecha y hora.
+                Usa el cronómetro al iniciar y terminar tu jornada de voluntariado.
+                El sistema registrará automáticamente las horas trabajadas.
               </p>
 
               <Link href="/formulario-horas" className={styles.guideButton}>

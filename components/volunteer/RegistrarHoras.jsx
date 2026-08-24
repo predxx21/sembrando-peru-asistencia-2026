@@ -1,61 +1,70 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
-import { calcularHoras } from '@/lib/utils/horas';
-import { comprimirImagen, superaBytes } from '@/lib/utils/imagen';
+import { fetchConToken } from '@/lib/api/client';
+import Cronometro from './Cronometro';
 import styles from './RegistrarHoras.module.css';
-
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-// Límite de tamaño por evidencia (5 MB) y meta mensual de horas aprobadas.
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const META_MENSUAL = 30;
 
 export default function FormularioHoras() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    fecha: '',
-    horaInicio: '',
-    horaFin: '',
-    descripcion: '',
-  });
-  // Una sola evidencia por archivo (imagen o PDF).
-  const [file, setFile] = useState(null);
-  const [fileError, setFileError] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mensaje, setMensaje] = useState('');
-  // Horas aprobadas del mes actual (para la tarjeta "Tu Historial").
+  const [sesion, setSesion] = useState(null);
+  const [cargandoSesion, setCargandoSesion] = useState(true);
   const [horasMes, setHorasMes] = useState(0);
+  const [mensaje, setMensaje] = useState('');
+  const [redirectEnabled, setRedirectEnabled] = useState(false);
 
-  const horasCalculadas = calcularHoras(formData.horaInicio, formData.horaFin);
+  // Función para cargar la sesión activa (reutilizable)
+  const cargarSesionActiva = useCallback(async () => {
+    try {
+      const res = await fetchConToken('/api/registros/sesion-activa');
+      if (!res.ok) return;
+      const body = await res.json().catch(() => ({}));
+      if (body.data) {
+        setSesion(body.data);
+      }
+    } catch {
+      // Silencioso: fetchConToken ya maneja 401 → redirect a login
+    } finally {
+      setCargandoSesion(false);
+    }
+  }, []);
 
-  // Carga las horas aprobadas del mes para mostrar cifras reales (no texto
-  // hardcodeado). Si falla, el formulario sigue funcionando sin esa cifra.
+  // Cargar sesión activa al montar
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (active) await cargarSesionActiva();
+    };
+    load();
+    return () => { active = false; };
+  }, [cargarSesionActiva]);
+
+  // Recargar al recuperar el foco de la pestaña (para sincronizar entre pestañas)
+  useEffect(() => {
+    const onFocus = () => {
+      cargarSesionActiva();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [cargarSesionActiva]);
+
+  // Carga las horas aprobadas del mes (desde el historial del usuario)
   useEffect(() => {
     let active = true;
 
     async function cargarHorasMes() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
       try {
-        // scope=mine: solo los registros del usuario actual (para un admin no
-        // mezclar las horas de todos los voluntarios en "Tu Historial").
-        const res = await fetch('/api/registros?scope=mine', {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const body = await res.json().catch(() => ({}));
+        const res = await fetchConToken('/api/registros?scope=mine&estado=aprobado');
         if (!res.ok) return;
-
+        const body = await res.json();
         const ahora = new Date();
+        const año = ahora.getUTCFullYear();
+        const mes = ahora.getUTCMonth();
+
         const total = (body.data || []).reduce((sum, r) => {
           const fecha = new Date(r.fecha);
-          const enEsteMes =
-            fecha.getMonth() === ahora.getMonth() &&
-            fecha.getFullYear() === ahora.getFullYear();
+          const enEsteMes = fecha.getUTCMonth() === mes && fecha.getUTCFullYear() === año;
           if (r.estado === 'aprobado' && enEsteMes) {
             return sum + (Number(r.horas) || 0);
           }
@@ -64,7 +73,7 @@ export default function FormularioHoras() {
 
         if (active) setHorasMes(Math.round(total * 10) / 10);
       } catch {
-        // Silencioso: no bloquea el registro si el cálculo falla.
+        // Silencioso
       }
     }
 
@@ -74,293 +83,82 @@ export default function FormularioHoras() {
     };
   }, []);
 
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }
-
-  // Valida tipo y tamaño (5 MB en bruto), luego comprime la imagen antes de
-  // subirla: reescala a ~1600px y re-codifica (JPEG o PNG si hay transparencia).
-  // Con eso se usa menos storage y el visor de evidencia descarga un archivo mucho menor.
-  async function pickFile(selected) {
-    if (!ACCEPTED_TYPES.includes(selected.type)) {
-      setFileError('Formato no soportado. Solo se permiten imágenes JPEG, PNG o WebP.');
-      return;
-    }
-    if (superaBytes(selected.size, MAX_FILE_SIZE)) {
-      setFileError('El archivo supera los 5 MB. Usa una imagen más pequeña.');
-      return;
-    }
-    setFileError('');
+  const handleIniciar = async (descripcion) => {
     try {
-      const preparado = await comprimirImagen(selected);
-      setFile(preparado);
+      const res = await fetchConToken('/api/registros/sesion-activa', {
+        method: 'POST',
+        body: { descripcion },
+      });
+      const body = await res.json();
+      setSesion(body.data);
+      setMensaje('✅ Jornada iniciada. El cronómetro está en marcha.');
+      return body.data;
     } catch (err) {
-      setFileError(err.message || 'Error al procesar la imagen.');
+      throw new Error(err.message || 'Error al iniciar la sesión.');
     }
-  }
+  };
 
-  async function handleFileChange(event) {
-    const selected = event.target.files[0];
-    if (selected) await pickFile(selected);
-    event.target.value = '';
-  }
+  const handleTerminar = async () => {
+    try {
+      const res = await fetchConToken('/api/registros/sesion-activa', {
+        method: 'PATCH',
+      });
 
-  async function handleDrop(event) {
-    event.preventDefault();
-    setIsDragging(false);
-    const selected = event.dataTransfer.files[0];
-    if (selected) await pickFile(selected);
-  }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Error al terminar la jornada.');
+      }
 
-  function handleDragOver(event) {
-    event.preventDefault();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave() {
-    setIsDragging(false);
-  }
-
-  function removeFile() {
-    setFile(null);
-    setFileError('');
-  }
-
-  function handleCancel() {
-    setFormData({ fecha: '', horaInicio: '', horaFin: '', descripcion: '' });
-    setFile(null);
-    setFileError('');
-    setMensaje('');
-  }
-
-  async function handleSubmit(event) {
-  event.preventDefault();
-
-  const { fecha, horaInicio, horaFin, descripcion } = formData;
-
-  if (!fecha || !horaInicio || !horaFin || !descripcion) {
-    setMensaje('❌ Completa todos los campos obligatorios.');
-    return;
-  }
-
-  if (horasCalculadas <= 0) {
-    setMensaje('❌ La hora de fin debe ser mayor que la hora de inicio.');
-    return;
-  }
-
-  if (!file) {
-    setMensaje('❌ Debes adjuntar una evidencia (imagen o PDF).');
-    return;
-  }
-
-  setIsSubmitting(true);
-  setMensaje('');
-
-  try {
-    // 1. Obtener usuario y token
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) {
-      throw new Error('No hay sesión activa. Inicia sesión nuevamente.');
+      // Éxito: mostrar confirmación con botón para ver historial
+      // (en lugar de redirect automático que podría perderse si se cierra la pestaña)
+      setRedirectEnabled(true);
+      setSesion(null);
+      setMensaje('✅ Jornada finalizada. Horas registradas automáticamente.');
+    } catch (err) {
+      setMensaje(`❌ ${err.message}. Intenta de nuevo.`);
+      // No reseteamos sesion, el cronómetro sigue activo
     }
+  };
 
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData.user) {
-      throw new Error('No se pudo obtener el usuario autenticado.');
-    }
-    const userId = userData.user.id;
-
-    // 2. Subir la evidencia a Supabase Storage (bucket privado)
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('evidencias')
-      .upload(fileName, file);
-
-    if (uploadError) {
-      throw new Error('Error al subir la evidencia: ' + uploadError.message);
-    }
-
-    // ============================================================
-    // 🔧 NORMALIZACIÓN DE FECHA Y HORAS (para evitar errores de formato)
-    // ============================================================
-    // Fecha: eliminar espacios, asegurar YYYY-MM-DD
-    const fechaNormalizada = fecha.trim();
-    // Horas: eliminar espacios y quitar segundos si los hay (ej. "14:30:00" → "14:30")
-    const horaInicioNormalizada = horaInicio.trim().split(':').slice(0, 2).join(':');
-    const horaFinNormalizada = horaFin.trim().split(':').slice(0, 2).join(':');
-
-    console.log('📦 Enviando datos normalizados:', {
-      fecha: fechaNormalizada,
-      horaInicio: horaInicioNormalizada,
-      horaFin: horaFinNormalizada,
-      descripcion,
-      evidenciaUrl: fileName,
-    });
-
-    // 3. Guardar el registro en la API (con token)
-    const response = await fetch('/api/registros', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        fecha: fechaNormalizada,
-        horaInicio: horaInicioNormalizada,
-        horaFin: horaFinNormalizada,
-        descripcion,
-        evidenciaUrl: fileName,
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new Error(body.error || 'Error al guardar el registro.');
-    }
-
-    setMensaje('✅ Registro guardado exitosamente. Será revisado por la coordinación.');
-    setFormData({ fecha: '', horaInicio: '', horaFin: '', descripcion: '' });
-    setFile(null);
-
-    setTimeout(() => {
-      router.push('/historial');
-    }, 3000);
-  } catch (err) {
-    console.error('Error en el registro:', err);
-    setMensaje('❌ ' + (err.message || 'Error al guardar el registro. Inténtalo nuevamente.'));
-  } finally {
-    setIsSubmitting(false);
+  if (cargandoSesion) {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner} aria-hidden="true"></div>
+        <p className={styles.loadingText}>Cargando...</p>
+      </div>
+    );
   }
-}
 
   return (
     <div className={styles.formPage}>
       <header className={styles.pageHeader}>
-        <h1>Registrar Horas de Voluntariado</h1>
+        <h1>Registrar Jornada de Voluntariado</h1>
         <p>
-          Documenta tu impacto. Completa el formulario a continuación para
-          validar tus horas de servicio.
+          Usa el cronómetro para registrar tu tiempo de trabajo. Presiona "Iniciar"
+          al comenzar y "Terminar" al finalizar.
         </p>
       </header>
 
-      <form className={styles.formCard} onSubmit={handleSubmit}>
-        <div className={styles.fieldsRow}>
-          <div className={styles.field}>
-            <label htmlFor="fecha">Fecha de la Actividad</label>
-            <input
-              type="date"
-              id="fecha"
-              name="fecha"
-              value={formData.fecha}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="horaInicio">Hora de Inicio</label>
-            <input
-              type="time"
-              id="horaInicio"
-              name="horaInicio"
-              value={formData.horaInicio}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="horaFin">Hora de Fin</label>
-            <input
-              type="time"
-              id="horaFin"
-              name="horaFin"
-              value={formData.horaFin}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="descripcion">Descripción de la Actividad</label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            rows={4}
-            placeholder="Describe brevemente las tareas realizadas durante este periodo..."
-            value={formData.descripcion}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label>Adjuntar Evidencia (Imágenes)</label>
-
-          <div
-            className={`${styles.dropzone} ${
-              isDragging ? styles.dropzoneActive : ''
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => document.getElementById('evidenciaInput').click()}
-          >
-            <div className={styles.dropzoneIcon}>⇪</div>
-            <strong>Arrastra archivos aquí o haz clic</strong>
-            <span>Las imágenes se comprimen automáticamente. Máx 5 MB: JPG, PNG, WebP.</span>
-
-            <input
-              id="evidenciaInput"
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp"
-              className={styles.hiddenInput}
-              onChange={handleFileChange}
-            />
-          </div>
-
-          {fileError && <p className={styles.fileError}>{fileError}</p>}
-
-          {file && (
-            <ul className={styles.fileList}>
-              <li>
-                <span>{file.name}</span>
-                <button
-                  type="button"
-                  onClick={removeFile}
-                  aria-label={`Quitar ${file.name}`}
-                >
-                  ✕
-                </button>
-              </li>
-            </ul>
-          )}
-        </div>
-
-        <div className={styles.formActions}>
-          <button
-            type="submit"
-            className={styles.primaryButton}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Enviando...' : '▷ Enviar para Revisión'}
-          </button>
-
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={handleCancel}
-          >
-            Cancelar
-          </button>
-        </div>
+      <div className={styles.formCard}>
+        <Cronometro
+          sesionInicial={sesion}
+          onIniciar={handleIniciar}
+          onTerminar={handleTerminar}
+        />
 
         {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
-      </form>
+
+        {redirectEnabled && (
+          <div className={styles.redirectBox}>
+            <button
+              className={styles.redirectButton}
+              onClick={() => router.push('/historial')}
+            >
+              Ver mi historial →
+            </button>
+          </div>
+        )}
+      </div>
 
       <section className={styles.infoGrid}>
         <article className={styles.infoCard}>
@@ -368,8 +166,8 @@ export default function FormularioHoras() {
           <div>
             <h3>Información Importante</h3>
             <p>
-              Recuerda que todas las horas deben ser validadas por un
-              coordinador.
+              El cronómetro registra el tiempo exacto. Asegúrate de presionar
+              "Terminar" al concluir tu jornada.
             </p>
           </div>
         </article>
