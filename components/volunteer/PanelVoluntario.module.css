@@ -13,13 +13,13 @@
 
 /* Hero Banner de Bienvenida */
 .heroBanner {
-  background: linear-gradient(135deg, #0f766e 0%, #115e59 50%, #042f2e 100%);
+  background: linear-gradient(135deg, #197343 0%, #125a33 50%, #0a3a20 100%);
   border-radius: 20px;
   padding: 32px 36px;
   color: #ffffff;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px -5px rgba(15, 118, 110, 0.3);
+  box-shadow: 0 10px 30px -5px rgba(25, 115, 67, 0.25);
   margin-bottom: 28px;
   display: flex;
   align-items: center;
@@ -181,8 +181,8 @@
 }
 
 .kpiIconTotal {
-  background: #eff6ff;
-  color: #2563eb;
+  background: #e6f4ea;
+  color: #197343;
 }
 
 .kpiIconApproved {
