@@ -160,10 +160,10 @@ export default function HistorialAuditoria() {
         <div className={styles.headerTitleGroup}>
           <div className={styles.headerBadgeRow}>
             <span className={styles.adminBadge}>
-              <span className={styles.liveDot} /> Auditoría en vivo
+              <span className={styles.liveDot} /> Reporte en vivo
             </span>
           </div>
-          <h1 className={styles.pageTitle}>Historial de Auditoría</h1>
+          <h1 className={styles.pageTitle}>Historial de Reportes</h1>
           <p className={styles.pageSubtitle}>
             Trazabilidad completa de revisiones, aprobaciones y rechazos de horas.
           </p>
@@ -191,7 +191,7 @@ export default function HistorialAuditoria() {
           <div className={styles.kpiContent}>
             <span className={styles.kpiLabel}>Total Registros</span>
             <span className={styles.kpiValue}>{total}</span>
-            <span className={styles.kpiSubtext}>Eventos auditados</span>
+            <span className={styles.kpiSubtext}>Eventos reportados</span>
           </div>
         </div>
 
@@ -328,7 +328,7 @@ export default function HistorialAuditoria() {
         {loading && auditoria.length === 0 ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
-            <p>Cargando registros de auditoría...</p>
+            <p>Cargando registros de reportes...</p>
           </div>
         ) : error ? (
           <div className={styles.emptyState}>
@@ -341,7 +341,7 @@ export default function HistorialAuditoria() {
             <div className={styles.emptyIcon}>🔍</div>
             <h3 className={styles.emptyTitle}>No hay registros encontrados</h3>
             <p className={styles.emptySubtext}>
-              No se encontraron registros de auditoría que coincidan con los filtros aplicados.
+              No se encontraron registros de reportes que coincidan con los filtros aplicados.
             </p>
             {hasActiveFilters && (
               <button type="button" className={styles.clearAllFiltersBtn} onClick={limpiarFiltros} style={{ marginTop: "12px" }}>
@@ -496,7 +496,7 @@ export default function HistorialAuditoria() {
         <div className={styles.modalBackdrop} onClick={() => setSelectedItem(null)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Detalle del Registro de Auditoría</h3>
+              <h3 className={styles.modalTitle}>Detalle del Registro de Reporte</h3>
               <button
                 type="button"
                 className={styles.closeModalBtn}

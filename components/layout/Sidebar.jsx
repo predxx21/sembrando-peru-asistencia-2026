@@ -73,7 +73,7 @@ export default function Sidebar() {
     ...(rol === "admin"
       ? [
           { label: "◉　Administración", href: "/administracion" },
-          { label: "◐　Auditoría", href: "/administracion/auditoria" },
+          { label: "◐　Reporte", href: "/administracion/auditoria" },
           { label: "▥　Reportes", href: "/reportes" },
         ]
       : []),

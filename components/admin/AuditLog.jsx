@@ -9,7 +9,7 @@ import styles from "./AdminDashboard.module.css";
 export default function AuditLog({ entries }) {
   return (
     <article className={styles.auditCard}>
-      <h2>Registros de Auditoría</h2>
+      <h2>Registros de Reportes</h2>
       {(entries?.length ?? 0) > 0 ? (
         <ul className={styles.auditList}>
           {entries.map((entry) => (
@@ -31,7 +31,7 @@ export default function AuditLog({ entries }) {
           ))}
         </ul>
       ) : (
-        <p>No hay registros de auditoría.</p>
+        <p>No hay registros de reportes.</p>
       )}
       <Link href="/administracion/auditoria" className={styles.auditLink}>
         Ver Historial Completo

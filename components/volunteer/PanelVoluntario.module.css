@@ -1,391 +1,570 @@
+/* ============================================================ */
+/* ===== ESTILOS PREMIUM PARA EL PANEL DE VOLUNTARIO ===== */
+/* ============================================================ */
+
 .dashboard {
   width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: var(--font-family, 'Inter', system-ui, sans-serif);
+  color: #1e293b;
 }
 
-.welcome {
+/* Hero Banner de Bienvenida */
+.heroBanner {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 50%, #042f2e 100%);
+  border-radius: 20px;
+  padding: 32px 36px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px -5px rgba(15, 118, 110, 0.3);
+  margin-bottom: 28px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 
-.welcome h1 {
-  color: #26384b;
-  font-size: 28px;
-  margin: 0 0 4px;
+.heroBanner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.25) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.welcome p {
-  color: #667281;
-  margin: 0;
+.heroContent {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+}
+
+.heroBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.greetingTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #ccfbf1;
 }
 
 .areaBadge {
-  display: inline-block;
-  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 12px;
-  background: #cdeedd;
-  color: #125a33;
-  border-radius: 99px;
-  font-size: 13px;
-  font-weight: 600;
+  background: #2dd4bf;
+  color: #042f2e;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
-.primaryButton {
-  border: 0;
-  border-radius: 8px;
-  background: #197343;
-  color: white;
-  padding: 11px 16px;
+.heroTitle {
+  font-size: 30px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.heroSubtitle {
+  font-size: 14.5px;
+  color: #99f6e4;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.heroActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heroCtaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #0f766e;
+  padding: 12px 22px;
+  border-radius: 12px;
   font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.primaryButton:hover {
-  background: #125a33;
+.heroCtaBtn:hover {
+  background: #f0fdf4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  color: #0d9488;
 }
 
-.stats {
+/* Tarjetas de Estadísticas KPI */
+.kpiGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin: 32px 0;
+  margin-bottom: 28px;
 }
 
-.statCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 24px;
-}
-
-.statCardHead {
+.kpiCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
+}
+
+.kpiCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.kpiHead {
+  display: flex;
   align-items: center;
-  color: #667281;
-  font-size: 14px;
-  letter-spacing: 0.7px;
-  text-transform: uppercase;
-}
-
-.statCardHead b {
-  background: #cdeedd;
-  border-radius: 8px;
-  padding: 8px;
-}
-
-.statCard h2 {
-  color: #26384b;
-  font-size: 36px;
-  margin: 16px 0 8px;
-}
-
-.statCard p {
-  color: #667281;
-  font-size: 12px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.portalGrid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-}
-
-.sectionTitle {
-  display: flex;
-  align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
   margin-bottom: 12px;
 }
 
-.sectionTitle h2 {
-  color: #26384b;
-  font-size: 20px;
-  margin: 0;
-}
-
-.sectionTitle span {
-  color: #197343;
-  cursor: pointer;
-}
-
-.tableCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.guideColumn {
-  display: grid;
-  gap: 20px;
-  align-content: start;
-}
-
-.activityRow {
-  display: grid;
-  grid-template-columns: 1fr 2fr 0.8fr 1fr 0.5fr;
-  align-items: center;
-  border-bottom: 1px solid #dfe4ea;
-  min-height: 76px;
-  padding: 12px 20px;
-  color: #26384b;
-}
-
-.activityRow:last-child {
-  border-bottom: 0;
-}
-
-.activityRowHead {
-  min-height: 40px;
-  background: #f4f6f9;
-  color: #667281;
+.kpiLabel {
   font-size: 12px;
   font-weight: 700;
+  color: #64748b;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.activityRow strong,
-.activityRow small {
-  display: block;
+.kpiIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
-.activityRow strong {
-  font-size: 14px;
-  font-weight: 500;
+.kpiIconTotal {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
-.activityRow small {
-  color: #667281;
-  font-size: 11px;
-  margin-top: 4px;
+.kpiIconApproved {
+  background: #ecfdf5;
+  color: #059669;
 }
 
-.badge {
-  border-radius: 99px;
+.kpiIconPending {
+  background: #fffbe6;
+  color: #d97706;
+}
+
+.kpiIconRejected {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.kpiValue {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+.kpiSubtext {
   font-size: 12px;
-  font-style: normal;
-  padding: 4px 10px;
+  color: #64748b;
+  margin-top: 6px;
 }
 
-.badgeSuccess {
-  background: #6cf8bb;
-  color: #146b4f;
+/* Layout Principal de 2 Columnas */
+.mainLayout {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 24px;
+}
+
+/* Columna Izquierda: Actividad Reciente */
+.contentCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewAllLink {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.viewAllLink:hover {
+  color: #0d9488;
+  text-decoration: underline;
+}
+
+/* Stream de Actividades */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.activityItem:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.activityMain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.activityIconBox {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.activityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activityTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.activityMeta {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activityRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.activityHours {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.08);
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.badgeApproved {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .badgePending {
-  background: #ffdca8;
-  color: #744600;
+  background: #fffbe6;
+  color: #b45309;
+  border: 1px solid #fef3c7;
 }
 
 .badgeRejected {
-  background: #ffc9c0;
-  color: #9b2c1f;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
 
-.loadingText {
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.badgeApproved .badgeDot { background: #10b981; }
+.badgePending .badgeDot { background: #f59e0b; }
+.badgeRejected .badgeDot { background: #f43f5e; }
+
+.loadingState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13.5px;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  width: 50px;
+  height: 50px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #94a3b8;
+}
+
+/* Columna Derecha: Widgets & Acciones */
+.sideWidgets {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Card de Meta Mensual */
+.goalWidget {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.goalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.goalTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
-  padding: 16px 20px;
-  color: #667281;
-  font-size: 13px;
 }
 
-/* ===== TABLET / PANTALLAS MEDIANAS ===== */
-@media (max-width: 1100px) and (min-width: 901px) {
-  .stats {
+.goalPercent {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.progressBarBg {
+  width: 100%;
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #14b8a6 0%, #0f766e 100%);
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.goalSubtext {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Acciones Rápidas Grid */
+.quickActionsCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.actionTile {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.actionTile:hover {
+  background: #ffffff;
+  border-color: #0f766e;
+  color: #0f766e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.1);
+}
+
+.actionTileIcon {
+  font-size: 20px;
+}
+
+/* ============================================================ */
+/* ===== ADAPTABILIDAD RESPONSIVA ===== */
+/* ============================================================ */
+
+@media (max-width: 1024px) {
+  .kpiGrid {
     grid-template-columns: repeat(2, 1fr);
   }
-}
 
-/* ===== TABLET PEQUEÑA / MÓVIL GRANDE ===== */
-@media (max-width: 900px) {
-  .welcome {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .stats,
-  .portalGrid {
+  .mainLayout {
     grid-template-columns: 1fr;
   }
-
-  .activityRow {
-    grid-template-columns: 1fr 1.4fr 0.7fr;
-  }
-
-  .activityRow span:nth-child(4),
-  .activityRow span:nth-child(5) {
-    display: none;
-  }
 }
 
-/* ===== MÓVIL PEQUEÑO (diseño tipo tarjetas horizontales) ===== */
-@media (max-width: 700px) {
-  /* ---- Header ---- */
-  .welcome h1 {
+@media (max-width: 640px) {
+  .heroBanner {
+    padding: 24px 20px;
+  }
+
+  .heroTitle {
     font-size: 22px;
   }
-  .welcome p {
-    font-size: 14px;
-  }
-  .primaryButton {
+
+  .heroActions {
     width: 100%;
-    text-align: center;
   }
 
-  /* ---- Stats: 2 columnas ---- */
-  .stats {
+  .heroCtaBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .kpiGrid {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin: 16px 0;
   }
-  .statCard {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 14px;
+
+  .kpiCard {
+    padding: 16px;
   }
-  .statCardHead {
-    order: 2;
-    font-size: 12px;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-  .statCardHead b {
-    display: none;
-  }
-  .statCard h2 {
+
+  .kpiValue {
     font-size: 24px;
-    margin: 0;
-    order: 1;
-  }
-  .statCard p {
-    display: none;
   }
 
-  /* ===== ACTIVIDAD RECIENTE: TARJETAS SEPARADAS ===== */
-  .portalGrid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  /* Quitar el contenedor común: sin borde, sin fondo, sin padding */
-  .tableCard {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-  }
-
-  /* Ocultar encabezado de la tabla */
-  .activityRowHead {
-    display: none !important;
-  }
-
-  /* Cada fila es una tarjeta independiente */
-  .activityRow {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    background: white;
-    border: 1px solid #dfe4ea;
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    gap: 4px 12px;
-  }
-  .activityRow:last-child {
-    margin-bottom: 0;
-  }
-
-  /* ---- TÍTULO Y BADGE EN LA MISMA LÍNEA ---- */
-  .activityRow span:nth-child(2) {
-    order: 1;
-    flex: 1 1 auto;
-    font-size: 18px;
-    font-weight: 600;
-    color: #26384b;
-    display: flex;
+  .activityItem {
     flex-direction: column;
-  }
-  .activityRow span:nth-child(2) strong {
-    font-size: 18px;
-    font-weight: 600;
+    align-items: flex-start;
   }
 
-  .activityRow span:nth-child(4) {
-    order: 1;
-    display: block !important;
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .badge {
-    display: inline-block !important;
-    font-size: 12px;
-    padding: 4px 14px;
-    border-radius: 99px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  .badgeSuccess {
-    background: #e5f8ee;
-    color: #197343;
-  }
-  .badgePending {
-    background: #fff3d6;
-    color: #a67c27;
-  }
-  .badgeRejected {
-    background: #fdecec;
-    color: #d64545;
-  }
-
-  /* ---- FECHA (línea separada) ---- */
-  .activityRow span:first-child {
-    order: 2;
-    flex: 0 0 100%;
-    font-size: 14px;
-    color: #667281;
-  }
-
-  /* ---- HORAS (línea separada) ---- */
-  .activityRow span:nth-child(3) {
-    order: 3;
-    flex: 0 0 100%;
-    font-size: 14px;
-    color: #667281;
-    font-weight: 500;
-  }
-
-  /* ---- TIPO DE ACTIVIDAD (opcional) ---- */
-  .activityRow span:nth-child(2) small {
-    display: block;
-    font-size: 13px;
-    color: #667281;
-    font-weight: 400;
-    margin-top: 2px;
-  }
-
-  /* Ocultar enlace "Ver" */
-  .activityRow span:nth-child(5) {
-    display: none;
-  }
-
-  .sectionTitle {
-    flex-direction: row;
-    align-items: center;
-  }
-  .loadingText {
-    font-size: 13px;
-    padding: 12px 16px;
+  .activityRight {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
   }
 }
