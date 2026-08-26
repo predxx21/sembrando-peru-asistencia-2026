@@ -9,9 +9,7 @@ export default function LoginVisual() {
       
       {/* Texto de Marca y Propósito */}
       <div className={styles['brand-copy']}>
-        <div className={styles['brand-tag']}>
-          <span className={styles['brand-dot']} /> Gestión e Impacto Social
-        </div>
+        
         <h1>Sistemas de Asistencia - Sembrando Perú</h1>
         <p>Transparencia, gestión de horas y trazabilidad para comunidades con propósito ambiental.</p>
       </div>

@@ -158,9 +158,7 @@ export default function LoginScreen() {
                 ¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link>
               </p>
 
-              <button className={styles['access-button']} type="button">
-                <span>🌱</span> Solicitar acceso para la organización
-              </button>
+              
               <p className={styles['request-note']}>
                 Para nuevas organizaciones que desean digitalizar su impacto social.
               </p>
