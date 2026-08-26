@@ -1,5 +1,5 @@
-import ReportsDashboard from "@/components/reports/Reportes";
+import { redirect } from 'next/navigation';
 
 export default function ReportesPage() {
-  return <ReportsDashboard />;
+  redirect('/administracion');
 }

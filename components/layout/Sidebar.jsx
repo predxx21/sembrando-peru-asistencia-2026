@@ -74,7 +74,6 @@ export default function Sidebar() {
       ? [
           { label: "◉　Administración", href: "/administracion" },
           { label: "◐　Reporte", href: "/administracion/auditoria" },
-          { label: "▥　Reportes", href: "/reportes" },
         ]
       : []),
   ];

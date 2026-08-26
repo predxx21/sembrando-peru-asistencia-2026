@@ -3,14 +3,26 @@ import styles from './LoginScreen.module.css';
 export default function LoginVisual() {
   return (
     <aside className={styles['visual-panel']}>
-      <div className={styles['visual-collage']} aria-label="Bosques y conservación ambiental en Perú">
-        <div className={styles['forest-image']} />
-        <div className={styles['reforestation-image']} />
-        <div className={styles['collage-shade']} />
-      </div>
+      {/* Fondo completo sin cortes ni costuras de múltiples imágenes */}
+      <div className={styles['visual-hero-bg']} aria-label="Bosques y conservación ambiental en Perú" />
+      <div className={styles['visual-overlay']} />
+      
+      {/* Texto de Marca y Propósito */}
       <div className={styles['brand-copy']}>
+        <div className={styles['brand-tag']}>
+          <span className={styles['brand-dot']} /> Gestión e Impacto Social
+        </div>
         <h1>Sistemas de Asistencia - Sembrando Perú</h1>
-        <p>Gestión de asistencia y transparencia, para comunidades con propósito.</p>
+        <p>Transparencia, gestión de horas y trazabilidad para comunidades con propósito ambiental.</p>
+      </div>
+
+      {/* Tarjeta de Impacto Social en la parte inferior */}
+      <div className={styles['impact-card']}>
+        <div className={styles['impact-icon']}>🌱</div>
+        <div>
+          <strong>Compromiso con el Perú</strong>
+          <span>Digitalizando el voluntariado e impacto ambiental en cada región.</span>
+        </div>
       </div>
     </aside>
   );
