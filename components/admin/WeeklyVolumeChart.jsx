@@ -10,7 +10,6 @@ export default function WeeklyVolumeChart({ data, maxVolume }) {
 
   return (
     <article className={styles.chartCard}>
-      <h2>Tendencias de Volumen de Envíos</h2>
       {data.length > 0 ? (
         <div className={styles.chart}>
           {data.map((item, index) => (

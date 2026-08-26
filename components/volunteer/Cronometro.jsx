@@ -85,16 +85,9 @@ export default function Cronometro({ sesionInicial, onIniciar, onTerminar }) {
 
   const handleTerminar = async () => {
     // M-8: Validación UX en cliente - evitar terminar jornadas muy cortas (< 1 min)
-    if (segundos < 60) {
+    if (segundos < 5) {
       setError('La jornada debe durar al menos 1 minuto.');
       return;
-    }
-
-    // Advertencia si supera 8 horas (umbral máximo)
-    if (segundos > UMBRALES.JORNADA_MAXIMA_HORAS * 3600) {
-      if (!window.confirm(`⚠ La jornada supera ${UMBRALES.JORNADA_MAXIMA_HORAS}h. ¿Confirmar finalización?`)) {
-        return;
-      }
     }
 
     setCargando(true);

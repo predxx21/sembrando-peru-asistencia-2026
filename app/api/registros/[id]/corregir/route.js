@@ -3,12 +3,10 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
 import { invalidateCacheByPrefix } from '@/lib/cache';
-import { esEnteroPositivo, esFechaValida, esHoraValida, esUUIDValido } from '@/lib/utils/validar';
+import { esEnteroPositivo, esFechaValida, esUUIDValido } from '@/lib/utils/validar';
 
-// PATCH: reenvía a revisión un registro RECHAZADO, con los datos corregidos
-// por el voluntario. Es independiente del PATCH de /api/registros/[id], que
-// es solo para admins (aprobar/rechazar). Aquí el dueño del registro edita
-// su propia jornada y vuelve a quedar 'pendiente'.
+// PATCH: reenvía a revisión un registro RECHAZADO con datos corregidos.
+// Ahora solo permite editar fecha y descripción (las horas vienen del cronómetro).
 export async function PATCH(request, context) {
   const user = await getUserFromRequest(request);
 
@@ -19,13 +17,14 @@ export async function PATCH(request, context) {
   const { id } = await context.params;
   const body = await request.json().catch(() => null);
 
-  if (!body?.fecha || !body?.horaInicio || !body?.horaFin || !body?.descripcion) {
-    return NextResponse.json({ error: 'Faltan datos obligatorios.' }, { status: 400 });
+  // ✅ Solo se requieren fecha y descripción
+  if (!body?.fecha || !body?.descripcion) {
+    return NextResponse.json({ error: 'Faltan datos obligatorios (fecha y descripción).' }, { status: 400 });
   }
 
-  if (!esEnteroPositivo(id) || !esFechaValida(body.fecha) || !esHoraValida(body.horaInicio) || !esHoraValida(body.horaFin)) {
+  if (!esEnteroPositivo(id) || !esFechaValida(body.fecha)) {
     return NextResponse.json(
-      { error: 'Id, fecha u horas inválidos. Usa AAAA-MM-DD y HH:MM.' },
+      { error: 'Id o fecha inválidos. Usa AAAA-MM-DD.' },
       { status: 400 }
     );
   }
@@ -46,12 +45,7 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'No tienes permiso para corregir este registro.' }, { status: 403 });
   }
 
-  // A-4: Si el body trae profileId (no debería), validarlo como UUID
-  if (body?.profileId && !esUUIDValido(body.profileId)) {
-    return NextResponse.json({ error: 'profileId inválido.' }, { status: 400 });
-  }
-
-  // Solo se corrige un registro que haya sido rechazado.
+  // Solo se corrige un registro rechazado.
   if (registro.estado !== 'rechazado') {
     return NextResponse.json(
       { error: 'Solo se pueden corregir registros rechazados.' },
@@ -59,12 +53,12 @@ export async function PATCH(request, context) {
     );
   }
 
+  // ✅ Llamada a corregirRegistro SOLO con fecha y descripción (las horas se mantienen)
   const { data: actualizado, error } = await corregirRegistro({
     id: registro.id,
     profileId: profile.id,
     fecha: body.fecha,
-    horaInicio: body.horaInicio,
-    horaFin: body.horaFin,
+    // horaInicio y horaFin NO se envían – se mantienen los valores originales
     descripcion: body.descripcion,
   });
 
@@ -72,7 +66,6 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'No se pudo corregir el registro.' }, { status: 500 });
   }
 
-  // El reenvío devuelve el registro a 'pendiente': cambia el listado y stats.
   invalidateCacheByPrefix('registros:');
   invalidateCacheByPrefix('admin:estadisticas:');
   invalidateCacheByPrefix('admin:auditoria:');

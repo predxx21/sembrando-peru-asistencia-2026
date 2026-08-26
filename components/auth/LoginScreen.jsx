@@ -137,11 +137,6 @@ export default function LoginScreen() {
                 </div>
               </div>
 
-              <label className={styles['remember']}>
-                <input type="checkbox" />
-                <span>Recordar mi sesión en este dispositivo</span>
-              </label>
-
               <button
                 className={styles['primary-button']}
                 type="submit"
@@ -156,11 +151,6 @@ export default function LoginScreen() {
             <div className={styles['register-box']}>
               <p className={styles['register']}>
                 ¿No tienes una cuenta? <Link href="/registro">Regístrate aquí</Link>
-              </p>
-
-              
-              <p className={styles['request-note']}>
-                Para nuevas organizaciones que desean digitalizar su impacto social.
               </p>
             </div>
           </div>

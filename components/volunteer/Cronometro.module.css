@@ -4,17 +4,18 @@
 
 .timerCard,
 .inicioCard {
-  background: white;
+  /*background: white;
   border: 1px solid #dfe4ea;
   border-radius: 12px;
-  padding: 32px;
+  padding: 32px;*/
   display: grid;
   gap: 24px;
+  padding: 24px;
   text-align: center;
 }
 
 .timerLabel {
-  color: #667281;
+  color: black;
   font-size: 14px;
   font-weight: 500;
   text-transform: uppercase;
@@ -35,7 +36,6 @@
   font-size: 15px;
   margin: 8px 0 16px;
   padding: 12px;
-  background: #f4f6f9;
   border-radius: 8px;
 }
 

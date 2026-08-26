@@ -18,25 +18,20 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [areaFilter, setAreaFilter] = useState(""); // NUEVO: filtro por área
-  const [areas, setAreas] = useState([]); // Lista de áreas para el select
-  const [estadoFilter, setEstadoFilter] = useState("pendiente"); // A-5: filtro de estado
+  const [areaFilter, setAreaFilter] = useState("");
+  const [areas, setAreas] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [currentUserProfileId, setCurrentUserProfileId] = useState(null); // NUEVO: para deshabilitar auto-auditoría
+  const [currentUserProfileId, setCurrentUserProfileId] = useState(null);
 
-  // Estado para tendencia y auditoría (los 4 cards de métricas se movieron
-  // a la página de Reportes).
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
+  const [reviewingId, setReviewingId] = useState(null);
 
-  // Evita que el useEffect de filtros dispare también en el primer render
-  // (la carga inicial la hace el primer useEffect, con deps vacías).
   const isFirstRender = useRef(true);
-
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
-  // Obtener profileId del usuario actual y áreas disponibles al montar
+  // Obtener perfil y áreas
   useEffect(() => {
     async function getProfileId() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -69,8 +64,7 @@ export default function AdminDashboard() {
     getProfileId();
   }, []);
 
-  // Cargar tendencia y auditoría en UNA sola petición. El endpoint sigue
-  // devolviendo también las stats, pero ya no se muestran aquí.
+  // Cargar tendencias
   async function cargarTendencias() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -84,7 +78,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error('Error al cargar la tendencia.');
 
       const body = await res.json();
-      // Fallback defensivo: asegurar que siempre sean arrays
+      console.log('[Dashboard] stats endpoint response:', JSON.stringify(body.data, null, 2));
       setWeeklyVolume(body.data?.tendencia ?? []);
       setAuditLog(body.data?.auditoria ?? []);
     } catch (err) {
@@ -92,7 +86,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // Cargar la primera página de registros (filtro pendiente por defecto)
+  // Cargar inicial (siempre pendientes)
   async function cargarInicial() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -103,7 +97,10 @@ export default function AdminDashboard() {
     }
 
     try {
-      const res = await getPendingSubmissions({ limit: ITEMS_PER_PAGE, estado: estadoFilter });
+      const res = await getPendingSubmissions({
+        limit: ITEMS_PER_PAGE,
+        estado: 'pendiente', // ← fijo
+      });
       if (res) {
         setSubmissions(res.items);
         setTotal(res.total);
@@ -115,12 +112,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // Cargar tendencias y auditoría (separado para evitar doble llamada en error)
-  useEffect(() => {
-    cargarTendencias();
-  }, []);
-
-  // Cargar con filtros (búsqueda, fechas, área, estado) - se dispara cuando cambian los filtros
+  // Cargar con filtros (siempre pendientes)
   async function cargarConFiltros() {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
@@ -132,8 +124,8 @@ export default function AdminDashboard() {
       busqueda: search || undefined,
       desde: dateFrom || undefined,
       hasta: dateTo || undefined,
-      area: areaFilter || undefined, // NUEVO
-      estado: estadoFilter || undefined, // A-5
+      area: areaFilter || undefined,
+      estado: 'pendiente', // ← fijo
     };
 
     try {
@@ -147,50 +139,43 @@ export default function AdminDashboard() {
     }
   }
 
-  // Carga inicial
+  // Efectos
   useEffect(() => {
+    cargarTendencias();
     cargarInicial();
   }, []);
 
-  // Carga con filtros (pero NO en el primer render, para evitar doble llamada)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    // Resetear página al cambiar filtros
     setPage(1);
     cargarConFiltros();
   }, [search, dateFrom, dateTo, areaFilter]);
 
-  // Al cambiar de página
   useEffect(() => {
     if (!isFirstRender.current) {
       cargarConFiltros();
     }
   }, [page]);
 
-  // Obtener badge de anomalía
+  // Badge de anomalía
   const getAnomaliaBadge = (horas) => {
     if (horas > UMBRALES.JORNADA_MAXIMA_HORAS) {
-      return (
-        <span className={styles.alertBadge}>⚠️ +8h</span>
-      );
+      return <span className={styles.alertBadge}>⚠️ +8h</span>;
     }
     if (horas < UMBRALES.JORNADA_MINIMA_MINUTOS / 60) {
-      return (
-        <span className={styles.alertBadge}>⚠️ {'<15min'}</span>
-      );
+      return <span className={styles.alertBadge}>⚠️ {'<15min'}</span>;
     }
     return null;
   };
 
-  // NUEVO: Verificar si el registro pertenece al admin actual
   const esRegistroPropio = (profileId) => {
     return currentUserProfileId && profileId === currentUserProfileId;
   };
 
-  // Aprobar / Rechazar desde la tabla (auditoría)
+  // Aprobar / Rechazar
   async function revisar(id, estado) {
     const motivo = estado === 'rechazado'
       ? prompt('Indica el motivo del rechazo (obligatorio):')
@@ -200,16 +185,30 @@ export default function AdminDashboard() {
       return;
     }
 
+    setReviewingId(id);
     try {
       await reviewSubmission(id, estado, motivo);
-      // Actualizar estado local sin recargar
-      setSubmissions((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, status: estado } : s))
-      );
+      // Refrescar tabla y auditoría en paralelo sin recargar la página completa
+      await Promise.all([cargarInicial(), cargarTendencias()]);
     } catch (err) {
       alert('Error: ' + err.message);
+    } finally {
+      setReviewingId(null);
     }
   }
+
+  // Limpiar filtros
+  function limpiarFiltros() {
+    setSearch("");
+    setDateFrom("");
+    setDateTo("");
+    setAreaFilter("");
+    setPage(1);
+    // Forzar recarga con filtros limpios
+    cargarConFiltros();
+  }
+
+  const hasActiveFilters = Boolean(search || dateFrom || dateTo || areaFilter);
 
   if (loading) {
     return (
@@ -222,6 +221,7 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.dashboard}>
+      {/* HEADER */}
       <header className={styles.pageHeader}>
         <div>
           <h1>Panel de Coordinación</h1>
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Filtros */}
+      {/* FILTROS */}
       <section className={styles.filtersSection}>
         <div className={styles.filtersRow}>
           <div className={styles.filterGroup}>
@@ -266,7 +266,6 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* NUEVO: Filtro por área (dinámico desde BD) */}
           <div className={styles.filterGroup}>
             <label htmlFor="areaFilter" className={styles.filterLabel}>Área</label>
             <select
@@ -282,27 +281,45 @@ export default function AdminDashboard() {
             </select>
           </div>
 
-          {/* A-5: Filtro por estado */}
-          <div className={styles.filterGroup}>
-            <label htmlFor="estadoFilter" className={styles.filterLabel}>Estado</label>
-            <select
-              id="estadoFilter"
-              value={estadoFilter}
-              onChange={(e) => setEstadoFilter(e.target.value)}
-              className={styles.filterInput}
-            >
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobado">Aprobado</option>
-              <option value="rechazado">Rechazado</option>
-              <option value="">Todos</option>
-            </select>
-          </div>
+          {/* Botón "Limpiar filtros" (aparece solo si hay filtros activos) */}
+          {hasActiveFilters && (
+            <div className={styles.filterGroup} style={{ flex: '0 0 auto', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className={styles.clearAllFiltersBtn}
+                onClick={limpiarFiltros}
+                style={{
+                  background: '#fff1f2',
+                  color: '#e11d48',
+                  border: '1px solid #fecdd3',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  height: '40px',
+                  alignSelf: 'flex-end',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#ffe4e6';
+                  e.target.style.borderColor = '#fda4af';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#fff1f2';
+                  e.target.style.borderColor = '#fecdd3';
+                }}
+              >
+                ✕ Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
 
         {dataError && <p className={styles.dataError}>{dataError}</p>}
       </section>
 
-      {/* Tabla de registros */}
+      {/* TABLA */}
       <section className={styles.tableSection}>
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
@@ -313,14 +330,14 @@ export default function AdminDashboard() {
                 <th>Fecha</th>
                 <th>Duración</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th style={{ textAlign: "right" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {submissions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className={styles.emptyRow}>
-                    No hay registros para mostrar.
+                    No hay registros pendientes para mostrar.
                   </td>
                 </tr>
               ) : (
@@ -358,43 +375,46 @@ export default function AdminDashboard() {
                       <td>
                         <div className={styles.actionsCell}>
                           {esPropio ? (
-                            <span className={styles.disabledAction} title="No puedes auditar tu propio registro (conflicto de interés)">
+                            <span className={styles.disabledAction} title="No puedes auditar tu propio registro">
                               —
                             </span>
                           ) : (
                             <>
-                              {/* Botón de auditoría - permite cambiar estado de cualquier registro */}
                               {s.status === 'aprobado' && (
                                 <button
                                   className={styles.auditButton}
-                                  onClick={() => revisar(s.id, 'rechazado', s.description)}
-                                  title="Rechazar (auditoría)"
+                                  onClick={() => revisar(s.id, 'rechazado')}
+                                  disabled={reviewingId === s.id}
+                                  title={reviewingId === s.id ? 'Procesando...' : 'Rechazar'}
                                 >
-                                  ❌ Rechazar
+                                  {reviewingId === s.id ? '⏳' : '❌ Rechazar'}
                                 </button>
                               )}
                               {s.status === 'rechazado' && (
                                 <button
                                   className={styles.auditButton}
-                                  onClick={() => revisar(s.id, 'aprobado', s.description)}
-                                  title="Aprobar (auditoría)"
+                                  onClick={() => revisar(s.id, 'aprobado')}
+                                  disabled={reviewingId === s.id}
+                                  title={reviewingId === s.id ? 'Procesando...' : 'Aprobar'}
                                 >
-                                  ✅ Aprobar
+                                  {reviewingId === s.id ? '⏳' : '✅ Aprobar'}
                                 </button>
                               )}
                               {s.status === 'pendiente' && (
                                 <>
                                   <button
                                     className={styles.approveButton}
-                                    onClick={() => revisar(s.id, 'aprobado', s.description)}
+                                    onClick={() => revisar(s.id, 'aprobado')}
+                                    disabled={reviewingId === s.id}
                                   >
-                                    ✅ Aprobar
+                                    {reviewingId === s.id ? '⏳' : '✅ Aprobar'}
                                   </button>
                                   <button
                                     className={styles.rejectButton}
-                                    onClick={() => revisar(s.id, 'rechazado', s.description)}
+                                    onClick={() => revisar(s.id, 'rechazado')}
+                                    disabled={reviewingId === s.id}
                                   >
-                                    ❌ Rechazar
+                                    {reviewingId === s.id ? '⏳' : '❌ Rechazar'}
                                   </button>
                                 </>
                               )}
@@ -434,10 +454,30 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      {/* Tendencia semanal y auditoría */}
+      {/* GRÁFICOS Y AUDITORÍA */}
       <section className={styles.chartsSection}>
-        <WeeklyVolumeChart data={weeklyVolume} />
-        <AuditLog items={auditLog} />
+        <div className={styles.chartCard}>
+          <h3>📊 Tendencias de Volumen de Envíos</h3>
+          {weeklyVolume.length > 0 ? (
+            <WeeklyVolumeChart data={weeklyVolume} />
+          ) : (
+            <p>No hay datos suficientes para mostrar la tendencia.</p>
+          )}
+        </div>
+
+        <div className={styles.chartCard}>
+          <h3>📋 Registros de Auditoría</h3>
+          {auditLog.length > 0 ? (
+            <AuditLog entries={auditLog} />
+          ) : (
+            <p>No hay registros de auditoría recientes.</p>
+          )}
+          <div style={{ marginTop: "12px" }}>
+            <a href="/administracion/auditoria" className={styles.auditLink}>
+              Ver Historial Completo →
+            </a>
+          </div>
+        </div>
       </section>
     </div>
   );

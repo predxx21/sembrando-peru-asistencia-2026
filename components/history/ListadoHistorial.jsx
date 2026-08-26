@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import styles from "./ListadoHistorial.module.css";
 import { ESTADO_LABEL } from "@/lib/utils/estado";
-import Pagination from "@/components/reports/Pagination";
 
 const statusConfig = {
   aprobado: { label: ESTADO_LABEL.aprobado, className: "statusApproved" },
@@ -19,7 +18,7 @@ export default function HistoryDashboard({ activities }) {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Filtros + paginación (memoizado para evitar recálculos)
+  // Filtros + paginación
   const { filtered, totalPages, currentItems } = useMemo(() => {
     const filtered = activities.filter((act) => {
       const matchSearch =
@@ -36,7 +35,6 @@ export default function HistoryDashboard({ activities }) {
     return { filtered, totalPages, currentItems };
   }, [activities, search, filterStatus, currentPage]);
 
-  // Al cambiar de filtros (búsqueda o estado), volver a la primera página
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterStatus]);
@@ -44,6 +42,27 @@ export default function HistoryDashboard({ activities }) {
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
+
+  // Generar elementos de paginación (con "..." entre bloques)
+  function getPaginationItems(currentPage, totalPages) {
+    const items = [];
+    const maxVisible = 7;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) items.push(i);
+    } else {
+      items.push(1);
+      if (currentPage > 3) items.push("...");
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) items.push(i);
+      if (currentPage < totalPages - 2) items.push("...");
+      items.push(totalPages);
+    }
+    return items;
+  }
+
+  const paginationItems = getPaginationItems(currentPage, totalPages);
 
   return (
     <div className={styles.historyPage}>
@@ -58,7 +77,10 @@ export default function HistoryDashboard({ activities }) {
       {/* Filtros */}
       <div className={styles.filtersBar}>
         <div className={styles.searchField}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
           <input
             type="text"
             placeholder="Buscar por título o descripción..."
@@ -105,7 +127,10 @@ export default function HistoryDashboard({ activities }) {
 
               <div className={styles.cardMeta}>
                 <span className={styles.hoursBadge}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
                   {act.hours} h
                 </span>
                 <span className={styles.activityArea}>
@@ -141,13 +166,39 @@ export default function HistoryDashboard({ activities }) {
         )}
       </div>
 
-      {/* Paginación compacta: 1 2 ... penúltimo último */}
+      {/* Paginación */}
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        <div className={styles.pagination}>
+          <span className={styles.paginationInfo}>
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className={styles.pageControls}>
+            <button
+              className={styles.pageBtn}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹ Anterior
+            </button>
+            {paginationItems.map((item, index) => (
+              <button
+                key={index}
+                className={`${styles.pageBtn} ${item === currentPage ? styles.pageBtnActive : ""}`}
+                onClick={() => typeof item === "number" && handlePageChange(item)}
+                disabled={item === "..." || item === currentPage}
+              >
+                {item}
+              </button>
+            ))}
+            <button
+              className={styles.pageBtn}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente ›
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

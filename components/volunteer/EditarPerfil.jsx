@@ -105,10 +105,10 @@ export default function EditarPerfil() {
         throw new Error(body.error || "No se pudo actualizar el perfil.");
       }
 
-      setMensaje("✅ Perfil actualizado correctamente.");
+      setMensaje("Perfil actualizado correctamente.");
       setTimeout(() => router.push("/formulario-horas"), 1500);
     } catch (err) {
-      setMensaje("❌ " + (err.message || "No se pudo actualizar el perfil."));
+      setMensaje("" + (err.message || "No se pudo actualizar el perfil."));
     } finally {
       setSaving(false);
     }
@@ -176,7 +176,7 @@ export default function EditarPerfil() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="email">Email (solo lectura)</label>
+          <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
@@ -187,7 +187,7 @@ export default function EditarPerfil() {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="rol">Rol (solo lectura)</label>
+          <label htmlFor="rol">Rol</label>
           <input
             id="rol"
             type="text"

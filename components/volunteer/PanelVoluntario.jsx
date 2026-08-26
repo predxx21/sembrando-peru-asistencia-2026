@@ -80,10 +80,6 @@ export default function VolunteerDashboard() {
     [activities]
   );
 
-  // Meta estimada del mes (20h sugeridas)
-  const META_MES = 20;
-  const porcentajeMeta = Math.min(100, Math.round((approvedHours / META_MES) * 100));
-
   const recent = useMemo(() => activities.slice(0, 4), [activities]);
   const saludo = useMemo(() => getSaludo(), []);
 
@@ -92,10 +88,6 @@ export default function VolunteerDashboard() {
       {/* Hero Banner */}
       <section className={styles.heroBanner}>
         <div className={styles.heroContent}>
-          <div className={styles.heroBadgeRow}>
-            <span className={styles.greetingTag}>{saludo} 👋</span>
-            {area && <span className={styles.areaBadge}>Área: {area}</span>}
-          </div>
           <h1 className={styles.heroTitle}>
             {nombre ? `${nombre}, bienvenido a tu panel` : "Bienvenido a tu panel"}
           </h1>
@@ -124,7 +116,7 @@ export default function VolunteerDashboard() {
         <article className={styles.kpiCard}>
           <div className={styles.kpiHead}>
             <span className={styles.kpiLabel}>Aprobadas</span>
-            <div className={`${styles.kpiIcon} ${styles.kpiIconApproved}`}>✓</div>
+            <div className={`${styles.kpiIcon} ${styles.kpiIconApproved}`}>✅</div>
           </div>
           <div className={styles.kpiValue}>{approvedHours.toFixed(1)} h</div>
           <span className={styles.kpiSubtext}>Verificadas por el área</span>
@@ -133,7 +125,7 @@ export default function VolunteerDashboard() {
         <article className={styles.kpiCard}>
           <div className={styles.kpiHead}>
             <span className={styles.kpiLabel}>Pendientes</span>
-            <div className={`${styles.kpiIcon} ${styles.kpiIconPending}`}>⌛</div>
+            <div className={`${styles.kpiIcon} ${styles.kpiIconPending}`}>⏳</div>
           </div>
           <div className={styles.kpiValue}>{pendingHours.toFixed(1)} h</div>
           <span className={styles.kpiSubtext}>En revisión por coordinación</span>
@@ -151,11 +143,11 @@ export default function VolunteerDashboard() {
 
       {/* Grid Principal */}
       <div className={styles.mainLayout}>
-        {/* Actividad Reciente */}
+        {/* Columna Izquierda: Actividad Reciente */}
         <section className={styles.contentCard}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <span>📋</span> Actividad Reciente
+              Actividad Reciente
             </h2>
             <Link href="/historial" className={styles.viewAllLink}>
               Ver historial completo ›
@@ -165,7 +157,7 @@ export default function VolunteerDashboard() {
           {loading ? (
             <div className={styles.loadingState}>Cargando tus actividades recientes...</div>
           ) : error ? (
-            <div className={styles.loadingState} style={{ color: "#d64545" }}>{error}</div>
+            <div className={styles.loadingState} style={{ color: "#D64545" }}>{error}</div>
           ) : recent.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📂</div>
@@ -176,7 +168,7 @@ export default function VolunteerDashboard() {
               <Link
                 href="/formulario-horas"
                 className={styles.heroCtaBtn}
-                style={{ marginTop: "8px", background: "#0f766e", color: "#ffffff" }}
+                style={{ marginTop: "8px", background: "#0F766E", color: "#FFFFFF" }}
               >
                 Registrar Horas Ahora
               </Link>
@@ -210,48 +202,47 @@ export default function VolunteerDashboard() {
           )}
         </section>
 
-        {/* Sidebar Derecha: Progreso y Acciones */}
+        {/* Columna Derecha: GUÍA RÁPIDA (reemplaza Meta Mensual + Acciones Rápidas) */}
         <aside className={styles.sideWidgets}>
-          {/* Widget de Meta Mensual */}
-          <div className={styles.goalWidget}>
-            <div className={styles.goalHeader}>
-              <h3 className={styles.goalTitle}>Meta Mensual (20h)</h3>
-              <span className={styles.goalPercent}>{porcentajeMeta}%</span>
-            </div>
-            <div className={styles.progressBarBg}>
-              <div
-                className={styles.progressBarFill}
-                style={{ width: `${porcentajeMeta}%` }}
-              />
-            </div>
-            <p className={styles.goalSubtext}>
-              {approvedHours >= META_MES
-                ? "¡Excelente! Has alcanzado la meta sugerida de horas este mes. 🎉"
-                : `Llevas ${approvedHours.toFixed(1)} h aprobadas. ¡Faltan ${(
-                    META_MES - approvedHours
-                  ).toFixed(1)} h para lograr la meta!`}
-            </p>
-          </div>
+          <div className={styles.guideCard}>
+            <h3 className={styles.guideTitle}>Guía Rápida</h3>
 
-          {/* Acciones Rápidas */}
-          <div className={styles.quickActionsCard}>
-            <h3 className={styles.goalTitle}>Acciones Rápidas</h3>
-            <div className={styles.actionGrid}>
-              <Link href="/formulario-horas" className={styles.actionTile}>
-                <span className={styles.actionTileIcon}>⏱️</span>
-                <span>Registrar Horas</span>
-              </Link>
-              <Link href="/historial" className={styles.actionTile}>
-                <span className={styles.actionTileIcon}>📜</span>
-                <span>Mis Registros</span>
-              </Link>
-              <Link href="/editar-perfil" className={styles.actionTile}>
-                <span className={styles.actionTileIcon}>⚙️</span>
-                <span>Mi Perfil</span>
-              </Link>
-              <Link href="/administracion/auditoria" className={styles.actionTile}>
-                <span className={styles.actionTileIcon}>📊</span>
-                <span>Reportes</span>
+            <div className={styles.guideItem}>
+              <div className={styles.guideIcon}>⏱️</div>
+              <div className={styles.guideContent}>
+                <h4>Registrar horas</h4>
+                <p>
+                  Ve a <strong>Registrar Horas</strong> y usa el cronómetro para
+                  registrar tu tiempo de voluntariado. Recuerda añadir una descripción clara.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.guideItem}>
+              <div className={styles.guideIcon}>📜</div>
+              <div className={styles.guideContent}>
+                <h4>Ver historial</h4>
+                <p>
+                  Revisa todas tus actividades en el <strong>Historial</strong>.
+                  Puedes ver el detalle de cada jornada y su estado de aprobación.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.guideItem}>
+              <div className={styles.guideIcon}>⚙️</div>
+              <div className={styles.guideContent}>
+                <h4>Editar perfil</h4>
+                <p>
+                  Actualiza tus datos personales en <strong>Editar Perfil</strong>.
+                  Mantén tu información al día para una mejor comunicación.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.guideFooter}>
+              <Link href="/formulario-horas" className={styles.guideCta}>
+                Comenzar ahora →
               </Link>
             </div>
           </div>

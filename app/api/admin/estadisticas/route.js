@@ -39,9 +39,7 @@ export async function GET(request) {
     return NextResponse.json({ data: cacheado });
   }
 
-  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard({
-    revisorId: profile.id,
-  });
+  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard();
 
   if (error) {
     return NextResponse.json(

@@ -158,11 +158,6 @@ export default function HistorialAuditoria() {
       {/* Header */}
       <header className={styles.pageHeader}>
         <div className={styles.headerTitleGroup}>
-          <div className={styles.headerBadgeRow}>
-            <span className={styles.adminBadge}>
-              <span className={styles.liveDot} /> Reporte en vivo
-            </span>
-          </div>
           <h1 className={styles.pageTitle}>Historial de Reportes</h1>
           <p className={styles.pageSubtitle}>
             Trazabilidad completa de revisiones, aprobaciones y rechazos de horas.
@@ -441,7 +436,7 @@ export default function HistorialAuditoria() {
                             setSelectedItem(item);
                           }}
                         >
-                          Detalles 👁️
+                          Detalles
                         </button>
                       </td>
                     </tr>

@@ -1,75 +1,92 @@
+/* ============================================================ */
+/* ===== CORREGIR ACTIVIDAD (estilo premium = Auditoría) ===== */
+/* ============================================================ */
+
 .correctionPage {
   width: 100%;
-  max-width: 980px;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: var(--font-family, 'Inter', system-ui, sans-serif);
+  color: #1e293b;
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #667281;
+  color: #64748b;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   margin-bottom: 16px;
+  transition: color 0.15s ease;
 }
 
 .backLink:hover {
-  color: #26384b;
+  color: #0f172a;
 }
 
 .rejectedFlag {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #d64545;
-  font-size: 13px;
+  padding: 6px 14px;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
 .correctionPage h1 {
-  color: #26384b;
-  font-size: 30px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0 0 6px;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  color: #667281;
+  color: #64748b;
   font-size: 14px;
-  margin: 0 0 20px;
+  margin: 0 0 24px;
 }
 
+/* ===== COMENTARIO DEL COORDINADOR ===== */
 .commentCard {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  background: #eef2fb;
-  border: 1px solid #dbe2f5;
-  border-radius: 12px;
-  padding: 18px 20px;
-  margin-bottom: 24px;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
 }
 
 .commentIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background: #d64545;
+  background: #be123c;
   color: white;
-  font-size: 15px;
+  font-size: 16px;
   font-style: normal;
   flex-shrink: 0;
 }
 
 .commentLabel {
   display: block;
-  color: #3d4f88;
+  color: #475569;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -79,98 +96,141 @@
 
 .commentCard p {
   margin: 0;
-  color: #2e3a5c;
+  color: #1e293b;
   font-size: 14px;
   line-height: 1.6;
 }
 
 .reviewedBy {
   display: block;
-  color: #667281;
+  color: #64748b;
   font-size: 12px;
   margin-top: 10px;
 }
 
+/* ===== GRID PRINCIPAL ===== */
 .contentGrid {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 20px;
+  gap: 24px;
 }
 
 .formCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 32px;
   display: grid;
-  gap: 22px;
+  gap: 24px;
   align-content: start;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
+/* ===== SECCIÓN DE INFORMACIÓN (horas no editables) ===== */
+.infoSection {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.infoLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.infoValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.infoNote {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ===== CAMPOS DEL FORMULARIO ===== */
 .fieldsRow {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
 .field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field label {
-  color: #26384b;
+  color: #0f172a;
   font-size: 13px;
   font-weight: 600;
 }
 
 .field input,
 .field textarea {
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  background: #f8f9ff;
-  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 10px 14px;
   font-size: 14px;
-  color: #26384b;
+  color: #0f172a;
   font-family: inherit;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .field input:focus,
 .field textarea:focus {
-  outline: 2px solid #197343;
-  outline-offset: 1px;
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  background: #ffffff;
 }
 
 .field textarea {
   resize: vertical;
+  min-height: 100px;
 }
 
+/* ===== SIDEBAR ===== */
 .sidePanel {
   display: grid;
   gap: 16px;
   align-content: start;
 }
 
-.summaryCard,
-.infoCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 20px;
+.summaryCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
 }
 
 .summaryCard h2 {
-  color: #26384b;
+  color: #0f172a;
   font-size: 16px;
-  margin: 0 0 16px;
+  font-weight: 700;
+  margin: 0 0 18px;
 }
 
 .summaryRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  border-top: 1px solid #eef1f5;
+  padding: 12px 0;
+  border-top: 1px solid #f1f5f9;
 }
 
 .summaryRow:first-of-type {
@@ -179,106 +239,147 @@
 }
 
 .summaryRow span {
-  color: #667281;
+  color: #64748b;
   font-size: 13px;
 }
 
 .summaryRow strong {
-  color: #197343;
-  font-size: 18px;
-}
-
-.infoCard {
-  display: flex;
-  gap: 12px;
-  background: #eaf2fb;
-  border-color: #d7e4f5;
-}
-
-.infoIcon {
-  color: #3d6fbf;
+  color: #0f172a;
   font-size: 16px;
-  font-style: normal;
-  flex-shrink: 0;
+  font-weight: 700;
 }
 
-.infoCard strong {
-  display: block;
-  color: #26384b;
-  font-size: 13px;
-  margin-bottom: 4px;
+.statusRejected {
+  color: #be123c !important;
 }
 
-.infoCard p {
-  margin: 0;
-  color: #4c5a68;
-  font-size: 13px;
-  line-height: 1.5;
+.statusPending {
+  color: #d97706 !important;
 }
 
-.decorativeImage {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #dfe4ea;
-  height: 160px;
-}
-
-.decorativeImage img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
+/* ===== BOTONES ===== */
 .submitButton {
   border: 0;
   border-radius: 10px;
-  background: #197343;
+  background: #0f766e;
   color: white;
-  padding: 14px 16px;
+  padding: 14px 20px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .submitButton:hover {
-  background: #125a33;
+  background: #065f46;
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .cancelLink {
+  display: block;
   text-align: center;
-  color: #667281;
+  color: #64748b;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
-  padding: 4px;
+  padding: 6px;
+  transition: color 0.15s ease;
 }
 
 .cancelLink:hover {
-  color: #26384b;
+  color: #0f172a;
   text-decoration: underline;
 }
 
 .mensaje {
-  color: #b3403a;
+  color: #be123c;
   font-size: 13px;
   font-weight: 600;
-  margin: 0 0 8px;
   text-align: center;
+  margin: 4px 0 0;
 }
 
-@media (max-width: 1100px) {
+/* ===== BLOQUEO POR SESIÓN ACTIVA ===== */
+.blockedNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 24px 0;
+}
+
+.blockedIcon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.blockedNotice h3 {
+  color: #92400e;
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+
+.blockedNotice p {
+  color: #78350f;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================================ */
+/* ===== RESPONSIVE ===== */
+/* ============================================================ */
+
+@media (max-width: 1024px) {
   .contentGrid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 700px) {
-  .fieldsRow {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .correctionPage {
+    padding: 8px 0 24px;
+  }
+
+  .correctionPage h1 {
+    font-size: 22px;
   }
 
   .formCard {
-    padding: 20px;
+    padding: 20px 16px;
+  }
+
+  .summaryCard {
+    padding: 18px 16px;
+  }
+
+  .commentCard {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .blockedNotice {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .rejectedFlag {
+    font-size: 11px;
+    padding: 4px 12px;
   }
 }

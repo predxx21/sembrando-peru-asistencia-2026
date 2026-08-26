@@ -91,7 +91,7 @@ export default function FormularioHoras() {
       });
       const body = await res.json();
       setSesion(body.data);
-      setMensaje('✅ Jornada iniciada. El cronómetro está en marcha.');
+      setMensaje('Jornada iniciada. El cronómetro está en marcha.');
       return body.data;
     } catch (err) {
       throw new Error(err.message || 'Error al iniciar la sesión.');
@@ -113,9 +113,9 @@ export default function FormularioHoras() {
       // (en lugar de redirect automático que podría perderse si se cierra la pestaña)
       setRedirectEnabled(true);
       setSesion(null);
-      setMensaje('✅ Jornada finalizada. Horas registradas automáticamente.');
+      setMensaje('Jornada finalizada. Horas registradas automáticamente.');
     } catch (err) {
-      setMensaje(`❌ ${err.message}. Intenta de nuevo.`);
+      setMensaje(`${err.message}. Intenta de nuevo.`);
       // No reseteamos sesion, el cronómetro sigue activo
     }
   };
