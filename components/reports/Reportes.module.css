@@ -283,10 +283,11 @@
 
 .tableCard {
   background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   overflow: hidden;
-  margin-top: 16px;
+  margin-top: 24px;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
 }
 
 .tableHeader {
@@ -295,12 +296,13 @@
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 20px;
+  padding: 22px 24px;
 }
 
 .tableHeader h2 {
-  color: #26384b;
-  font-size: 16px;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -308,19 +310,26 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f8f9ff;
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  padding: 9px 12px;
-  color: #667281;
-  font-size: 13px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 9px 14px;
+  color: #64748b;
+  font-size: 13.5px;
+  transition: all 0.2s ease;
+}
+
+.searchField:focus-within {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  background: #ffffff;
 }
 
 .searchField input {
   border: 0;
   outline: 0;
-  font-size: 13px;
-  color: #26384b;
+  font-size: 13.5px;
+  color: #0f172a;
   font-family: inherit;
   background: transparent;
   width: 220px;
@@ -331,44 +340,52 @@
   grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid #dfe4ea;
+  border-top: 1px solid #f1f5f9;
   min-height: 64px;
-  padding: 12px 20px;
-  color: #26384b;
-  font-size: 13px;
+  padding: 14px 24px;
+  color: #334155;
+  font-size: 13.5px;
+  transition: background-color 0.15s ease;
+}
+
+.tableRow:not(.tableRowHead):hover {
+  background: #f8fafc;
 }
 
 .tableRowHead {
-  border-top: 0;
-  background: #e7f4ec;
-  color: #667281;
-  font-size: 11px;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
-  min-height: 44px;
+  min-height: 46px;
 }
 
 .volunteerCell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .volunteerCell strong {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
+  color: #0f172a;
 }
 
 .hoursBadge {
-  display: inline-block;
-  background: #cdeedd;
-  color: #145c34;
+  display: inline-flex;
+  align-items: center;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
   border-radius: 99px;
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 12px;
 }
 
 .emptyState {
