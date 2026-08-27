@@ -1,35 +1,48 @@
+/* ============================================================ */
+/* ===== VER DETALLE (estilo premium = Auditoría) ===== */
+/* ============================================================ */
+
 .detailPage {
   width: 100%;
-  max-width: 720px;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: var(--font-family, 'Inter', system-ui, sans-serif);
+  color: #1e293b;
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #667281;
+  color: #64748b;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   margin-bottom: 20px;
+  transition: color 0.15s ease;
 }
 
 .backLink:hover {
-  color: #26384b;
+  color: #0f172a;
 }
 
+/* HEADER */
 .detailHeader {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 28px;
   margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eef1f5;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
 }
 
 .statusRow {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .statusPill {
@@ -45,30 +58,40 @@
 }
 
 .statusApproved {
-  background: #d1f2e0;
-  color: #145c34;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .statusPending {
   background: #fef3c7;
   color: #92400e;
+  border: 1px solid #fde68a;
 }
 
 .statusRejected {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.statusInProgress {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
 .activityDate {
-  color: #667281;
+  color: #64748b;
   font-size: 14px;
 }
 
 .activityTitle {
-  color: #26384b;
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0 0 12px;
+  letter-spacing: -0.5px;
   line-height: 1.3;
 }
 
@@ -84,7 +107,7 @@
   align-items: center;
   gap: 6px;
   background: #e7f4ec;
-  color: #197343;
+  color: #0f766e;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 14px;
@@ -103,30 +126,51 @@
   font-weight: 600;
 }
 
+/* GRID DE DOS COLUMNAS */
 .detailGrid {
   display: grid;
-  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* El primer card (Información de la Jornada) ocupa todo el espacio disponible */
+.leftColumn > .detailCard:first-child {
+  flex: 1;
+}
+
+/* El comentario (si existe) mantiene su altura natural */
+.leftColumn > .detailCard:not(:first-child) {
+  flex-shrink: 0;
 }
 
 .detailCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   padding: 24px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
 .detailCard h2 {
-  color: #26384b;
+  color: #0f172a;
   font-size: 16px;
   font-weight: 700;
-  margin: 0 0 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eef1f5;
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
+/* LISTAS DE INFORMACIÓN */
 .infoList {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   margin: 0;
 }
 
@@ -138,14 +182,14 @@
 }
 
 .infoRow dt {
-  color: #667281;
+  color: #64748b;
   font-size: 13px;
   font-weight: 600;
   margin: 0;
 }
 
 .infoRow dd {
-  color: #26384b;
+  color: #0f172a;
   font-size: 14px;
   margin: 0;
   line-height: 1.5;
@@ -154,50 +198,87 @@
 .exactTime {
   font-family: "SF Mono", "Fira Code", monospace;
   font-weight: 600;
-  color: #197343;
+  color: #0f766e;
 }
 
 .durationValue {
   font-size: 18px;
   font-weight: 700;
-  color: #197343;
+  color: #0f766e;
+}
+
+/* BLOQUE DE DESCRIPCIÓN Y ESTADO (dentro de la misma tarjeta) */
+.descriptionBlock {
+  margin-bottom: 16px;
 }
 
 .description {
-  color: #2e3a5c;
+  color: #334155;
   font-size: 14px;
   line-height: 1.7;
   margin: 0;
   white-space: pre-wrap;
 }
 
+.stateDivider {
+  border-top: 1px solid #f1f5f9;
+  margin: 16px 0;
+}
+
+.stateBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.stateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stateLabel {
+  font-weight: 600;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* COMENTARIO DEL COORDINADOR (izquierda) */
 .comment {
   margin: 0 0 12px;
   padding: 16px;
-  background: #f8f9ff;
-  border-left: 4px solid #3d6fbf;
+  background: #f8fafc;
+  border-left: 4px solid #0f766e;
   border-radius: 0 8px 8px 0;
-  color: #2e3a5c;
+  color: #1e293b;
   font-size: 14px;
   line-height: 1.6;
   font-style: italic;
 }
 
 .reviewedBy {
-  color: #667281;
+  color: #64748b;
   font-size: 12px;
   margin: 0;
 }
 
+/* BLOQUE DE RECHAZO (dentro de la misma tarjeta) */
+.rejectedBlock {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
 .rejectedInfo {
-  color: #b91c1c;
+  color: #be123c;
   font-size: 14px;
   line-height: 1.6;
   margin: 0 0 16px;
   padding: 12px;
-  background: #fef2f2;
+  background: #fff1f2;
   border-radius: 8px;
-  border: 1px solid #fecaca;
+  border: 1px solid #fecdd3;
 }
 
 .corregirButton {
@@ -205,24 +286,45 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #d64545;
+  background: #0f766e;
   color: white;
   padding: 12px 20px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
+  width: 100%;
 }
 
 .corregirButton:hover {
-  background: #b33a3a;
+  background: #065f46;
 }
 
-@media (max-width: 600px) {
-  .infoRow {
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .detailGrid {
     grid-template-columns: 1fr;
-    gap: 4px;
+  }
+
+  .leftColumn,
+  .rightColumn {
+    gap: 20px;
+  }
+
+  /* En móvil, ya no necesitamos estirar el primer card porque las columnas se apilan */
+  .leftColumn > .detailCard:first-child {
+    flex: 0; /* Restablecer a altura automática */
+  }
+}
+
+@media (max-width: 640px) {
+  .detailPage {
+    padding: 8px 0 24px;
+  }
+
+  .detailHeader {
+    padding: 20px;
   }
 
   .activityTitle {
@@ -231,5 +333,24 @@
 
   .detailCard {
     padding: 18px;
+  }
+
+  .infoRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .leftColumn,
+  .rightColumn {
+    gap: 16px;
+  }
+
+  .stateRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .corregirButton {
+    width: 100%;
   }
 }

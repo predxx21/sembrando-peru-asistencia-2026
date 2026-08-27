@@ -138,13 +138,6 @@ export default function HistoryDashboard({ activities }) {
                 </span>
               </div>
 
-              {/* Mostrar comentario de rechazo si existe */}
-              {act.status === "rechazado" && act.coordinatorComment && (
-                <div className={styles.rejectionComment}>
-                  <strong>Motivo de rechazo:</strong> {act.coordinatorComment}
-                </div>
-              )}
-
               <div className={styles.cardActions}>
                 <Link
                   href={`/historial/${act.id}`}

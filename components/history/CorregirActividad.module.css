@@ -108,11 +108,29 @@
   margin-top: 10px;
 }
 
-/* ===== GRID PRINCIPAL ===== */
+/* ===== GRID PRINCIPAL (dos columnas con altura igual) ===== */
 .contentGrid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+  align-items: stretch;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* El card del formulario se estira para ocupar toda la altura */
+.leftColumn > .formCard {
+  flex: 1;
+}
+
+/* El sidebar también se estira (para que la columna derecha tenga altura completa) */
+.rightColumn {
+  flex: 1;
 }
 
 .formCard {
@@ -203,19 +221,14 @@
   min-height: 100px;
 }
 
-/* ===== SIDEBAR ===== */
-.sidePanel {
-  display: grid;
-  gap: 16px;
-  align-content: start;
-}
-
+/* ===== SIDEBAR (columna derecha) ===== */
 .summaryCard {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  flex: 1; /* Se estira para ocupar toda la altura */
 }
 
 .summaryCard h2 {
@@ -381,5 +394,13 @@
   .rejectedFlag {
     font-size: 11px;
     padding: 4px 12px;
+  }
+
+  .leftColumn > .formCard {
+    flex: 0; /* En móvil no estiramos */
+  }
+
+  .summaryCard {
+    flex: 0;
   }
 }
