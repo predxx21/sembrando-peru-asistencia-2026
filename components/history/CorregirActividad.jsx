@@ -14,7 +14,6 @@ export default function CorrectionForm({ activity }) {
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  // Las horas NO son editables – vienen del cronómetro
   const horasOriginales = activity.hours || 0;
 
   async function handleSubmit(event) {
@@ -46,7 +45,6 @@ export default function CorrectionForm({ activity }) {
         body: JSON.stringify({
           fecha,
           descripcion: descripcion.trim(),
-          // Las horas se mantienen igual (no se envían)
         }),
       });
 
@@ -64,7 +62,6 @@ export default function CorrectionForm({ activity }) {
     }
   }
 
-  // Si la sesión está activa, mostrar bloqueo
   if (activity.sesionActiva) {
     return (
       <div className={styles.correctionPage}>
@@ -94,13 +91,9 @@ export default function CorrectionForm({ activity }) {
         ← Volver al historial
       </Link>
 
-      <span className={styles.rejectedFlag}>
-        ⚠ RECHAZADO - Requiere corrección
-      </span>
-
       <h1>Corregir Registro de Actividad</h1>
       <p className={styles.subtitle}>
-        ID de Registro: #{activity.id} • Fecha de envío: {activity.date}
+        Fecha de envío: {activity.date}
       </p>
 
       <div className={styles.commentCard}>
@@ -117,45 +110,49 @@ export default function CorrectionForm({ activity }) {
       </div>
 
       <form className={styles.contentGrid} onSubmit={handleSubmit}>
-        <div className={styles.formCard}>
-          {/* Información de la jornada (solo lectura) */}
-          <div className={styles.infoSection}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Duración registrada</span>
-              <span className={styles.infoValue}>
-                {horasOriginales.toFixed(2)} horas
-              </span>
-              <span className={styles.infoNote}>
-                (Registrada automáticamente por el cronómetro)
-              </span>
+        {/* Columna izquierda: Formulario */}
+        <div className={styles.leftColumn}>
+          <div className={styles.formCard}>
+            {/* Información de la jornada (solo lectura) */}
+            <div className={styles.infoSection}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Duración registrada</span>
+                <span className={styles.infoValue}>
+                  {horasOriginales.toFixed(2)} horas
+                </span>
+                <span className={styles.infoNote}>
+                  (Registrada automáticamente por el cronómetro)
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className={styles.fieldsRow}>
+            <div className={styles.fieldsRow}>
+              <div className={styles.field}>
+                <label htmlFor="fecha">Fecha de la Actividad</label>
+                <input
+                  id="fecha"
+                  type="date"
+                  value={fecha}
+                  onChange={(event) => setFecha(event.target.value)}
+                />
+              </div>
+            </div>
+
             <div className={styles.field}>
-              <label htmlFor="fecha">Fecha de la Actividad</label>
-              <input
-                id="fecha"
-                type="date"
-                value={fecha}
-                onChange={(event) => setFecha(event.target.value)}
+              <label htmlFor="descripcion">Descripción de la Actividad</label>
+              <textarea
+                id="descripcion"
+                rows={4}
+                value={descripcion}
+                onChange={(event) => setDescripcion(event.target.value)}
+                placeholder="Describe brevemente lo que hiciste durante la jornada..."
               />
             </div>
           </div>
-
-          <div className={styles.field}>
-            <label htmlFor="descripcion">Descripción de la Actividad</label>
-            <textarea
-              id="descripcion"
-              rows={4}
-              value={descripcion}
-              onChange={(event) => setDescripcion(event.target.value)}
-              placeholder="Describe brevemente lo que hiciste durante la jornada..."
-            />
-          </div>
         </div>
 
-        <aside className={styles.sidePanel}>
+        {/* Columna derecha: Sidebar */}
+        <div className={styles.rightColumn}>
           <article className={styles.summaryCard}>
             <h2>Resumen de la Jornada</h2>
 
@@ -184,7 +181,7 @@ export default function CorrectionForm({ activity }) {
           <Link href="/historial" className={styles.cancelLink}>
             Cancelar
           </Link>
-        </aside>
+        </div>
       </form>
     </div>
   );

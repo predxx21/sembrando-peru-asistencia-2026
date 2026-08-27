@@ -657,7 +657,7 @@ function TableListIcon({ size = 18, className }) {
       {/* GRÁFICOS Y AUDITORÍA */}
       <section className={styles.chartsSection}>
         <div className={styles.chartCard}>
-          <h3>📊 Tendencias de Volumen de Envíos</h3>
+          <h3>Tendencias de Volumen de Envíos</h3>
           {weeklyVolume.length > 0 ? (
             <WeeklyVolumeChart data={weeklyVolume} />
           ) : (
@@ -666,7 +666,7 @@ function TableListIcon({ size = 18, className }) {
         </div>
 
         <div className={styles.chartCard}>
-          <h3>📋 Registros de Auditoría</h3>
+          <h3>Registros de Auditoría</h3>
           {auditLog.length > 0 ? (
             <AuditLog entries={auditLog} />
           ) : (

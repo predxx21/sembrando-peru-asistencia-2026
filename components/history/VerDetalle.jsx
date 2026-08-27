@@ -23,7 +23,6 @@ function getAnomaliaBadge(horas) {
   return null;
 }
 
-// A-6: Badge "En curso" si el cronómetro está corriendo
 function getEstadoBadge(activity) {
   if (activity.sesionActiva) {
     return (
@@ -55,127 +54,125 @@ function formatearHoraLocal(fechaISO) {
 }
 
 export default function VerDetalle({ activity }) {
-  const status = STATUS_CONFIG[activity.status] || STATUS_CONFIG.pendiente;
-
   return (
     <div className={styles.detailPage}>
       <Link href="/historial" className={styles.backLink}>
         ← Volver al historial
       </Link>
 
+      {/* Header con estado y fecha */}
       <header className={styles.detailHeader}>
         <div className={styles.statusRow}>
-          {/* A-6: badge dinámico según sesionActiva */}
           {getEstadoBadge(activity)}
           <span className={styles.activityDate}>{activity.date}</span>
         </div>
-
         <h1 className={styles.activityTitle}>{activity.title}</h1>
-
         <div className={styles.activityMeta}>
           <span className={styles.hoursBadge}>{activity.hours} hrs</span>
           {getAnomaliaBadge(activity.hours)}
         </div>
       </header>
 
-      <section className={styles.detailGrid}>
-        <article className={styles.detailCard}>
-          <h2>Información de la Jornada</h2>
-
-          <dl className={styles.infoList}>
-            <div className={styles.infoRow}>
-              <dt>Fecha</dt>
-              <dd>{activity.date}</dd>
-            </div>
-
-            <div className={styles.infoRow}>
-              <dt>Hora de Inicio</dt>
-              <dd>{activity.startTime || "—"}</dd>
-            </div>
-
-            <div className={styles.infoRow}>
-              <dt>Hora de Fin</dt>
-              <dd>{activity.endTime || "—"}</dd>
-            </div>
-
-            {activity.horaInicioReal && (
+      {/* Grid de dos columnas */}
+      <div className={styles.detailGrid}>
+        {/* Columna izquierda: Información de la Jornada + Comentario (opcional) */}
+        <div className={styles.leftColumn}>
+          <article className={styles.detailCard}>
+            <h2>Información de la Jornada</h2>
+            <dl className={styles.infoList}>
               <div className={styles.infoRow}>
-                <dt>Iniciado exactamente a las</dt>
-                <dd className={styles.exactTime}>
-                  {formatearHoraLocal(activity.horaInicioReal)}
-                </dd>
+                <dt>Fecha</dt>
+                <dd>{activity.date}</dd>
+              </div>
+              <div className={styles.infoRow}>
+                <dt>Hora de Inicio</dt>
+                <dd>{activity.startTime || "—"}</dd>
+              </div>
+              <div className={styles.infoRow}>
+                <dt>Hora de Fin</dt>
+                <dd>{activity.endTime || "—"}</dd>
+              </div>
+              {activity.horaInicioReal && (
+                <div className={styles.infoRow}>
+                  <dt>Iniciado exactamente a las</dt>
+                  <dd className={styles.exactTime}>
+                    {formatearHoraLocal(activity.horaInicioReal)}
+                  </dd>
+                </div>
+              )}
+              <div className={styles.infoRow}>
+                <dt>Duración Total</dt>
+                <dd className={styles.durationValue}>{activity.hours} horas</dd>
+              </div>
+            </dl>
+          </article>
+
+          {/* Comentario del Coordinador (si existe) */}
+          {activity.coordinatorComment && (
+            <article className={styles.detailCard}>
+              <h2>Comentario del Coordinador</h2>
+              <blockquote className={styles.comment}>
+                {activity.coordinatorComment}
+              </blockquote>
+              {activity.reviewedBy && (
+                <p className={styles.reviewedBy}>
+                  Revisado por: {activity.reviewedBy}
+                  {activity.reviewedAt && (
+                    <>
+                      {" • "}
+                      <time dateTime={activity.reviewedAt}>
+                        {formatFechaEs(activity.reviewedAt)}
+                      </time>
+                    </>
+                  )}
+                </p>
+              )}
+            </article>
+          )}
+        </div>
+
+        {/* Columna derecha: Descripción + Estado (cards independientes) */}
+        <div className={styles.rightColumn}>
+          {/* Card de Descripción */}
+          <article className={styles.detailCard}>
+            <h2>Descripción</h2>
+            <p className={styles.description}>{activity.description}</p>
+          </article>
+
+          {/* Card de Estado del Registro */}
+          <article className={styles.detailCard}>
+            <h2>Estado del Registro</h2>
+            <dl className={styles.infoList}>
+              <div className={styles.infoRow}>
+                <dt>Estado Actual</dt>
+                <dd>{getEstadoBadge(activity)}</dd>
+              </div>
+              {activity.reviewedAt && (
+                <div className={styles.infoRow}>
+                  <dt>Última Revisión</dt>
+                  <dd>{formatFechaEs(activity.reviewedAt)}</dd>
+                </div>
+              )}
+            </dl>
+
+            {/* Si el registro está rechazado, mostramos el bloque dentro de esta misma card */}
+            {activity.status === "rechazado" && (
+              <div className={styles.rejectedBlock}>
+                <p className={styles.rejectedInfo}>
+                  Este registro fue rechazado por el coordinador. Puedes corregirlo y
+                  reenviarlo para nueva revisión.
+                </p>
+                <Link
+                  href={`/registro-editar/${activity.id}`}
+                  className={styles.corregirButton}
+                >
+                  Corregir y Reenviar
+                </Link>
               </div>
             )}
-
-            <div className={styles.infoRow}>
-              <dt>Duración Total</dt>
-              <dd className={styles.durationValue}>{activity.hours} horas</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className={styles.detailCard}>
-          <h2>Descripción</h2>
-          <p className={styles.description}>{activity.description}</p>
-        </article>
-
-        {activity.coordinatorComment && (
-          <article className={styles.detailCard}>
-            <h2>Comentario del Coordinador</h2>
-            <blockquote className={styles.comment}>
-              {activity.coordinatorComment}
-            </blockquote>
-            {activity.reviewedBy && (
-              <p className={styles.reviewedBy}>
-                Revisado por: {activity.reviewedBy}
-                {activity.reviewedAt && (
-                  <>
-                    {" • "}
-                    <time dateTime={activity.reviewedAt}>
-                      {formatFechaEs(activity.reviewedAt)}
-                    </time>
-                  </>
-                )}
-              </p>
-            )}
           </article>
-        )}
-
-        {activity.status === "rechazado" && (
-          <article className={styles.detailCard}>
-            <h2>⚠ Registro Rechazado</h2>
-            <p className={styles.rejectedInfo}>
-              Este registro fue rechazado por el coordinador. Puedes corregirlo y
-              reenviarlo para nueva revisión.
-            </p>
-            <Link
-              href={`/registro-editar/${activity.id}`}
-              className={styles.corregirButton}
-            >
-              Corregir y Reenviar
-            </Link>
-          </article>
-        )}
-
-        <article className={styles.detailCard}>
-          <h2>Estado del Registro</h2>
-          <dl className={styles.infoList}>
-            <div className={styles.infoRow}>
-              <dt>Estado Actual</dt>
-              <dd>
-                {/* A-6: badge dinámico según sesionActiva */}
-                {getEstadoBadge(activity)}
-              </dd>
-            </div>
-            {activity.reviewedAt && (
-              <div className={styles.infoRow}>
-                <dt>Última Revisión</dt>
-                <dd>{formatFechaEs(activity.reviewedAt)}</dd>
-              </div>
-            )}
-          </dl>
-        </article>
-      </section>
+        </div>
+      </div>
     </div>
   );
 }
