@@ -162,4 +162,67 @@
     font-size: 15px;
     padding: 14px 20px;
   }
+  .photoSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #f7f8fa;
+  margin-bottom: 20px;
+}
+
+.photoPreview {
+  width: 110px;
+  height: 110px;
+  min-width: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  border: 3px solid #325446;
+}
+
+.photoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoPlaceholder {
+  font-size: 42px;
+}
+
+.photoControls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photoControls label {
+  font-weight: 600;
+}
+
+.photoControls input {
+  max-width: 280px;
+}
+
+.photoControls small {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+@media (max-width: 600px) {
+  .photoSection {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .photoControls {
+    align-items: center;
+  }
+}
 }

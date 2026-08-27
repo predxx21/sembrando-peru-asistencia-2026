@@ -8,27 +8,45 @@ import styles from './Topbar.module.css';
 
 export default function Topbar() {
   const router = useRouter();
+
   const [nombre, setNombre] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [imagenError, setImagenError] = useState(false);
+
   const { sidebarOpen, toggleSidebar } = useSidebar();
 
   useEffect(() => {
     async function cargarUsuario() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return;
-      const { data: { session } } = await supabase.auth.getSession();
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const token = session?.access_token;
+
       if (!token) return;
 
       try {
         const res = await fetch('/api/auth/perfil', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+
         const body = await res.json().catch(() => null);
-        if (body?.profile?.nombre) {
-          setNombre(body.profile.nombre);
+
+        if (body?.profile) {
+          setNombre(body.profile.nombre || '');
+          setAvatarUrl(body.profile.avatarUrl || '');
+          setImagenError(false);
         }
       } catch {
-        // Silencioso: el nombre es opcional en la UI.
+        // Silencioso.
       }
     }
 
@@ -41,7 +59,12 @@ export default function Topbar() {
   }
 
   const iniciales = nombre
-    ? nombre.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+    ? nombre
+        .split(' ')
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
     : 'U';
 
   return (
@@ -53,7 +76,11 @@ export default function Topbar() {
         onClick={toggleSidebar}
         aria-expanded={sidebarOpen}
         aria-controls="sidebar-drawer"
-        aria-label={sidebarOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+        aria-label={
+          sidebarOpen
+            ? 'Cerrar menú de navegación'
+            : 'Abrir menú de navegación'
+        }
       >
         {sidebarOpen ? '✕' : '☰'}
       </button>
@@ -63,18 +90,22 @@ export default function Topbar() {
       </strong>
 
       <div className={styles.userArea}>
-        <div className={styles.avatar} aria-hidden="true">
-          {iniciales}
+        <div className={styles.avatar}>
+          {avatarUrl && !imagenError ? (
+            <img
+              src={avatarUrl}
+              alt="Foto de perfil"
+              className={styles.avatarImage}
+              onError={() => setImagenError(true)}
+            />
+          ) : (
+            iniciales
+          )}
         </div>
-        <span className={styles.userName}>{nombre || 'Cargando...'}</span>
-        {/* <button
-          type="button"
-          className={styles.logoutButton}
-          onClick={handleLogout}
-          aria-label="Cerrar sesión"
-        >
-          Salir
-        </button> */}
+
+        <span className={styles.userName}>
+          {nombre || 'Cargando...'}
+        </span>
       </div>
     </header>
   );

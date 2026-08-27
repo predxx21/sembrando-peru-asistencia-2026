@@ -35,7 +35,11 @@ INSERT INTO "areas" ("id", "nombre", "orden") VALUES
 --    Since old areas don't match new ones, we leave areaId NULL for existing
 --    profiles (they'll need to select a new area on next profile edit)
 --    This is intentional: old areas are deprecated and won't appear in selects
+ALTER TABLE "registroasistencia"
+ADD COLUMN "sesionActiva" BOOLEAN NOT NULL DEFAULT false;
 
+ALTER TABLE "registroasistencia"
+ADD COLUMN "horaInicioReal" TIMESTAMP(3);
 -- 7. Add missing indexes to registroasistencia
 CREATE INDEX "registroasistencia_profileId_sesionActiva_idx"
     ON "registroasistencia"("profileId", "sesionActiva");
