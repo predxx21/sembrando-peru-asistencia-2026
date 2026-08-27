@@ -14,6 +14,8 @@ export default function EditarPerfil() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [foto, setFoto] = useState(null);
+const [fotoPreview, setFotoPreview] = useState("");
 
   // Carga el perfil real (nombre/apellido) y áreas disponibles.
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function EditarPerfil() {
           rol: perfilBody.profile.rol || "voluntario",
           areaId: perfilBody.profile.areaId || "",
         });
+        setFotoPreview(perfilBody.profile.avatarUrl || "");
         setAreas(areasBody?.areas || []);
         setEmail(user.email || "");
       } catch (err) {
@@ -64,7 +67,31 @@ export default function EditarPerfil() {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
+function handleFotoChange(event) {
+  const file = event.target.files?.[0];
 
+  if (!file) return;
+
+  const tiposPermitidos = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (!tiposPermitidos.includes(file.type)) {
+    setMensaje("Solo se permiten imágenes JPG, PNG o WEBP.");
+    return;
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    setMensaje("La imagen no debe superar los 2 MB.");
+    return;
+  }
+
+  setFoto(file);
+  setFotoPreview(URL.createObjectURL(file));
+  setMensaje("");
+}
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -84,11 +111,41 @@ export default function EditarPerfil() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No hay sesión activa.");
+let nuevaAvatarUrl = fotoPreview || null;
 
+if (foto) {
+  const extension = foto.name.split(".").pop()?.toLowerCase() || "jpg";
+
+  const nombreArchivo = `${crypto.randomUUID()}.${extension}`;
+
+  const rutaArchivo = `${session.user.id}/${nombreArchivo}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(rutaArchivo, foto, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: foto.type,
+    });
+
+  if (uploadError) {
+    throw new Error(
+      uploadError.message || "No se pudo subir la foto."
+    );
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("avatars")
+    .getPublicUrl(rutaArchivo);
+
+  nuevaAvatarUrl = publicUrlData.publicUrl;
+}
       const payload = {
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
         areaId: form.areaId || null,
+        avatarUrl: nuevaAvatarUrl,
+
       };
 
       const res = await fetch("/api/auth/perfil", {
@@ -129,6 +186,38 @@ export default function EditarPerfil() {
         <h1>Editar Perfil</h1>
         <p>Actualiza tu información personal y área de voluntariado.</p>
       </header>
+<div className={styles.photoSection}>
+  <div className={styles.photoPreview}>
+    {fotoPreview ? (
+      <img
+        src={fotoPreview}
+        alt="Foto de perfil"
+        className={styles.photoImage}
+      />
+    ) : (
+      <div className={styles.photoPlaceholder}>
+        👤
+      </div>
+    )}
+  </div>
+
+  <div className={styles.photoControls}>
+    <label htmlFor="foto">
+      Foto de perfil
+    </label>
+
+    <input
+      id="foto"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      onChange={handleFotoChange}
+    />
+
+    <small>
+      JPG, PNG o WEBP. Máximo 2 MB.
+    </small>
+  </div>
+</div>
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.field}>
@@ -198,7 +287,6 @@ export default function EditarPerfil() {
         </div>
 
         {mensaje && <p className={styles.mensaje}>{mensaje}</p>}
-
         <button type="submit" className={styles.saveButton} disabled={saving}>
           {saving ? "Guardando..." : "Guardar Cambios"}
         </button>

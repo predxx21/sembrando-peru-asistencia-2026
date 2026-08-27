@@ -68,6 +68,8 @@ export async function PATCH(request) {
     nombre: body.nombre.trim(),
     apellido: body.apellido.trim(),
     areaId: body.areaId || null,
+      avatarUrl: body.avatarUrl || null,
+
   });
 
   if (error) {

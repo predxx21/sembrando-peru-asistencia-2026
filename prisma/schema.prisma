@@ -46,6 +46,7 @@ model Profile {
   rol           Rol                @default(voluntario)
   areaId        String?            // FK a Area (nullable para compatibilidad)
   area          Area?              @relation(fields: [areaId], references: [id])
+  avatarUrl     String?
   fechaCreacion DateTime           @default(now())
 
   registros     RegistroAsistencia[]
