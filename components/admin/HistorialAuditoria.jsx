@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import { getAuditoriaCompleta } from "./adminData";
 import { formatFechaEs } from "@/lib/utils/fecha";
+import ExportModalAuditoria from "./ExportModalAuditoria";
 import styles from "./HistorialAuditoria.module.css";
 
 const ITEMS_PER_PAGE = 20;
@@ -44,6 +46,9 @@ export default function HistorialAuditoria() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Modal de exportación
+  const [showExport, setShowExport] = useState(false);
+
   const isFirstRender = useRef(true);
 
   const totalPages = useMemo(
@@ -51,13 +56,12 @@ export default function HistorialAuditoria() {
     [total]
   );
 
-  // KPIs dinámicos calculados sobre la muestra actual
+  // KPIs dinámicos
   const kpiStats = useMemo(() => {
     const aprobados = auditoria.filter((item) => item.estado === "aprobado").length;
     const rechazados = auditoria.filter((item) => item.estado === "rechazado").length;
     const muestraTotal = auditoria.length;
     const tasaAprobacion = muestraTotal > 0 ? Math.round((aprobados / muestraTotal) * 100) : 100;
-    
     return { aprobados, rechazados, tasaAprobacion };
   }, [auditoria]);
 
@@ -121,28 +125,8 @@ export default function HistorialAuditoria() {
     }
   }
 
-  // Exportar a CSV
-  function exportarCSV() {
-    if (auditoria.length === 0) return;
-    const headers = ["ID", "Fecha Revision", "Estado", "Voluntario", "Revisor", "Comentario"];
-    const rows = auditoria.map((item) => [
-      item.id,
-      formatFechaEs(item.fechaRevision),
-      item.estado,
-      `"${item.profile?.nombre || ""} ${item.profile?.apellido || ""}"`,
-      `"${item.revisor?.nombre || ""} ${item.revisor?.apellido || ""}"`,
-      `"${(item.comentarioRevision || "").replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `auditoria_reporte_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  function abrirModalExport() {
+    setShowExport(true);
   }
 
   function handleCopyId(id) {
@@ -158,7 +142,7 @@ export default function HistorialAuditoria() {
       {/* Header */}
       <header className={styles.pageHeader}>
         <div className={styles.headerTitleGroup}>
-          <h1 className={styles.pageTitle}>Historial de Reportes</h1>
+          <h1 className={styles.pageTitle}>Historial de Auditoría</h1>
           <p className={styles.pageSubtitle}>
             Trazabilidad completa de revisiones, aprobaciones y rechazos de horas.
           </p>
@@ -167,14 +151,13 @@ export default function HistorialAuditoria() {
           <button
             type="button"
             className={styles.exportBtn}
-            onClick={exportarCSV}
-            disabled={auditoria.length === 0}
-            title="Descargar listado actual en formato CSV"
+            onClick={abrirModalExport}
+            title="Exportar reporte a Excel o CSV"
           >
             <svg viewBox="0 0 24 24">
               <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
             </svg>
-            Exportar CSV
+            Exportar
           </button>
         </div>
       </header>
@@ -186,28 +169,25 @@ export default function HistorialAuditoria() {
           <div className={styles.kpiContent}>
             <span className={styles.kpiLabel}>Total Registros</span>
             <span className={styles.kpiValue}>{total}</span>
-            <span className={styles.kpiSubtext}>Eventos reportados</span>
+            <span className={styles.kpiSubtext}>Eventos auditados</span>
           </div>
         </div>
-
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconApproved}`}>✓</div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Aprobados (Pagina)</span>
+            <span className={styles.kpiLabel}>Aprobados (Página)</span>
             <span className={styles.kpiValue}>{kpiStats.aprobados}</span>
             <span className={styles.kpiSubtext}>Sin observaciones</span>
           </div>
         </div>
-
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconRejected}`}>✕</div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Rechazados (Pagina)</span>
+            <span className={styles.kpiLabel}>Rechazados (Página)</span>
             <span className={styles.kpiValue}>{kpiStats.rechazados}</span>
             <span className={styles.kpiSubtext}>Devueltos para corrección</span>
           </div>
         </div>
-
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconRate}`}>📈</div>
           <div className={styles.kpiContent}>
@@ -218,10 +198,9 @@ export default function HistorialAuditoria() {
         </div>
       </div>
 
-      {/* Barra de Filtros & Herramientas */}
+      {/* Filtros */}
       <div className={styles.toolbarCard}>
         <div className={styles.toolbarTopRow}>
-          {/* Tabs por Estado */}
           <div className={styles.tabsGroup}>
             <button
               type="button"
@@ -245,8 +224,6 @@ export default function HistorialAuditoria() {
               Rechazados
             </button>
           </div>
-
-          {/* Buscador */}
           <div className={styles.searchBox}>
             <span className={styles.searchIcon}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -266,15 +243,12 @@ export default function HistorialAuditoria() {
                 type="button"
                 className={styles.clearSearchBtn}
                 onClick={() => setSearch("")}
-                title="Limpiar búsqueda"
               >
                 ✕
               </button>
             )}
           </div>
         </div>
-
-        {/* Fila Inferior: Fechas & Acciones */}
         <div className={styles.toolbarBottomRow}>
           <div className={styles.dateFilterGroup}>
             <div className={styles.dateInputWrapper}>
@@ -298,18 +272,11 @@ export default function HistorialAuditoria() {
               />
             </div>
             <div className={styles.quickDates}>
-              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(0)}>
-                Hoy
-              </button>
-              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(7)}>
-                Últimos 7d
-              </button>
-              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(30)}>
-                Este mes
-              </button>
+              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(0)}>Hoy</button>
+              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(7)}>Últimos 7d</button>
+              <button type="button" className={styles.quickDateBtn} onClick={() => setRangoHoras(30)}>Este mes</button>
             </div>
           </div>
-
           {hasActiveFilters && (
             <button type="button" className={styles.clearAllFiltersBtn} onClick={limpiarFiltros}>
               ✕ Limpiar filtros
@@ -318,12 +285,12 @@ export default function HistorialAuditoria() {
         </div>
       </div>
 
-      {/* Tabla de Registros */}
+      {/* Tabla */}
       <div className={styles.tableContainer}>
         {loading && auditoria.length === 0 ? (
           <div className={styles.loadingContainer}>
             <div className={styles.spinner} />
-            <p>Cargando registros de reportes...</p>
+            <p>Cargando registros de auditoría...</p>
           </div>
         ) : error ? (
           <div className={styles.emptyState}>
@@ -336,7 +303,7 @@ export default function HistorialAuditoria() {
             <div className={styles.emptyIcon}>🔍</div>
             <h3 className={styles.emptyTitle}>No hay registros encontrados</h3>
             <p className={styles.emptySubtext}>
-              No se encontraron registros de reportes que coincidan con los filtros aplicados.
+              No se encontraron registros de auditoría que coincidan con los filtros aplicados.
             </p>
             {hasActiveFilters && (
               <button type="button" className={styles.clearAllFiltersBtn} onClick={limpiarFiltros} style={{ marginTop: "12px" }}>
@@ -367,35 +334,18 @@ export default function HistorialAuditoria() {
                   const isAprobado = item.estado === "aprobado";
 
                   return (
-                    <tr
-                      key={item.id}
-                      className={styles.tableRow}
-                      onClick={() => setSelectedItem(item)}
-                    >
+                    <tr key={item.id} className={styles.tableRow} onClick={() => setSelectedItem(item)}>
+                      <td><span style={{ fontWeight: 600, color: "#1e293b" }}>{formatFechaEs(item.fechaRevision)}</span></td>
                       <td>
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>
-                          {formatFechaEs(item.fechaRevision)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`${styles.statusBadge} ${
-                            isAprobado ? styles.statusApproved : styles.statusRejected
-                          }`}
-                        >
+                        <span className={`${styles.statusBadge} ${isAprobado ? styles.statusApproved : styles.statusRejected}`}>
                           <span className={isAprobado ? styles.statusApprovedDot : styles.statusRejectedDot} />
                           {isAprobado ? "Aprobado" : "Rechazado"}
                         </span>
                       </td>
-                      <td>
-                        <span className={styles.idBadge}>#{item.id}</span>
-                      </td>
+                      <td><span className={styles.idBadge}>#{item.id}</span></td>
                       <td>
                         <div className={styles.userCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{ backgroundColor: getAvatarColor(voluntarioNombre) }}
-                          >
+                          <div className={styles.avatar} style={{ backgroundColor: getAvatarColor(voluntarioNombre) }}>
                             {voluntarioInitials}
                           </div>
                           <div className={styles.userInfo}>
@@ -406,10 +356,7 @@ export default function HistorialAuditoria() {
                       </td>
                       <td>
                         <div className={styles.userCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{ backgroundColor: getAvatarColor(revisorNombre) }}
-                          >
+                          <div className={styles.avatar} style={{ backgroundColor: getAvatarColor(revisorNombre) }}>
                             {revisorInitials}
                           </div>
                           <div className={styles.userInfo}>
@@ -420,11 +367,7 @@ export default function HistorialAuditoria() {
                       </td>
                       <td>
                         <div className={styles.commentBox} title={item.comentarioRevision || "Sin comentario"}>
-                          {item.comentarioRevision ? (
-                            item.comentarioRevision
-                          ) : (
-                            <span className={styles.noComment}>Sin observación</span>
-                          )}
+                          {item.comentarioRevision || <span className={styles.noComment}>Sin observación</span>}
                         </div>
                       </td>
                       <td style={{ textAlign: "right" }}>
@@ -447,7 +390,6 @@ export default function HistorialAuditoria() {
           </div>
         )}
 
-        {/* Paginación */}
         {!loading && !error && total > 0 && (
           <div className={styles.pagination}>
             <span className={styles.paginationInfo}>
@@ -465,7 +407,6 @@ export default function HistorialAuditoria() {
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pagina) => (
                 <button
-                  type="button"
                   key={pagina}
                   className={`${styles.pageBtn} ${pagina === page ? styles.pageBtnActive : ""}`}
                   onClick={() => cargarAuditoria(pagina)}
@@ -491,14 +432,8 @@ export default function HistorialAuditoria() {
         <div className={styles.modalBackdrop} onClick={() => setSelectedItem(null)}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Detalle del Registro de Reporte</h3>
-              <button
-                type="button"
-                className={styles.closeModalBtn}
-                onClick={() => setSelectedItem(null)}
-              >
-                ✕
-              </button>
+              <h3 className={styles.modalTitle}>Detalle del Registro de Auditoría</h3>
+              <button type="button" className={styles.closeModalBtn} onClick={() => setSelectedItem(null)}>✕</button>
             </div>
             <div className={styles.modalBody}>
               <div className={styles.detailGrid}>
@@ -508,17 +443,9 @@ export default function HistorialAuditoria() {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Estado Final</span>
-                  <div>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        selectedItem.estado === "aprobado"
-                          ? styles.statusApproved
-                          : styles.statusRejected
-                      }`}
-                    >
-                      {selectedItem.estado === "aprobado" ? "✓ Aprobado" : "✕ Rechazado"}
-                    </span>
-                  </div>
+                  <span className={`${styles.statusBadge} ${selectedItem.estado === "aprobado" ? styles.statusApproved : styles.statusRejected}`}>
+                    {selectedItem.estado === "aprobado" ? "✓ Aprobado" : "✕ Rechazado"}
+                  </span>
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Voluntario</span>
@@ -534,19 +461,10 @@ export default function HistorialAuditoria() {
                 </div>
                 <div className={`${styles.detailItem} ${styles.detailItemFull}`}>
                   <span className={styles.detailLabel}>Fecha y Hora de Revisión</span>
-                  <span className={styles.detailValue}>
-                    {formatFechaEs(selectedItem.fechaRevision)}
-                  </span>
+                  <span className={styles.detailValue}>{formatFechaEs(selectedItem.fechaRevision)}</span>
                 </div>
               </div>
-
-              <div
-                className={`${styles.commentBlock} ${
-                  selectedItem.estado === "aprobado"
-                    ? styles.commentBlockApproved
-                    : styles.commentBlockRejected
-                }`}
-              >
+              <div className={`${styles.commentBlock} ${selectedItem.estado === "aprobado" ? styles.commentBlockApproved : styles.commentBlockRejected}`}>
                 <div className={styles.commentTitle}>Observaciones / Comentario de Revisión</div>
                 <p className={styles.commentText}>
                   {selectedItem.comentarioRevision || "No se registró ninguna observación en este dictamen."}
@@ -554,24 +472,26 @@ export default function HistorialAuditoria() {
               </div>
             </div>
             <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.copyIdBtn}
-                onClick={() => handleCopyId(selectedItem.id)}
-              >
+              <button type="button" className={styles.copyIdBtn} onClick={() => handleCopyId(selectedItem.id)}>
                 {copied ? "¡Copiado! ✓" : "Copiar ID #"}
               </button>
-              <button
-                type="button"
-                className={styles.exportBtn}
-                onClick={() => setSelectedItem(null)}
-              >
-                Cerrar
+              <button type="button" className={styles.exportBtn} onClick={() => setShowExport(true)}>
+                Exportar CSV/Excel
               </button>
+              <button type="button" className={styles.closeBtn} onClick={() => setSelectedItem(null)}>Cerrar</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Modal de Exportación */}
+      <ExportModalAuditoria
+        isOpen={showExport}
+        onClose={() => setShowExport(false)}
+        initialDesde={desde}
+        initialHasta={hasta}
+        initialEstado={estado}
+      />
     </div>
   );
 }
