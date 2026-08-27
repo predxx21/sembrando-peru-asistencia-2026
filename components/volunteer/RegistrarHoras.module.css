@@ -1,45 +1,161 @@
+/* ============================================================ */
+/* ===== REGISTRAR HORAS (estilo premium = Auditoría) ===== */
+/* ============================================================ */
+
 .formPage {
   width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: var(--font-family, 'Inter', system-ui, sans-serif);
+  color: #1e293b;
 }
 
+/* ===== HEADER ===== */
 .pageHeader {
-  margin-bottom: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
 }
 
 .pageHeader h1 {
-  color: #26384b;
-  font-size: 28px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
   margin: 0 0 4px;
+  letter-spacing: -0.5px;
 }
 
 .pageHeader p {
-  color: #667281;
+  color: #64748b;
+  font-size: 14px;
   margin: 0;
 }
 
+/* ===== CARD PRINCIPAL (contenedor del cronómetro) ===== */
 .formCard {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 32px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  margin-bottom: 24px;
 }
 
+/* ===== MENSAJES ===== */
+.mensaje {
+  margin-top: 16px;
+  font-weight: 500;
+  text-align: center;
+  color: #0f172a;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.mensaje:has(> .✅) {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.mensaje:has(> .❌) {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+/* ===== BOTÓN DE REDIRECCIÓN ===== */
+.redirectBox {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.redirectButton {
+  border: 0;
+  border-radius: 10px;
+  background: #0f766e;
+  color: white;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.redirectButton:hover {
+  background: #065f46;
+}
+
+/* ===== GRID DE INFORMACIÓN (dos tarjetas) ===== */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.infoCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  gap: 16px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  transition: all 0.15s ease;
+}
+
+.infoCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  border-color: #cbd5e1;
+}
+
+.infoIcon {
+  font-size: 20px;
+  color: #0f766e;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.infoCard h3 {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.infoCard p {
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ===== LOADING ===== */
 .loadingContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 24px;
+  padding: 60px 20px;
   gap: 16px;
+  color: #64748b;
 }
 
 .loadingSpinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #dfe4ea;
-  border-top-color: #197343;
+  width: 42px;
+  height: 42px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #0f766e;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -47,103 +163,44 @@
 }
 
 .loadingText {
-  color: #667281;
   font-size: 14px;
-}
-
-.infoGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.infoCard {
-  background: #e7f4ec;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  gap: 12px;
-}
-
-.infoIcon {
-  color: #197343;
-  font-size: 18px;
-}
-
-.infoCard h3 {
-  color: #26384b;
-  font-size: 14px;
-  margin: 0 0 4px;
-}
-
-.infoCard p {
-  color: #667281;
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.mensaje {
-  margin-top: 16px;
-  padding: 12px;
-  border-radius: 8px;
   font-weight: 500;
-  text-align: center;
-  color: #26384b;
-}
-
-.mensaje:has(> .✅) {
-  background: #e5f8ee;
-  border-color: #197343;
-  color: #197343;
-}
-
-.mensaje:has(> .❌) {
-  background: #fdecec;
-  border-color: #d64545;
-  color: #d64545;
 }
 
 /* ============================================================ */
 /* ===== RESPONSIVE ===== */
 /* ============================================================ */
 
+@media (max-width: 900px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
-  .pageHeader h1 {
-    font-size: 22px;
+  .formPage {
+    padding: 8px 0 24px;
   }
 
-  .pageHeader p {
-    font-size: 14px;
+  .pageHeader {
+    padding: 20px;
+  }
+
+  .pageHeader h1 {
+    font-size: 22px;
   }
 
   .formCard {
     padding: 20px 16px;
   }
 
-  .infoGrid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 20px;
-  }
-
   .infoCard {
+    flex-direction: column;
+    align-items: flex-start;
     padding: 16px;
-    gap: 10px;
   }
 
-  .infoCard h3 {
-    font-size: 13px;
-  }
-
-  .infoCard p {
-    font-size: 12px;
-  }
-
-  .mensaje {
-    font-size: 14px;
-    padding: 10px 12px;
+  .redirectButton {
+    width: 100%;
   }
 }
