@@ -39,6 +39,9 @@ function mapActivity(row) {
       ? row.profile.nombre.charAt(0) + (row.profile.apellido?.charAt(0) || '')
       : 'V',
     avatarColor: '#197343',
+
+    avatarUrl: row.profile?.avatarUrl || '',
+
     date: formatFechaEs(row.fecha),
     // Fecha en ISO para comparar en los filtros de rango (new Date() no debe
     // parsear la fecha ya formateada).

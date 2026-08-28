@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [reviewingId, setReviewingId] = useState(null);
-
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
   const isFirstRender = useRef(true);
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
@@ -159,6 +159,29 @@ export default function AdminDashboard() {
       cargarConFiltros();
     }
   }, [page]);
+
+useEffect(() => {
+  if (!selectedAvatar) return;
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      setSelectedAvatar(null);
+    }
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+
+  // Evita que el fondo haga scroll mientras el modal está abierto
+  document.body.style.overflow = 'hidden';
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = '';
+  };
+}, [selectedAvatar]);
+
+
+
 
 // Componentes de iconos SVG inline
 function CheckIcon({ size = 14, className }) {
@@ -494,9 +517,41 @@ function TableListIcon({ size = 18, className }) {
                     <tr key={s.id}>
                       <td>
                         <div className={styles.userCell}>
-                          <span className={styles.avatar} style={{ backgroundColor: s.avatarColor || '#0f766e' }}>
-                            {s.initials}
-                          </span>
+
+                          
+                         {s.avatarUrl ? (
+  <button
+    type="button"
+    className={styles.avatarButton}
+    onClick={() =>
+      setSelectedAvatar({
+        url: s.avatarUrl,
+        name: s.name,
+      })
+    }
+    title={`Ver foto de ${s.name}`}
+    aria-label={`Ver foto de ${s.name}`}
+  >
+    <img
+      src={s.avatarUrl}
+      alt={`Foto de ${s.name}`}
+      className={styles.avatarImage}
+    />
+  </button>
+) : (
+  <span
+    className={styles.avatar}
+    style={{
+      backgroundColor: s.avatarColor || '#0f766e',
+    }}
+    aria-label={`Iniciales de ${s.name}`}
+  >
+    {s.initials}
+  </span>
+)}
+
+
+
                           <div className={styles.userMeta}>
                             <span className={styles.userName}>{s.name}</span>
                             <span className={styles.userRoleTag}>Voluntario</span>
@@ -679,6 +734,39 @@ function TableListIcon({ size = 18, className }) {
           </div>
         </div>
       </section>
+
+      {/* MODAL DE FOTO DE PERFIL */}
+      {selectedAvatar && (
+        <div
+          className={styles.avatarModalOverlay}
+          onClick={() => setSelectedAvatar(null)}
+        >
+          <div
+            className={styles.avatarModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.avatarModalClose}
+              onClick={() => setSelectedAvatar(null)}
+              aria-label="Cerrar foto"
+              title="Cerrar"
+            >
+              ×
+            </button>
+
+            <img
+              src={selectedAvatar.url}
+              alt={`Foto de ${selectedAvatar.name}`}
+              className={styles.avatarModalImage}
+            />
+
+            <p className={styles.avatarModalName}>
+              {selectedAvatar.name}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
