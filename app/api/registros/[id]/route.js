@@ -10,10 +10,12 @@ const CACHE_TTL_MS = 60 * 1000;
 
 // La autorización se re-evalúa en CADA request, también en cache hit.
 function tienePermiso(registro, userId, rol) {
-  return registro.profileId === userId || rol === 'admin';
+  // Ahora permitimos que tanto admin como coordinador_general vean cualquier registro
+  // pero la lógica de área se aplica en el PATCH.
+  return registro.profileId === userId || rol === 'admin' || rol === 'coordinador_general';
 }
 
-// Devuelve UN registro. Solo el dueño del registro o un admin pueden verlo.
+// Devuelve UN registro. Solo el dueño del registro, admin o coordinador_general pueden verlo.
 export async function GET(request, context) {
   const user = await getUserFromRequest(request);
 
@@ -71,9 +73,12 @@ export async function PATCH(request, context) {
     return NextResponse.json({ error: 'No se encontró tu perfil.' }, { status: 404 });
   }
 
-  // Solo admin puede auditar
-  if (profile.rol !== 'admin') {
-    return NextResponse.json({ error: 'No tienes permisos de administrador.' }, { status: 403 });
+  // 🔐 Permitir solo admin o coordinador_general
+  if (profile.rol !== 'admin' && profile.rol !== 'coordinador_general') {
+    return NextResponse.json(
+      { error: 'No tienes permisos de administrador.' },
+      { status: 403 }
+    );
   }
 
   const { id } = await context.params;
@@ -92,7 +97,7 @@ export async function PATCH(request, context) {
     );
   }
 
-  // NUEVO: Comentario obligatorio al rechazar (auditoría)
+  // Comentario obligatorio al rechazar
   if (estado === 'rechazado' && !comentarioRevision?.trim()) {
     return NextResponse.json(
       { error: 'Debes indicar el motivo del rechazo.' },
@@ -100,13 +105,14 @@ export async function PATCH(request, context) {
     );
   }
 
-  // CAMBIO: Ya no validamos que esté "pendiente", el admin puede auditar cualquier registro
+  // Obtener el registro para validar área y propietario
   const { data: registroActual, error: registroError } = await obtenerRegistroPorId(id);
   if (registroError || !registroActual) {
     return NextResponse.json({ error: 'No se encontró el registro.' }, { status: 404 });
   }
 
-  // Un admin no puede auditar su propio registro (conflicto de interés).
+  // ❌ Un admin NORMAL no puede auditar su propio registro (conflicto de interés)
+  // (el coordinador_general sí podría, pero lo dejamos igual por seguridad)
   if (registroActual.profileId === user.id) {
     return NextResponse.json(
       { error: 'No puedes auditar tu propio registro.' },
@@ -114,6 +120,28 @@ export async function PATCH(request, context) {
     );
   }
 
+  // ✅ Verificación de área para admin normal
+  if (profile.rol === 'admin') {
+    // Obtener el área del voluntario dueño del registro
+    // Nota: el registro tiene profileId, debemos obtener el área de ese perfil
+    // Usamos una consulta adicional o incluimos profile en la obtención del registro.
+    // Como obtenerRegistroPorId no trae el areaId del voluntario, hacemos una consulta extra.
+    const { prisma } = await import('@/lib/db/client');
+    const voluntario = await prisma.profile.findUnique({
+      where: { id: registroActual.profileId },
+      select: { areaId: true },
+    });
+
+    if (!voluntario || voluntario.areaId !== profile.areaId) {
+      return NextResponse.json(
+        { error: 'No tienes permisos para auditar este registro (área diferente).' },
+        { status: 403 }
+      );
+    }
+  }
+  // Si es coordinador_general, no hay restricción de área.
+
+  // ✅ Actualizar el estado del registro
   const { data: registro, error } = await actualizarEstadoRegistro({
     id,
     estado,
@@ -129,7 +157,7 @@ export async function PATCH(request, context) {
     );
   }
 
-  // Auditoría cambia el listado y las estadísticas.
+  // Invalidar cachés relacionadas
   invalidateCacheByPrefix('registros:');
   invalidateCacheByPrefix('admin:estadisticas:');
   invalidateCacheByPrefix('admin:auditoria:');
