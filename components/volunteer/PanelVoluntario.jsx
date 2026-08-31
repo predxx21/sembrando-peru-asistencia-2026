@@ -39,8 +39,9 @@ export default function VolunteerDashboard() {
         setNombre(perfil?.profile?.nombre || "");
         setArea(perfil?.profile?.area?.nombre || "");
 
-        const historial = await getHistoryActivities();
-        if (!cancelled) setActivities(historial);
+        // 🔧 OBTENER ACTIVIDADES CON PAGINACIÓN
+        const result = await getHistoryActivities(); // devuelve { activities, total }
+        if (!cancelled) setActivities(result.activities || []);
       } catch (err) {
         if (!cancelled) {
           setError(err.message || "No se pudieron cargar tus actividades.");
