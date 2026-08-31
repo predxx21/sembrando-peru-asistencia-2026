@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/supabase/authServer";
 import { getPerfilByUserId } from "@/lib/db/perfil";
 import { prisma } from "@/lib/db/client";
+import { getCached, setCached } from "@/lib/cache";
 
 const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const CACHE_TTL_MS = 60 * 1000;
 
 // Obtener número de semana ISO
 function getWeekNumber(date) {
@@ -27,25 +29,51 @@ export async function GET(request) {
   }
 
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
-  if (perfilError || !profile || profile.rol !== "admin") {
+  
+  // ✅ Permitir admin y coordinador_general
+  if (perfilError || !profile || (profile.rol !== "admin" && profile.rol !== "coordinador_general")) {
     return NextResponse.json(
       { error: "No tienes permisos de administrador." },
       { status: 403 }
     );
   }
 
+  // ✅ Si es admin, forzar su área
+  let areaId = undefined;
+  if (profile.rol === "admin") {
+    areaId = profile.areaId;
+    if (!areaId) {
+      return NextResponse.json(
+        { error: "Tu perfil no tiene área asignada." },
+        { status: 400 }
+      );
+    }
+  }
+  // coordinador_general ve todo (areaId = undefined)
+
   const { searchParams } = new URL(request.url);
   const desde = searchParams.get("desde");
   const hasta = searchParams.get("hasta");
-  const estado = searchParams.get("estado") || undefined;   // ← aquí el cambio
+  const estado = searchParams.get("estado") || undefined;
   const agruparPor = searchParams.get("agruparPor") || "semana";
 
+  // ✅ Clave de caché incluye profile.id para aislar por usuario
+  const cacheKey = `admin:auditoria:reporte:${profile.id}:${searchParams.toString()}`;
+  const cacheado = getCached(cacheKey);
+  if (cacheado) {
+    return NextResponse.json({ data: cacheado });
+  }
+
   const where = {};
-  if (estado) where.estado = estado;   // ← solo filtra si se envió
+  if (estado) where.estado = estado;
+
+  // ✅ Filtro por área (si es admin)
+  if (areaId) {
+    where.profile = { areaId };
+  }
 
   if (desde || hasta) {
     where.fechaCreacion = {};
-    // Offset -05:00 para Perú
     if (desde) {
       where.fechaCreacion.gte = new Date(desde + "T00:00:00-05:00");
     }
@@ -54,7 +82,7 @@ export async function GET(request) {
     }
   }
 
-  // Obtener registros ordenados por fechaCreacion
+  // Obtener registros
   const registros = await prisma.registroAsistencia.findMany({
     where,
     include: {
@@ -74,10 +102,12 @@ export async function GET(request) {
   });
 
   if (registros.length === 0) {
-    return NextResponse.json({ data: [] });
+    const emptyData = [];
+    setCached(cacheKey, emptyData, CACHE_TTL_MS);
+    return NextResponse.json({ data: emptyData });
   }
 
-  // Agrupar por período (semana o mes) usando fechaCreacion
+  // Agrupar por período (semana o mes)
   function getPeriodo(fecha) {
     const d = new Date(fecha);
     if (agruparPor === "mes") {
@@ -145,7 +175,7 @@ export async function GET(request) {
       esHeader: true,
     });
 
-    // Datos (usando fechaCreacion para "FechaRegistro" y día)
+    // Datos
     for (const r of regs) {
       const fechaRegistro = new Date(r.fechaCreacion);
       const dia = DIAS[fechaRegistro.getDay()];
@@ -195,6 +225,9 @@ export async function GET(request) {
 
     filas.push({});
   }
+
+  // Guardar en caché
+  setCached(cacheKey, filas, CACHE_TTL_MS);
 
   return NextResponse.json({ data: filas });
 }

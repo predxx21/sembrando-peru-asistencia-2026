@@ -41,19 +41,20 @@ model Area {
 }
 
 model Profile {
-  id            String             @id @default(uuid())
+  id            String   @id @default(uuid())
   nombre        String
   apellido      String
-  rol           Rol                @default(voluntario)
-  areaId        String?            // FK a Area (nullable para compatibilidad)
-  area          Area?              @relation(fields: [areaId], references: [id])
+  rol           Rol      @default(voluntario)
+  areaId        String?  // FK a Area (nullable para compatibilidad)
+  area          Area?    @relation(fields: [areaId], references: [id])
   avatarUrl     String?
-  fechaCreacion DateTime           @default(now())
+  fechaCreacion DateTime @default(now())
 
   registros     RegistroAsistencia[]
   registrosRevisados RegistroAsistencia[] @relation("revisor")
 
   @@map("profiles")
+  @@index([areaId])  // ✅ Índice para consultas por área
 }
 
 model RegistroAsistencia {
@@ -66,10 +67,10 @@ model RegistroAsistencia {
   horaFin           String
   horas             Float
   descripcion       String
-  evidenciaUrl      String?          // CAMBIO: Opcional (nullable) - mantener para registros legacy
+  evidenciaUrl      String?          // Opcional (nullable) - mantener para registros legacy
   estado            EstadoRegistro   @default(pendiente)
 
-  // NUEVO: Para cronómetro activo
+  // Cronómetro activo
   sesionActiva      Boolean          @default(false)
   horaInicioReal    DateTime?        // Timestamp exacto cuando presionó "Iniciar"
 
@@ -85,8 +86,8 @@ model RegistroAsistencia {
   @@index([fechaRevision])
   @@index([estado, fecha])
   @@index([profileId, sesionActiva]) // Para buscar sesión activa (CRÍTICO)
-  @@index([revisorId]) // Para auditoría por revisor
-  @@index([estado, fechaRevision]) // Para auditoría completa filtrada
-  @@index([profileId, estado]) // Para historial filtrado por estado
-  @@map("registroasistencia")
+  @@index([revisorId])               // Para auditoría por revisor
+  @@index([estado, fechaRevision])   // Para auditoría completa filtrada
+  @@index([profileId, estado])       // Para historial filtrado por estado
+  @@map("registroasistencia")        // ✅ Solo UN @@map
 }

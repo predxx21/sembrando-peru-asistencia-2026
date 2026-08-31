@@ -84,9 +84,9 @@ export default function Cronometro({ sesionInicial, onIniciar, onTerminar }) {
   };
 
   const handleTerminar = async () => {
-    // M-8: Validación UX en cliente - evitar terminar jornadas muy cortas (< 1 min)
-    if (segundos < 5) {
-      setError('La jornada debe durar al menos 1 minuto.');
+    // Validación mínima para evitar doble clic accidental
+    if (segundos < 3) {
+      setError('Espere un momento para cancelar.');
       return;
     }
 

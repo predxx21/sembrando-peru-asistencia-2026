@@ -252,8 +252,8 @@ if (foto) {
             id="areaId"
             name="areaId"
             value={form?.areaId || ""}
-            onChange={handleChange}
-            required
+            readOnly
+            disabled
           >
             <option value="">Seleccionar área</option>
             {areas.map((area) => (

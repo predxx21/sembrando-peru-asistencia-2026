@@ -68,6 +68,7 @@ export async function POST(request) {
 
   // El voluntario inició sesión: el historial y stats cambian.
   invalidateCacheByPrefix('registros:');
+  invalidateCacheByPrefix('admin:estadisticas:');
 
   return NextResponse.json({ data });
 }

@@ -11,43 +11,59 @@ const statusConfig = {
   rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
-const ITEMS_PER_PAGE = 6;
-
-export default function HistoryDashboard({ activities }) {
+// El límite se define en el padre (page.js) y se pasa como prop
+export default function HistoryDashboard({
+  activities = [],
+  total = 0,
+  page = 1,
+  limit = 6,
+  onPageChange,
+}) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(page);
 
-  // Filtros + paginación
-  const { filtered, totalPages, currentItems } = useMemo(() => {
-    const filtered = activities.filter((act) => {
+  // Sincronizar currentPage con page prop (si el padre cambia la página)
+  useEffect(() => {
+    setCurrentPage(page);
+  }, [page]);
+
+  // Aplicar filtros SOLO a los registros de la página actual (client-side)
+  const filteredActivities = useMemo(() => {
+    return activities.filter((act) => {
       const matchSearch =
         act.title.toLowerCase().includes(search.toLowerCase()) ||
         act.description.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === "todos" || act.status === filterStatus;
       return matchSearch && matchStatus;
     });
+  }, [activities, search, filterStatus]);
 
-    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const currentItems = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-
-    return { filtered, totalPages, currentItems };
-  }, [activities, search, filterStatus, currentPage]);
-
+  // Reiniciar a página 1 cuando cambian filtros (aunque la paginación es servidor,
+  // aquí solo filtramos los datos ya traídos, así que no tiene mucho sentido
+  // reiniciar la página del servidor, pero podemos hacerlo)
   useEffect(() => {
-    setCurrentPage(1);
+    if (search || filterStatus !== "todos") {
+      // Si el usuario filtra, mostramos solo los que coinciden de la página actual.
+      // Para una búsqueda más precisa, deberías hacer una nueva petición al backend
+      // con los filtros, pero por ahora queda así.
+    }
   }, [search, filterStatus]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const totalPages = Math.ceil(total / limit);
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setCurrentPage(newPage);
+    if (onPageChange) {
+      onPageChange(newPage);
+    }
   };
 
-  // Generar elementos de paginación (con "..." entre bloques)
+  // Generar elementos de paginación (igual que antes)
   function getPaginationItems(currentPage, totalPages) {
     const items = [];
     const maxVisible = 7;
-
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) items.push(i);
     } else {
@@ -66,7 +82,6 @@ export default function HistoryDashboard({ activities }) {
 
   return (
     <div className={styles.historyPage}>
-      {/* Header */}
       <header className={styles.pageHeader}>
         <div>
           <h1>Mi Historial de Actividades</h1>
@@ -74,7 +89,6 @@ export default function HistoryDashboard({ activities }) {
         </div>
       </header>
 
-      {/* Filtros */}
       <div className={styles.filtersBar}>
         <div className={styles.searchField}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -88,7 +102,6 @@ export default function HistoryDashboard({ activities }) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-
         <select
           className={styles.filterSelect}
           value={filterStatus}
@@ -101,30 +114,24 @@ export default function HistoryDashboard({ activities }) {
         </select>
       </div>
 
-      {/* Lista de tarjetas */}
       <div className={styles.listContainer}>
-        {currentItems.length === 0 ? (
+        {filteredActivities.length === 0 ? (
           <p className={styles.emptyMessage}>
             {search || filterStatus !== "todos"
               ? "No se encontraron actividades con esos filtros."
               : "Aún no has registrado ninguna actividad. ¡Empieza hoy!"}
           </p>
         ) : (
-          currentItems.map((act) => (
+          filteredActivities.map((act) => (
             <article key={act.id} className={styles.activityCard}>
               <div className={styles.cardHeader}>
-                <span
-                  className={`${styles.statusPill} ${styles[statusConfig[act.status].className]}`}
-                >
+                <span className={`${styles.statusPill} ${styles[statusConfig[act.status].className]}`}>
                   {statusConfig[act.status].label}
                 </span>
                 <span className={styles.activityDate}>{act.date}</span>
               </div>
-
               <h2 className={styles.activityTitle}>{act.title}</h2>
-
               <p className={styles.activityDescription}>{act.description}</p>
-
               <div className={styles.cardMeta}>
                 <span className={styles.hoursBadge}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -133,23 +140,14 @@ export default function HistoryDashboard({ activities }) {
                   </svg>
                   {act.hours} h
                 </span>
-                <span className={styles.activityArea}>
-                  {act.area || "—"}
-                </span>
+                <span className={styles.activityArea}>{act.area || "—"}</span>
               </div>
-
               <div className={styles.cardActions}>
-                <Link
-                  href={`/historial/${act.id}`}
-                  className={styles.detailButton}
-                >
+                <Link href={`/historial/${act.id}`} className={styles.detailButton}>
                   Ver Detalle
                 </Link>
                 {act.status === "rechazado" && (
-                  <Link
-                    href={`/registro-editar/${act.id}`}
-                    className={styles.corregirButton}
-                  >
+                  <Link href={`/registro-editar/${act.id}`} className={styles.corregirButton}>
                     Corregir
                   </Link>
                 )}
@@ -159,11 +157,10 @@ export default function HistoryDashboard({ activities }) {
         )}
       </div>
 
-      {/* Paginación */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <span className={styles.paginationInfo}>
-            Página {currentPage} de {totalPages}
+            Página {currentPage} de {totalPages} ({total} registros)
           </span>
           <div className={styles.pageControls}>
             <button

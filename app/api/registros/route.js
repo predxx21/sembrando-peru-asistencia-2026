@@ -160,7 +160,7 @@ export async function GET(request) {
   };
 
   // Cache por combinación de filtros (clave con prefijo para invalidación granular)
-  const cacheKey = `${CACHE_KEY_PREFIX}${request.nextUrl.searchParams.toString()}`;
+  const cacheKey = `${CACHE_KEY_PREFIX}${profile.id}:${request.nextUrl.searchParams.toString()}`;
   const cacheado = getCached(cacheKey);
   if (cacheado) {
     return NextResponse.json(cacheado);

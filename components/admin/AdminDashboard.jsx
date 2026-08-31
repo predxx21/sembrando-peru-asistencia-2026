@@ -69,25 +69,29 @@ export default function AdminDashboard() {
 
   // Cargar tendencias
   async function cargarTendencias() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) return;
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) return;
 
-    try {
-      const res = await fetch('/api/admin/estadisticas', {
-        cache: 'no-store',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Error al cargar la tendencia.');
-
-      const body = await res.json();
-      console.log('[Dashboard] stats endpoint response:', JSON.stringify(body.data, null, 2));
-      setWeeklyVolume(body.data?.tendencia ?? []);
-      setAuditLog(body.data?.auditoria ?? []);
-    } catch (err) {
-      console.error('Error cargando tendencias:', err);
+  try {
+    const res = await fetch('/api/admin/estadisticas', {
+      cache: 'no-store',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.error('Error al cargar tendencias:', errorData.error || res.status);
+      return;
     }
+    const body = await res.json();
+    // Quita este log antes de producción:
+    // console.log('[Dashboard] stats endpoint response:', JSON.stringify(body.data, null, 2));
+    setWeeklyVolume(body.data?.tendencia ?? []);
+    setAuditLog(body.data?.auditoria ?? []);
+  } catch (err) {
+    console.error('Error en cargarTendencias:', err);
   }
+}
 
   // Cargar inicial (siempre pendientes)
   async function cargarInicial() {

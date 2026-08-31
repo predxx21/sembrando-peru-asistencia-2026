@@ -48,7 +48,7 @@ export async function GET(request) {
   const desde = searchParams.get('desde') || undefined;
   const hasta = searchParams.get('hasta') || undefined;
 
-  const cacheKey = `admin:auditoria:${searchParams.toString()}`;
+  const cacheKey = `admin:auditoria:${profile.id}:${searchParams.toString()}`;
   const cacheado = getCached(cacheKey);
   if (cacheado) {
     return NextResponse.json(cacheado);
