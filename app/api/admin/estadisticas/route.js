@@ -13,9 +13,9 @@ import { getCached, setCached } from '@/lib/cache';
 // cachean 60 s en memoria: al recargar la página el endpoint responde en
 // milisegundos sin pisar la BD. Las escrituras invalidan la caché.
 //
-// NOTA: La auditoría se filtra por el revisor logeado (revisorId = profile.id),
-// así que cada admin ve SOLO sus propias revisiones. La caché usa clave
-// compuesta por el profileId para aislar por admin.
+// NOTA: La auditoría se filtra por el área del admin (si es admin normal) o
+// global para coordinador_general. La caché usa clave compuesta por el profileId
+// para aislar por usuario y rol.
 const CACHE_TTL_MS = 60 * 1000;
 
 export async function GET(request) {
@@ -26,12 +26,25 @@ export async function GET(request) {
   }
 
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
-  if (perfilError || !profile || profile.rol !== 'admin') {
+  // Cambio: permitir admin y coordinador_general
+  if (perfilError || !profile || (profile.rol !== 'admin' && profile.rol !== 'coordinador_general')) {
     return NextResponse.json(
       { error: 'No tienes permisos de administrador.' },
       { status: 403 }
     );
   }
+
+  let areaId = undefined;
+  if (profile.rol === 'admin') {
+    areaId = profile.areaId;
+    if (!areaId) {
+      return NextResponse.json(
+        { error: 'Tu perfil no tiene área asignada.' },
+        { status: 400 }
+      );
+    }
+  }
+  // Para coordinador_general, areaId se mantiene undefined (ve todas las áreas)
 
   const cacheKey = `admin:estadisticas:${profile.id}`;
   const cacheado = getCached(cacheKey);
@@ -39,7 +52,8 @@ export async function GET(request) {
     return NextResponse.json({ data: cacheado });
   }
 
-  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard();
+  // Pasar areaId a la función de dashboard
+  const { stats, tendencia, auditoria, error } = await obtenerDatosDashboard(areaId);
 
   if (error) {
     return NextResponse.json(

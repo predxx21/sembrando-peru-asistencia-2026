@@ -66,11 +66,11 @@ export default function Sidebar() {
     }
   }
 
-  // Administración y Reportes son exclusivos de coordinadores (admin).
+  // Administración y Reportes son exclusivos de coordinadores (admin o coordinador_general).
   const navItems = [
     { label: "▦　Panel", href: "/principal" },
     { label: "◴　Historial", href: "/historial" },
-    ...(rol === "admin"
+    ...(rol === "admin" || rol === "coordinador_general"
       ? [
           { label: "◉　Administración", href: "/administracion" },
           { label: "◐　Reporte", href: "/administracion/auditoria" },

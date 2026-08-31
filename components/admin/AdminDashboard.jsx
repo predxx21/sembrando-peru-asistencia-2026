@@ -7,11 +7,13 @@ import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import { UMBRALES } from '@/lib/constantes';
 import { fetchConToken } from "@/lib/api/client";
+import { useRol } from "@/components/layout/PortalAuthProvider"; // ← TUYA
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function AdminDashboard() {
+  const rol = useRol(); // ← TUYA
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState("");
@@ -27,7 +29,8 @@ export default function AdminDashboard() {
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [reviewingId, setReviewingId] = useState(null);
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [selectedAvatar, setSelectedAvatar] = useState(null); // ← DE TU AMIGO
+
   const isFirstRender = useRef(true);
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
@@ -99,7 +102,7 @@ export default function AdminDashboard() {
     try {
       const res = await getPendingSubmissions({
         limit: ITEMS_PER_PAGE,
-        estado: 'pendiente', // ← fijo
+        estado: 'pendiente',
       });
       if (res) {
         setSubmissions(res.items);
@@ -125,7 +128,7 @@ export default function AdminDashboard() {
       desde: dateFrom || undefined,
       hasta: dateTo || undefined,
       area: areaFilter || undefined,
-      estado: 'pendiente', // ← fijo
+      estado: 'pendiente',
     };
 
     try {
@@ -160,144 +163,139 @@ export default function AdminDashboard() {
     }
   }, [page]);
 
-useEffect(() => {
-  if (!selectedAvatar) return;
+  // 👇 EFECTO PARA MODAL (DE TU AMIGO)
+  useEffect(() => {
+    if (!selectedAvatar) return;
 
-  const handleKeyDown = (event) => {
-    if (event.key === 'Escape') {
-      setSelectedAvatar(null);
-    }
-  };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedAvatar(null);
+      }
+    };
 
-  document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
 
-  // Evita que el fondo haga scroll mientras el modal está abierto
-  document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedAvatar]);
 
-  return () => {
-    document.removeEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = '';
-  };
-}, [selectedAvatar]);
+  // ===== ICONOS ===== (todos los que ya tenías, los dejo igual)
+  function CheckIcon({ size = 14, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    );
+  }
 
+  function XIcon({ size = 14, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    );
+  }
 
+  function ClockIcon({ size = 14, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+  }
 
+  function AlertIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    );
+  }
 
-// Componentes de iconos SVG inline
-function CheckIcon({ size = 14, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
+  function SpinnerIcon({ size = 14, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`${styles.spinner} ${className || ''}`}>
+        <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
+        <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1" strokeLinecap="round" />
+      </svg>
+    );
+  }
 
-function XIcon({ size = 14, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
+  function UserIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    );
+  }
 
-function ClockIcon({ size = 14, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
+  function TagIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
+      </svg>
+    );
+  }
 
-function AlertIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
+  function CalendarIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    );
+  }
 
-function SpinnerIcon({ size = 14, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`${styles.spinner} ${className || ''}`}>
-      <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
-      <path d="M12 2a10 10 0 0 1 10 10" strokeOpacity="1" strokeLinecap="round" />
-    </svg>
-  );
-}
+  function TimerIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+  }
 
-function UserIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
+  function StatusIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+        <polyline points="22 4 12 14.01 9 11.01" />
+      </svg>
+    );
+  }
 
-function TagIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-      <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
+  function ZapIcon({ size = 13, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    );
+  }
 
-function CalendarIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
+  function TableListIcon({ size = 18, className }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
+      </svg>
+    );
+  }
 
-function TimerIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function StatusIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  );
-}
-
-function ZapIcon({ size = 13, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-
-function TableListIcon({ size = 18, className }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" />
-      <line x1="3" y1="12" x2="3.01" y2="12" />
-      <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  );
-}
-
-  // Badge de anomalía
+  // ===== FUNCIONES AUXILIARES =====
   const getAnomaliaBadge = (horas) => {
     if (horas > UMBRALES.JORNADA_MAXIMA_HORAS) {
       return (
@@ -333,7 +331,6 @@ function TableListIcon({ size = 18, className }) {
     setReviewingId(id);
     try {
       await reviewSubmission(id, estado, motivo);
-      // Refrescar tabla y auditoría en paralelo sin recargar la página completa
       await Promise.all([cargarInicial(), cargarTendencias()]);
     } catch (err) {
       alert('Error: ' + err.message);
@@ -349,7 +346,6 @@ function TableListIcon({ size = 18, className }) {
     setDateTo("");
     setAreaFilter("");
     setPage(1);
-    // Forzar recarga con filtros limpios
     cargarConFiltros();
   }
 
@@ -418,6 +414,7 @@ function TableListIcon({ size = 18, className }) {
               value={areaFilter}
               onChange={(e) => setAreaFilter(e.target.value)}
               className={styles.filterInput}
+              disabled={rol === 'admin'} // ← TU FUNCIONALIDAD
             >
               <option value="">Todas las áreas</option>
               {areas.map((area) => (
@@ -426,7 +423,6 @@ function TableListIcon({ size = 18, className }) {
             </select>
           </div>
 
-          {/* Botón "Limpiar filtros" */}
           {hasActiveFilters && (
             <div className={styles.filterGroup} style={{ flex: '0 0 auto', justifyContent: 'flex-end' }}>
               <button
@@ -517,40 +513,37 @@ function TableListIcon({ size = 18, className }) {
                     <tr key={s.id}>
                       <td>
                         <div className={styles.userCell}>
-
-                          
-                         {s.avatarUrl ? (
-  <button
-    type="button"
-    className={styles.avatarButton}
-    onClick={() =>
-      setSelectedAvatar({
-        url: s.avatarUrl,
-        name: s.name,
-      })
-    }
-    title={`Ver foto de ${s.name}`}
-    aria-label={`Ver foto de ${s.name}`}
-  >
-    <img
-      src={s.avatarUrl}
-      alt={`Foto de ${s.name}`}
-      className={styles.avatarImage}
-    />
-  </button>
-) : (
-  <span
-    className={styles.avatar}
-    style={{
-      backgroundColor: s.avatarColor || '#0f766e',
-    }}
-    aria-label={`Iniciales de ${s.name}`}
-  >
-    {s.initials}
-  </span>
-)}
-
-
+                          {/* 👇 AVATAR CON FOTO O INICIALES (DE TU AMIGO) */}
+                          {s.avatarUrl ? (
+                            <button
+                              type="button"
+                              className={styles.avatarButton}
+                              onClick={() =>
+                                setSelectedAvatar({
+                                  url: s.avatarUrl,
+                                  name: s.name,
+                                })
+                              }
+                              title={`Ver foto de ${s.name}`}
+                              aria-label={`Ver foto de ${s.name}`}
+                            >
+                              <img
+                                src={s.avatarUrl}
+                                alt={`Foto de ${s.name}`}
+                                className={styles.avatarImage}
+                              />
+                            </button>
+                          ) : (
+                            <span
+                              className={styles.avatar}
+                              style={{
+                                backgroundColor: s.avatarColor || '#0f766e',
+                              }}
+                              aria-label={`Iniciales de ${s.name}`}
+                            >
+                              {s.initials}
+                            </span>
+                          )}
 
                           <div className={styles.userMeta}>
                             <span className={styles.userName}>{s.name}</span>
@@ -685,7 +678,6 @@ function TableListIcon({ size = 18, className }) {
           </table>
         </div>
 
-        {/* Paginación */}
         {totalPages > 1 && (
           <nav className={styles.pagination}>
             <button
@@ -735,7 +727,7 @@ function TableListIcon({ size = 18, className }) {
         </div>
       </section>
 
-      {/* MODAL DE FOTO DE PERFIL */}
+      {/* 👇 MODAL DE FOTO (DE TU AMIGO) */}
       {selectedAvatar && (
         <div
           className={styles.avatarModalOverlay}

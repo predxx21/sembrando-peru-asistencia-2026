@@ -99,6 +99,14 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 });
   }
 
+  // Para admin: si no tiene área asignada, no puede ver nada (ni siquiera su propia área)
+  if (profile.rol === 'admin' && !profile.areaId) {
+    return NextResponse.json(
+      { error: 'El administrador debe tener un área asignada para visualizar registros.' },
+      { status: 400 }
+    );
+  }
+
   const searchParams = request.nextUrl.searchParams;
   const scope = searchParams.get('scope');
   const profileIdParam = searchParams.get('profileId');
@@ -110,19 +118,32 @@ export async function GET(request) {
   const page = parseInt(searchParams.get('page')) || 1;
   const limit = parseInt(searchParams.get('limit')) || 10;
 
-  // A-4: profileId es UUID (string), no entero. Validar con esUUIDValido.
+  // --- NUEVA LÓGICA DE FILTRADO ---
   let filtroProfileId = profileIdParam || undefined;
+  let areaParam = area; // por defecto, usar el query param
 
-  // Si es voluntario, forzar su propio profileId
-  if (profile.rol !== 'admin') {
+  // 1. Voluntario: solo ve sus propios registros
+  if (profile.rol === 'voluntario') {
     filtroProfileId = profile.id;
   }
-  // Si scope=mine, siempre usar su propio profileId (incluso para admin)
+
+  // 2. scope=mine: siempre forzar el propio perfil (incluso para admin)
   if (scope === 'mine') {
     filtroProfileId = profile.id;
   }
 
-  // Si es admin pero envió profileId inválido (no UUID)
+  // 3. Admin normal: forzar su área (ignorar cualquier área enviada)
+  if (profile.rol === 'admin') {
+    // Como ya validamos que profile.areaId no es null, usamos ese valor
+    areaParam = profile.areaId;
+    // Nota: si el admin quiere ver todos los registros de su área, esto es correcto.
+    // Si se necesita que el admin vea solo su área, esto lo logra.
+  }
+
+  // 4. Coordinador general: usar el área enviada (o undefined para todas)
+  // No se modifica areaParam, sigue siendo el query param o undefined.
+
+  // Validar profileId si se envía (debe ser UUID)
   if (filtroProfileId && !esUUIDValido(filtroProfileId)) {
     return NextResponse.json({ error: 'profileId inválido' }, { status: 400 });
   }
@@ -133,7 +154,7 @@ export async function GET(request) {
     busqueda,
     desde,
     hasta,
-    area,
+    area: areaParam, // se pasa a construirWhere
     page,
     limit,
   };

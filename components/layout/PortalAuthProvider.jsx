@@ -85,7 +85,8 @@ export default function PortalAuthProvider({ children }) {
       return;
     }
 
-    if (rol !== 'admin' && isAdminRoute(pathname)) {
+    // Cambio: permitir tanto admin como coordinador_general en rutas admin
+    if (rol !== 'admin' && rol !== 'coordinador_general' && isAdminRoute(pathname)) {
       router.replace('/principal');
     }
   }, [loading, rol, pathname, router]);

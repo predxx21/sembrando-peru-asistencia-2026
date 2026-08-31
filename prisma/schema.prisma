@@ -17,6 +17,7 @@ datasource db {
 enum Rol {
   voluntario
   admin
+  coordinador_general
 }
 
 enum EstadoRegistro {

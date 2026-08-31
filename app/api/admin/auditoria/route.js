@@ -19,12 +19,26 @@ export async function GET(request) {
   }
 
   const { profile, error: perfilError } = await getPerfilByUserId(user.id);
-  if (perfilError || !profile || profile.rol !== 'admin') {
+  // Cambio: permitir admin y coordinador_general
+  if (perfilError || !profile || (profile.rol !== 'admin' && profile.rol !== 'coordinador_general')) {
     return NextResponse.json(
       { error: 'No tienes permisos de administrador.' },
       { status: 403 }
     );
   }
+
+  // Obtener areaId si es admin normal
+  let areaId = undefined;
+  if (profile.rol === 'admin') {
+    areaId = profile.areaId;
+    if (!areaId) {
+      return NextResponse.json(
+        { error: 'Tu perfil no tiene área asignada.' },
+        { status: 400 }
+      );
+    }
+  }
+  // Para coordinador_general, areaId se mantiene undefined (ve todas las áreas)
 
   const { searchParams } = new URL(request.url);
   const page = Number(searchParams.get('page')) || 1;
@@ -40,6 +54,7 @@ export async function GET(request) {
     return NextResponse.json(cacheado);
   }
 
+  // Pasar areaId a la función de base de datos
   const { data: auditoria, total, error } = await obtenerAuditoriaCompleta({
     page,
     limit,
@@ -47,6 +62,7 @@ export async function GET(request) {
     estado,
     desde,
     hasta,
+    areaId, // <-- nuevo parámetro
   });
 
   if (error) {
