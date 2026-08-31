@@ -16,15 +16,12 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
   }
 
-  // 🔒 VALIDACIÓN DE DOMINIO EN EL SERVIDOR
+  // VALIDACIÓN DE DOMINIO
   const email = user.email;
   if (!email || !email.endsWith(DOMINIO_PERMITIDO)) {
-    // Opcional: eliminar el usuario de Supabase Auth para que no quede huérfano
     try {
       await supabaseAdmin.auth.admin.deleteUser(user.id);
-    } catch (_) {
-      // Si falla la eliminación, al menos el perfil no se crea
-    }
+    } catch (_) {}
     return NextResponse.json(
       { error: `Solo se permiten correos del dominio ${DOMINIO_PERMITIDO}.` },
       { status: 403 }
@@ -32,11 +29,36 @@ export async function POST(request) {
   }
 
   const body = await request.json().catch(() => null);
+  const nombre = body?.nombre;
+  const apellido = body?.apellido;
+  const areaId = body?.areaId;
 
+  // ✅ Validar que el área sea obligatoria
+  if (!areaId) {
+    return NextResponse.json(
+      { error: 'El área de voluntariado es obligatoria.' },
+      { status: 400 }
+    );
+  }
+
+  // ✅ Validar que el área exista en la base de datos
+  const areaExistente = await prisma.area.findUnique({
+    where: { id: areaId },
+  });
+
+  if (!areaExistente) {
+    return NextResponse.json(
+      { error: 'El área seleccionada no es válida.' },
+      { status: 400 }
+    );
+  }
+
+  // ✅ Guardar perfil con área
   const { profile, error } = await upsertPerfil({
     id: user.id,
-    nombre: body?.nombre,
-    apellido: body?.apellido,
+    nombre,
+    apellido,
+    areaId,
   });
 
   if (error) {

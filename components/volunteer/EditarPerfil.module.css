@@ -1,68 +1,194 @@
+/* ============================================================ */
+/* ===== EDITAR PERFIL – ESTILOS PREMIUM ===== */
+/* ============================================================ */
+
 .page {
   width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: var(--font-family, 'Inter', system-ui, sans-serif);
+  color: #1e293b;
 }
 
+/* ===== HEADER ===== */
 .pageHeader {
-  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
 }
 
 .pageHeader h1 {
-  color: #26384b;
-  font-size: 28px;
-  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
 .pageHeader p {
-  color: #667281;
-  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  margin: 4px 0 0;
 }
 
+/* ===== FORMULARIO ===== */
 .form {
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 12px;
-  padding: 32px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 32px;
   display: grid;
   gap: 20px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
+/* ===== CAMPOS ===== */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field label {
-  color: #26384b;
+  color: #1e293b;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .field input,
 .field select {
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  background: #f8f9ff;
-  padding: 11px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 10px 14px;
   font-size: 14px;
-  color: #26384b;
+  color: #0f172a;
   font-family: inherit;
+  transition: all 0.2s ease;
 }
 
 .field input:focus,
 .field select:focus {
-  outline: 2px solid #197343;
-  outline-offset: 1px;
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+  background: #ffffff;
 }
 
 .field input:disabled,
 .field input[readOnly],
 .field select:disabled {
   background: #f4f6f9;
-  color: #667281;
+  color: #64748b;
   cursor: not-allowed;
 }
 
+/* ===== ÁREA (solo lectura) ===== */
+.areaText {
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  color: #334155;
+  font-size: 14px;
+  border: 1.5px solid #e2e8f0;
+  font-weight: 500;
+}
+
+/* ===== SECCIÓN FOTO DE PERFIL (dentro del formulario) ===== */
+.photoSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 4px 20px 4px;
+  border-bottom: 1.5px solid #eef2f6;
+  margin-bottom: 8px;
+  background: transparent;
+}
+
+.photoPreview {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  border: 3px solid #0f766e;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.15);
+  flex-shrink: 0;
+}
+
+.photoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoPlaceholder {
+  font-size: 30px;
+  line-height: 1;
+  color: #94a3b8;
+}
+
+.photoControls {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.photoControls label {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  margin: 0;
+}
+
+.photoControls input[type="file"] {
+  padding: 6px 0;
+  font-size: 13px;
+  color: #334155;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: auto;
+}
+
+.photoControls input[type="file"]::file-selector-button {
+  padding: 6px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 12px;
+}
+
+.photoControls input[type="file"]::file-selector-button:hover {
+  background: #f1f5f9;
+  border-color: #0f766e;
+}
+
+.photoControls small {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* ===== ESTADOS DE CARGA ===== */
 .loadingContainer {
   display: flex;
   flex-direction: column;
@@ -75,74 +201,98 @@
 .loadingSpinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #dfe4ea;
-  border-top-color: #197343;
+  border: 3px solid #e2e8f0;
+  border-top-color: #0f766e;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loadingText {
-  color: #667281;
+  color: #64748b;
   font-size: 14px;
 }
 
+/* ===== MENSAJES ===== */
 .mensaje {
-  margin-top: 4px;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 500;
+  margin: 4px 0 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 600;
   text-align: center;
-  background: #f8f9ff;
-  border: 1px solid #dfe4ea;
-  color: #26384b;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #1e293b;
+  font-size: 14px;
 }
 
-.mensaje:has(> .✅) {
-  background: #e5f8ee;
-  border-color: #197343;
-  color: #197343;
+.mensaje.success {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #047857;
 }
 
-.mensaje:has(> .❌) {
-  background: #fdecec;
-  border-color: #d64545;
-  color: #d64545;
+.mensaje.error {
+  background: #fff1f2;
+  border-color: #f43f5e;
+  color: #be123c;
 }
 
+/* ===== BOTÓN GUARDAR ===== */
 .saveButton {
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 14px 28px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  background: #197343;
-  color: white;
+  background: #0f766e;
+  color: #ffffff;
   margin-top: 8px;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.2);
 }
 
 .saveButton:hover:not(:disabled) {
-  background: #125a33;
+  background: #065f46;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.3);
 }
 
 .saveButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ============================================================ */
 /* ===== RESPONSIVE ===== */
 /* ============================================================ */
 
+@media (max-width: 1024px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 @media (max-width: 640px) {
+  .page {
+    padding: 8px 12px 40px;
+  }
+
+  .pageHeader {
+    padding: 20px;
+  }
   .pageHeader h1 {
     font-size: 22px;
   }
-
   .pageHeader p {
     font-size: 14px;
   }
@@ -155,74 +305,47 @@
   .field input,
   .field select {
     font-size: 16px;
-    padding: 14px;
+    padding: 12px 14px;
   }
 
   .saveButton {
     font-size: 15px;
     padding: 14px 20px;
   }
-  .photoSection {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 20px;
-  border-radius: 14px;
-  background: #f7f8fa;
-  margin-bottom: 20px;
-}
 
-.photoPreview {
-  width: 110px;
-  height: 110px;
-  min-width: 110px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e5e7eb;
-  border: 3px solid #325446;
-}
-
-.photoImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photoPlaceholder {
-  font-size: 42px;
-}
-
-.photoControls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.photoControls label {
-  font-weight: 600;
-}
-
-.photoControls input {
-  max-width: 280px;
-}
-
-.photoControls small {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-@media (max-width: 600px) {
+  /* Foto en móvil: centrada y apilada */
   .photoSection {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 12px 0 16px 0;
   }
 
   .photoControls {
     align-items: center;
+    width: 100%;
   }
-}
+
+  .photoControls input[type="file"] {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .photoControls input[type="file"]::file-selector-button {
+    margin-right: 0;
+    margin-bottom: 6px;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+
+  .photoPreview {
+    width: 72px;
+    height: 72px;
+    min-width: 72px;
+  }
+
+  .photoPlaceholder {
+    font-size: 26px;
+  }
 }

@@ -1,24 +1,19 @@
 import { NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/supabase/authServer';
-import { obtenerAreasActivas } from '@/lib/db/areas';
+import { prisma } from '@/lib/db/client';
 
-// GET /api/areas - Lista todas las áreas activas (para selects de perfil)
-// Requiere autenticación (cualquier usuario logeado puede ver las áreas).
-export async function GET(request) {
-  const user = await getUserFromRequest(request);
-
-  if (!user) {
-    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
-  }
-
-  const { data, error } = await obtenerAreasActivas();
-
-  if (error) {
+export async function GET() {
+  try {
+    const areas = await prisma.area.findMany({
+      where: { activa: true },
+      orderBy: { orden: 'asc' },
+      select: { id: true, nombre: true },
+    });
+    return NextResponse.json({ areas });
+  } catch (error) {
+    console.error('Error al cargar áreas:', error);
     return NextResponse.json(
-      { error: 'No se pudieron obtener las áreas.' },
+      { error: 'Error al cargar áreas' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ areas: data });
 }

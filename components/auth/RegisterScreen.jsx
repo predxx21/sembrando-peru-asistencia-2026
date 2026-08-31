@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isOrganizationEmail } from '@/lib/auth/email';
 import { registerUser } from '@/lib/auth/register';
 import { obtenerRolActual, rutaPorRol } from '@/lib/auth/sesion';
@@ -12,6 +12,25 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [areas, setAreas] = useState([]);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  // Cargar áreas al montar
+  useEffect(() => {
+    async function cargarAreas() {
+      try {
+        const res = await fetch('/api/areas');
+        if (!res.ok) throw new Error('Error al cargar áreas');
+        const data = await res.json();
+        setAreas(data.areas || []);
+      } catch (error) {
+        console.error('Error cargando áreas:', error);
+      } finally {
+        setLoadingAreas(false);
+      }
+    }
+    cargarAreas();
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -23,6 +42,7 @@ export default function RegisterScreen() {
     const email = String(formData.get('email')).trim();
     const password = String(formData.get('password'));
     const confirmPassword = String(formData.get('confirmPassword'));
+    const areaId = String(formData.get('areaId'));
 
     if (!nombre || !apellido) {
       setMessage('Por favor, ingresa tu nombre y apellido.');
@@ -39,6 +59,11 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (!areaId) {
+      setMessage('Por favor, selecciona un área de voluntariado.');
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage('');
 
@@ -48,6 +73,7 @@ export default function RegisterScreen() {
         apellido,
         email,
         password,
+        areaId,
       });
 
       if (error) {
@@ -156,6 +182,27 @@ export default function RegisterScreen() {
               />
             </div>
           </div>
+
+          {/* ✅ Área de Voluntariado */}
+          <label htmlFor="areaId">Área de Voluntariado</label>
+          <select
+            id="areaId"
+            name="areaId"
+            required
+            className={styles['register-select']}
+            defaultValue=""
+          >
+            <option value="" disabled>Selecciona un área</option>
+            {loadingAreas ? (
+              <option value="" disabled>Cargando áreas...</option>
+            ) : (
+              areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.nombre}
+                </option>
+              ))
+            )}
+          </select>
 
           <label className={styles['terms']}>
             <input type="checkbox" required />

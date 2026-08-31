@@ -9,15 +9,13 @@ import styles from "./EditarPerfil.module.css";
 export default function EditarPerfil() {
   const router = useRouter();
   const [form, setForm] = useState(null);
-  const [areas, setAreas] = useState([]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [foto, setFoto] = useState(null);
-const [fotoPreview, setFotoPreview] = useState("");
+  const [fotoPreview, setFotoPreview] = useState("");
 
-  // Carga el perfil real (nombre/apellido) y áreas disponibles.
   useEffect(() => {
     let cancelled = false;
 
@@ -26,16 +24,10 @@ const [fotoPreview, setFotoPreview] = useState("");
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No hay sesión activa.");
 
-        const [perfilRes, areasRes] = await Promise.all([
-          fetchConToken("/api/auth/perfil"),
-          fetchConToken("/api/areas"),
-        ]);
-
+        const perfilRes = await fetchConToken("/api/auth/perfil");
         const perfilBody = await perfilRes.json().catch(() => null);
-        const areasBody = await areasRes.json().catch(() => null);
 
         if (cancelled) return;
-
         if (!perfilBody?.profile) throw new Error("No se encontró tu perfil.");
 
         setForm({
@@ -43,9 +35,9 @@ const [fotoPreview, setFotoPreview] = useState("");
           apellido: perfilBody.profile.apellido || "",
           rol: perfilBody.profile.rol || "voluntario",
           areaId: perfilBody.profile.areaId || "",
+          area: perfilBody.profile.area || null,
         });
         setFotoPreview(perfilBody.profile.avatarUrl || "");
-        setAreas(areasBody?.areas || []);
         setEmail(user.email || "");
       } catch (err) {
         if (!cancelled) {
@@ -67,41 +59,32 @@ const [fotoPreview, setFotoPreview] = useState("");
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   }
-function handleFotoChange(event) {
-  const file = event.target.files?.[0];
 
-  if (!file) return;
+  function handleFotoChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const tiposPermitidos = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ];
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposPermitidos.includes(file.type)) {
+      setMensaje("Solo se permiten imágenes JPG, PNG o WEBP.");
+      return;
+    }
 
-  if (!tiposPermitidos.includes(file.type)) {
-    setMensaje("Solo se permiten imágenes JPG, PNG o WEBP.");
-    return;
+    if (file.size > 2 * 1024 * 1024) {
+      setMensaje("La imagen no debe superar los 2 MB.");
+      return;
+    }
+
+    setFoto(file);
+    setFotoPreview(URL.createObjectURL(file));
+    setMensaje("");
   }
 
-  if (file.size > 2 * 1024 * 1024) {
-    setMensaje("La imagen no debe superar los 2 MB.");
-    return;
-  }
-
-  setFoto(file);
-  setFotoPreview(URL.createObjectURL(file));
-  setMensaje("");
-}
   async function handleSubmit(event) {
     event.preventDefault();
 
     if (!form.nombre.trim() || !form.apellido.trim()) {
       setMensaje("Los nombres y los apellidos son obligatorios.");
-      return;
-    }
-
-    if (!form.areaId) {
-      setMensaje("El área de voluntariado es obligatoria.");
       return;
     }
 
@@ -111,41 +94,37 @@ function handleFotoChange(event) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No hay sesión activa.");
-let nuevaAvatarUrl = fotoPreview || null;
 
-if (foto) {
-  const extension = foto.name.split(".").pop()?.toLowerCase() || "jpg";
+      let nuevaAvatarUrl = fotoPreview || null;
 
-  const nombreArchivo = `${crypto.randomUUID()}.${extension}`;
+      if (foto) {
+        const extension = foto.name.split(".").pop()?.toLowerCase() || "jpg";
+        const nombreArchivo = `${crypto.randomUUID()}.${extension}`;
+        const rutaArchivo = `${session.user.id}/${nombreArchivo}`;
 
-  const rutaArchivo = `${session.user.id}/${nombreArchivo}`;
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(rutaArchivo, foto, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: foto.type,
+          });
 
-  const { error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(rutaArchivo, foto, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: foto.type,
-    });
+        if (uploadError) {
+          throw new Error(uploadError.message || "No se pudo subir la foto.");
+        }
 
-  if (uploadError) {
-    throw new Error(
-      uploadError.message || "No se pudo subir la foto."
-    );
-  }
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(rutaArchivo);
 
-  const { data: publicUrlData } = supabase.storage
-    .from("avatars")
-    .getPublicUrl(rutaArchivo);
+        nuevaAvatarUrl = publicUrlData.publicUrl;
+      }
 
-  nuevaAvatarUrl = publicUrlData.publicUrl;
-}
       const payload = {
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
-        areaId: form.areaId || null,
         avatarUrl: nuevaAvatarUrl,
-
       };
 
       const res = await fetch("/api/auth/perfil", {
@@ -186,40 +165,36 @@ if (foto) {
         <h1>Editar Perfil</h1>
         <p>Actualiza tu información personal y área de voluntariado.</p>
       </header>
-<div className={styles.photoSection}>
-  <div className={styles.photoPreview}>
-    {fotoPreview ? (
-      <img
-        src={fotoPreview}
-        alt="Foto de perfil"
-        className={styles.photoImage}
-      />
-    ) : (
-      <div className={styles.photoPlaceholder}>
-        👤
-      </div>
-    )}
-  </div>
 
-  <div className={styles.photoControls}>
-    <label htmlFor="foto">
-      Foto de perfil
-    </label>
-
-    <input
-      id="foto"
-      type="file"
-      accept="image/jpeg,image/png,image/webp"
-      onChange={handleFotoChange}
-    />
-
-    <small>
-      JPG, PNG o WEBP. Máximo 2 MB.
-    </small>
-  </div>
-</div>
-
+      {/* ✅ FORMULARIO – ahora contiene la foto dentro */}
       <form className={styles.form} onSubmit={handleSubmit}>
+        {/* 👇 SECCIÓN FOTO (dentro del formulario) */}
+        <div className={styles.photoSection}>
+          <div className={styles.photoPreview}>
+            {fotoPreview ? (
+              <img
+                src={fotoPreview}
+                alt="Foto de perfil"
+                className={styles.photoImage}
+              />
+            ) : (
+              <div className={styles.photoPlaceholder}>👤</div>
+            )}
+          </div>
+
+          <div className={styles.photoControls}>
+            <label htmlFor="foto">Foto de perfil</label>
+            <input
+              id="foto"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFotoChange}
+            />
+            <small>JPG, PNG o WEBP. Máximo 2 MB.</small>
+          </div>
+        </div>
+
+        {/* 👇 CAMPOS */}
         <div className={styles.field}>
           <label htmlFor="nombre">Nombres *</label>
           <input
@@ -247,21 +222,10 @@ if (foto) {
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="areaId">Área de Voluntariado *</label>
-          <select
-            id="areaId"
-            name="areaId"
-            value={form?.areaId || ""}
-            readOnly
-            disabled
-          >
-            <option value="">Seleccionar área</option>
-            {areas.map((area) => (
-              <option key={area.id} value={area.id}>
-                {area.nombre}
-              </option>
-            ))}
-          </select>
+          <label>Área de Voluntariado</label>
+          <p className={styles.areaText}>
+            {form?.area?.nombre || "Sin asignar"}
+          </p>
         </div>
 
         <div className={styles.field}>
