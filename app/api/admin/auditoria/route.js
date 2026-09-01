@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerAuditoriaCompleta } from '@/lib/db/estadisticas';
+import { prisma } from '@/lib/db/client';
 import { getCached, setCached } from '@/lib/cache';
 
 // GET /api/admin/auditoria - Historial completo de auditoría con paginación y filtros
@@ -62,7 +63,7 @@ export async function GET(request) {
     estado,
     desde,
     hasta,
-    areaId, // <-- nuevo parámetro
+    areaId,
   });
 
   if (error) {
@@ -72,7 +73,43 @@ export async function GET(request) {
     );
   }
 
-  const body = { auditoria, total, page, limit };
+  // 📊 Calcular KPIs agregados (totales reales, no solo página actual)
+  const whereStats = {
+    estado: { in: ['aprobado', 'rechazado'] },
+    ...(areaId ? { profile: { areaId } } : {}),
+  };
+
+  // Si hay filtros de fecha, aplicarlos también a los stats
+  if (desde || hasta) {
+    whereStats.fechaRevision = {};
+    if (desde) whereStats.fechaRevision.gte = new Date(desde);
+    if (hasta) {
+      const h = new Date(hasta);
+      h.setHours(23, 59, 59, 999);
+      whereStats.fechaRevision.lte = h;
+    }
+  }
+
+  const [totalRegistros, aprobados, rechazados] = await Promise.all([
+    prisma.registroAsistencia.count({ where: whereStats }),
+    prisma.registroAsistencia.count({
+      where: { ...whereStats, estado: 'aprobado' },
+    }),
+    prisma.registroAsistencia.count({
+      where: { ...whereStats, estado: 'rechazado' },
+    }),
+  ]);
+
+  const stats = {
+    totalRegistros: totalRegistros || 0,
+    aprobados: aprobados || 0,
+    rechazados: rechazados || 0,
+    tasaAprobacion: totalRegistros > 0
+      ? Math.round((aprobados / totalRegistros) * 100)
+      : 100,
+  };
+
+  const body = { auditoria, total, page, limit, stats };
   setCached(cacheKey, body, CACHE_TTL_MS);
 
   return NextResponse.json(body);

@@ -84,8 +84,6 @@ export default function AdminDashboard() {
       return;
     }
     const body = await res.json();
-    // Quita este log antes de producción:
-    // console.log('[Dashboard] stats endpoint response:', JSON.stringify(body.data, null, 2));
     setWeeklyVolume(body.data?.tendencia ?? []);
     setAuditLog(body.data?.auditoria ?? []);
   } catch (err) {
@@ -287,18 +285,6 @@ export default function AdminDashboard() {
     );
   }
 
-  function TableListIcon({ size = 18, className }) {
-    return (
-      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="8" y1="6" x2="21" y2="6" />
-        <line x1="8" y1="12" x2="21" y2="12" />
-        <line x1="8" y1="18" x2="21" y2="18" />
-        <line x1="3" y1="6" x2="3.01" y2="6" />
-        <line x1="3" y1="12" x2="3.01" y2="12" />
-        <line x1="3" y1="18" x2="3.01" y2="18" />
-      </svg>
-    );
-  }
-
   // ===== FUNCIONES AUXILIARES =====
   const getAnomaliaBadge = (horas) => {
     if (horas > UMBRALES.JORNADA_MAXIMA_HORAS) {
@@ -308,13 +294,7 @@ export default function AdminDashboard() {
         </span>
       );
     }
-    if (horas < UMBRALES.JORNADA_MINIMA_MINUTOS / 60) {
-      return (
-        <span className={styles.alertBadge}>
-          <AlertIcon size={12} /> {'<15min'}
-        </span>
-      );
-    }
+    // Eliminada advertencia de < 15 minutos
     return null;
   };
 
@@ -448,9 +428,6 @@ export default function AdminDashboard() {
       <section className={styles.tableSection}>
         <div className={styles.tableCardHeader}>
           <div className={styles.tableTitleGroup}>
-            <div className={styles.tableIconBadge}>
-              <TableListIcon size={18} />
-            </div>
             <div>
               <h2 className={styles.tableTitle}>Registros Pendientes de Auditoría</h2>
               <p className={styles.tableSubtitle}>Revisa y audita las horas registradas por el equipo de voluntariado.</p>
@@ -513,18 +490,21 @@ export default function AdminDashboard() {
               ) : (
                 submissions.map((s) => {
                   const esPropio = esRegistroPropio(s.profileId);
+                  // Robustez: buscar tanto avatarUrl como avatar_url
+                  const avatar = s.avatarUrl || s.avatar_url;
+                  
                   return (
                     <tr key={s.id}>
                       <td>
                         <div className={styles.userCell}>
-                          {/* 👇 AVATAR CON FOTO O INICIALES (DE TU AMIGO) */}
-                          {s.avatarUrl ? (
+                          {/* 👇 AVATAR CON FOTO O INICIALES */}
+                          {avatar ? (
                             <button
                               type="button"
                               className={styles.avatarButton}
                               onClick={() =>
                                 setSelectedAvatar({
-                                  url: s.avatarUrl,
+                                  url: avatar,
                                   name: s.name,
                                 })
                               }
@@ -532,7 +512,7 @@ export default function AdminDashboard() {
                               aria-label={`Ver foto de ${s.name}`}
                             >
                               <img
-                                src={s.avatarUrl}
+                                src={avatar}
                                 alt={`Foto de ${s.name}`}
                                 className={styles.avatarImage}
                               />
@@ -731,7 +711,7 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* 👇 MODAL DE FOTO (DE TU AMIGO) */}
+      {/* 👇 MODAL DE FOTO */}
       {selectedAvatar && (
         <div
           className={styles.avatarModalOverlay}

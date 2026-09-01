@@ -36,6 +36,14 @@ export default function HistorialAuditoria() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
+  // ✅ KPIs desde el servidor (totales reales, no solo página actual)
+  const [stats, setStats] = useState({
+    totalRegistros: 0,
+    aprobados: 0,
+    rechazados: 0,
+    tasaAprobacion: 100,
+  });
+
   // Filtros
   const [search, setSearch] = useState("");
   const [estado, setEstado] = useState(""); // '', 'aprobado', 'rechazado'
@@ -49,6 +57,9 @@ export default function HistorialAuditoria() {
   // Modal de exportación
   const [showExport, setShowExport] = useState(false);
 
+  // ✅ Modal de foto de perfil (igual que AdminDashboard)
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+
   const isFirstRender = useRef(true);
 
   const totalPages = useMemo(
@@ -56,20 +67,30 @@ export default function HistorialAuditoria() {
     [total]
   );
 
-  // KPIs dinámicos
-  const kpiStats = useMemo(() => {
-    const aprobados = auditoria.filter((item) => item.estado === "aprobado").length;
-    const rechazados = auditoria.filter((item) => item.estado === "rechazado").length;
-    const muestraTotal = auditoria.length;
-    const tasaAprobacion = muestraTotal > 0 ? Math.round((aprobados / muestraTotal) * 100) : 100;
-    return { aprobados, rechazados, tasaAprobacion };
-  }, [auditoria]);
+  // ✅ Efecto para modal de foto
+  useEffect(() => {
+    if (!selectedAvatar) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedAvatar(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedAvatar]);
 
   async function cargarAuditoria(pagina = page) {
     try {
       setLoading(true);
       setError("");
-      const { auditoria: lista, total: nuevoTotal } = await getAuditoriaCompleta({
+      const result = await getAuditoriaCompleta({
         page: pagina,
         limit: ITEMS_PER_PAGE,
         busqueda: search.trim() || undefined,
@@ -77,9 +98,10 @@ export default function HistorialAuditoria() {
         desde: desde || undefined,
         hasta: hasta || undefined,
       });
-      setAuditoria(lista);
-      setTotal(nuevoTotal);
-      const maxPage = Math.max(1, Math.ceil(nuevoTotal / ITEMS_PER_PAGE));
+      setAuditoria(result.auditoria);
+      setTotal(result.total);
+      setStats(result.stats);
+      const maxPage = Math.max(1, Math.ceil(result.total / ITEMS_PER_PAGE));
       setPage(pagina > maxPage ? maxPage : pagina);
     } catch (err) {
       setError(err.message || "No se pudo cargar el historial de auditoría.");
@@ -162,29 +184,29 @@ export default function HistorialAuditoria() {
         </div>
       </header>
 
-      {/* Tarjetas KPI */}
+      {/* 📊 Tarjetas KPI con datos REALES del servidor */}
       <div className={styles.kpiGrid}>
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconTotal}`}>📋</div>
           <div className={styles.kpiContent}>
             <span className={styles.kpiLabel}>Total Registros</span>
-            <span className={styles.kpiValue}>{total}</span>
+            <span className={styles.kpiValue}>{stats.totalRegistros}</span>
             <span className={styles.kpiSubtext}>Eventos auditados</span>
           </div>
         </div>
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconApproved}`}>✓</div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Aprobados (Página)</span>
-            <span className={styles.kpiValue}>{kpiStats.aprobados}</span>
+            <span className={styles.kpiLabel}>Aprobados</span>
+            <span className={styles.kpiValue}>{stats.aprobados}</span>
             <span className={styles.kpiSubtext}>Sin observaciones</span>
           </div>
         </div>
         <div className={styles.kpiCard}>
           <div className={`${styles.kpiIcon} ${styles.kpiIconRejected}`}>✕</div>
           <div className={styles.kpiContent}>
-            <span className={styles.kpiLabel}>Rechazados (Página)</span>
-            <span className={styles.kpiValue}>{kpiStats.rechazados}</span>
+            <span className={styles.kpiLabel}>Rechazados</span>
+            <span className={styles.kpiValue}>{stats.rechazados}</span>
             <span className={styles.kpiSubtext}>Devueltos para corrección</span>
           </div>
         </div>
@@ -192,7 +214,7 @@ export default function HistorialAuditoria() {
           <div className={`${styles.kpiIcon} ${styles.kpiIconRate}`}>📈</div>
           <div className={styles.kpiContent}>
             <span className={styles.kpiLabel}>Tasa de Aprobación</span>
-            <span className={styles.kpiValue}>{kpiStats.tasaAprobacion}%</span>
+            <span className={styles.kpiValue}>{stats.tasaAprobacion}%</span>
             <span className={styles.kpiSubtext}>Promedio histórico</span>
           </div>
         </div>
@@ -332,9 +354,13 @@ export default function HistorialAuditoria() {
                   const voluntarioInitials = getInitials(item.profile?.nombre, item.profile?.apellido);
                   const revisorInitials = getInitials(item.revisor?.nombre, item.revisor?.apellido);
                   const isAprobado = item.estado === "aprobado";
+                  
+                  // Robustez: buscar tanto avatarUrl como avatar_url
+                  const voluntarioAvatar = item.profile?.avatarUrl || item.profile?.avatar_url;
+                  const revisorAvatar = item.revisor?.avatarUrl || item.revisor?.avatar_url;
 
                   return (
-                    <tr key={item.id} className={styles.tableRow} onClick={() => setSelectedItem(item)}>
+                    <tr key={item.id} className={styles.tableRow}>
                       <td><span style={{ fontWeight: 600, color: "#1e293b" }}>{formatFechaEs(item.fechaRevision)}</span></td>
                       <td>
                         <span className={`${styles.statusBadge} ${isAprobado ? styles.statusApproved : styles.statusRejected}`}>
@@ -343,22 +369,71 @@ export default function HistorialAuditoria() {
                         </span>
                       </td>
                       <td><span className={styles.idBadge}>#{item.id}</span></td>
+
+                      {/* ✅ Celda Voluntario con foto de perfil */}
                       <td>
                         <div className={styles.userCell}>
-                          <div className={styles.avatar} style={{ backgroundColor: getAvatarColor(voluntarioNombre) }}>
-                            {voluntarioInitials}
-                          </div>
+                          {voluntarioAvatar ? (
+                            <button
+                              type="button"
+                              className={styles.avatarButton}
+                              onClick={() =>
+                                setSelectedAvatar({
+                                  url: voluntarioAvatar,
+                                  name: voluntarioNombre,
+                                })
+                              }
+                              title={`Ver foto de ${voluntarioNombre}`}
+                              aria-label={`Ver foto de ${voluntarioNombre}`}
+                            >
+                              <img
+                                src={voluntarioAvatar}
+                                alt={`Foto de ${voluntarioNombre}`}
+                                className={styles.avatarImage}
+                              />
+                            </button>
+                          ) : (
+                            <div
+                              className={styles.avatar}
+                              style={{ backgroundColor: getAvatarColor(voluntarioNombre) }}
+                            >
+                              {voluntarioInitials}
+                            </div>
+                          )}
                           <div className={styles.userInfo}>
                             <span className={styles.userName}>{voluntarioNombre}</span>
                             <span className={styles.userRole}>Voluntario</span>
                           </div>
                         </div>
                       </td>
+
+                      {/* Celda Revisor (con lógica de foto también) */}
                       <td>
                         <div className={styles.userCell}>
-                          <div className={styles.avatar} style={{ backgroundColor: getAvatarColor(revisorNombre) }}>
-                            {revisorInitials}
-                          </div>
+                          {revisorAvatar ? (
+                            <button
+                              type="button"
+                              className={styles.avatarButton}
+                              onClick={() =>
+                                setSelectedAvatar({
+                                  url: revisorAvatar,
+                                  name: revisorNombre,
+                                })
+                              }
+                              title={`Ver foto de ${revisorNombre}`}
+                              aria-label={`Ver foto de ${revisorNombre}`}
+                            >
+                              <img
+                                src={revisorAvatar}
+                                alt={`Foto de ${revisorNombre}`}
+                                className={styles.avatarImage}
+                              />
+                            </button>
+                          ) : (
+                            <div className={styles.avatar} style={{ backgroundColor: getAvatarColor(revisorNombre) }}>
+                              {revisorInitials}
+                            </div>
+                          )}
                           <div className={styles.userInfo}>
                             <span className={styles.userName}>{revisorNombre}</span>
                             <span className={styles.userRole}>Revisor</span>
@@ -472,12 +547,6 @@ export default function HistorialAuditoria() {
               </div>
             </div>
             <div className={styles.modalFooter}>
-              <button type="button" className={styles.copyIdBtn} onClick={() => handleCopyId(selectedItem.id)}>
-                {copied ? "¡Copiado! ✓" : "Copiar ID #"}
-              </button>
-              <button type="button" className={styles.exportBtn} onClick={() => setShowExport(true)}>
-                Exportar CSV/Excel
-              </button>
               <button type="button" className={styles.closeBtn} onClick={() => setSelectedItem(null)}>Cerrar</button>
             </div>
           </div>
@@ -492,6 +561,39 @@ export default function HistorialAuditoria() {
         initialHasta={hasta}
         initialEstado={estado}
       />
+
+      {/* ✅ Modal de Foto de Perfil */}
+      {selectedAvatar && (
+        <div
+          className={styles.avatarModalOverlay}
+          onClick={() => setSelectedAvatar(null)}
+        >
+          <div
+            className={styles.avatarModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.avatarModalClose}
+              onClick={() => setSelectedAvatar(null)}
+              aria-label="Cerrar foto"
+              title="Cerrar"
+            >
+              ×
+            </button>
+
+            <img
+              src={selectedAvatar.url}
+              alt={`Foto de ${selectedAvatar.name}`}
+              className={styles.avatarModalImage}
+            />
+
+            <p className={styles.avatarModalName}>
+              {selectedAvatar.name}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
