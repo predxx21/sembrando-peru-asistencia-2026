@@ -85,7 +85,7 @@ model RegistroAsistencia {
   @@index([fecha])
   @@index([fechaRevision])
   @@index([estado, fecha])
-  @@index([profileId, sesionActiva]) // Para buscar sesión activa (CRÍTICO)
+  @@unique([profileId, sesionActiva]) // Para buscar sesión activa (CRÍTICO)
   @@index([revisorId])               // Para auditoría por revisor
   @@index([estado, fechaRevision])   // Para auditoría completa filtrada
   @@index([profileId, estado])       // Para historial filtrado por estado

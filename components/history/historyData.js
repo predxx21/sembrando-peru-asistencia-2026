@@ -2,14 +2,17 @@
 import { fetchConToken } from '@/lib/api/client';
 import { formatFechaEs } from '@/lib/utils/fecha';
 
-async function fetchRegistros({ page = 1, limit = 6 } = {}) {
-  const queryParams = new URLSearchParams({
+async function fetchRegistros({ page = 1, limit = 6, busqueda, estado } = {}) {
+  const params = new URLSearchParams({
     scope: 'mine',
     page: page.toString(),
     limit: limit.toString(),
   });
 
-  const res = await fetchConToken(`/api/registros?${queryParams}`);
+  if (busqueda) params.append('busqueda', busqueda);
+  if (estado && estado !== 'todos') params.append('estado', estado);
+
+  const res = await fetchConToken(`/api/registros?${params}`);
   if (!res.ok) {
     throw new Error('Error al obtener los registros');
   }
@@ -38,9 +41,9 @@ function mapActivity(row) {
   };
 }
 
-// Obtiene una página del historial con paginación en servidor
-export async function getHistoryActivities({ page = 1, limit = 6 } = {}) {
-  const { data, total } = await fetchRegistros({ page, limit });
+// Obtiene una página del historial con paginación en servidor y filtros
+export async function getHistoryActivities({ page = 1, limit = 6, busqueda, estado } = {}) {
+  const { data, total } = await fetchRegistros({ page, limit, busqueda, estado });
   return {
     activities: data.map(mapActivity),
     total,

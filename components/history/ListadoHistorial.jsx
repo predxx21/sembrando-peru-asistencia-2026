@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./ListadoHistorial.module.css";
 import { ESTADO_LABEL } from "@/lib/utils/estado";
@@ -11,44 +11,26 @@ const statusConfig = {
   rechazado: { label: ESTADO_LABEL.rechazado, className: "statusRejected" },
 };
 
-// El límite se define en el padre (page.js) y se pasa como prop
 export default function HistoryDashboard({
   activities = [],
   total = 0,
   page = 1,
   limit = 6,
   onPageChange,
+  search = '',
+  filterStatus = 'todos',
+  onSearchChange,
+  onFilterChange,
 }) {
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("todos");
   const [currentPage, setCurrentPage] = useState(page);
 
-  // Sincronizar currentPage con page prop (si el padre cambia la página)
   useEffect(() => {
     setCurrentPage(page);
   }, [page]);
 
-  // Aplicar filtros SOLO a los registros de la página actual (client-side)
-  const filteredActivities = useMemo(() => {
-    return activities.filter((act) => {
-      const matchSearch =
-        act.title.toLowerCase().includes(search.toLowerCase()) ||
-        act.description.toLowerCase().includes(search.toLowerCase());
-      const matchStatus = filterStatus === "todos" || act.status === filterStatus;
-      return matchSearch && matchStatus;
-    });
-  }, [activities, search, filterStatus]);
-
-  // Reiniciar a página 1 cuando cambian filtros (aunque la paginación es servidor,
-  // aquí solo filtramos los datos ya traídos, así que no tiene mucho sentido
-  // reiniciar la página del servidor, pero podemos hacerlo)
-  useEffect(() => {
-    if (search || filterStatus !== "todos") {
-      // Si el usuario filtra, mostramos solo los que coinciden de la página actual.
-      // Para una búsqueda más precisa, deberías hacer una nueva petición al backend
-      // con los filtros, pero por ahora queda así.
-    }
-  }, [search, filterStatus]);
+  // Los filtros ahora se aplican en el servidor, así que no necesitamos
+  // filtrar en cliente; mostramos directamente activities.
+  const filteredActivities = activities;
 
   const totalPages = Math.ceil(total / limit);
 
@@ -60,7 +42,6 @@ export default function HistoryDashboard({
     }
   };
 
-  // Generar elementos de paginación (igual que antes)
   function getPaginationItems(currentPage, totalPages) {
     const items = [];
     const maxVisible = 7;
@@ -99,13 +80,13 @@ export default function HistoryDashboard({
             type="text"
             placeholder="Buscar por título o descripción..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         <select
           className={styles.filterSelect}
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={(e) => onFilterChange(e.target.value)}
         >
           <option value="todos">Todos los estados</option>
           <option value="aprobado">Aprobado</option>

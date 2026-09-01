@@ -13,6 +13,8 @@ export default function HistoryLoader() {
   const [activities, setActivities] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('todos');
 
   useEffect(() => {
     let isMounted = true;
@@ -20,7 +22,12 @@ export default function HistoryLoader() {
     async function loadPage() {
       try {
         setLoaded(false);
-        const result = await getHistoryActivities({ page, limit: ITEMS_PER_PAGE });
+        const result = await getHistoryActivities({
+          page,
+          limit: ITEMS_PER_PAGE,
+          busqueda: search || undefined,
+          estado: filterStatus !== 'todos' ? filterStatus : undefined,
+        });
         if (isMounted) {
           setActivities(result.activities);
           setTotal(result.total);
@@ -42,7 +49,7 @@ export default function HistoryLoader() {
     return () => {
       isMounted = false;
     };
-  }, [page]);
+  }, [page, search, filterStatus]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1) {
@@ -70,6 +77,10 @@ export default function HistoryLoader() {
       page={page}
       limit={ITEMS_PER_PAGE}
       onPageChange={handlePageChange}
+      search={search}
+      filterStatus={filterStatus}
+      onSearchChange={setSearch}
+      onFilterChange={setFilterStatus}
     />
   );
 }

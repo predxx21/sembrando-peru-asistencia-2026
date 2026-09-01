@@ -24,6 +24,12 @@ export default function VolunteerDashboard() {
   const [nombre, setNombre] = useState("");
   const [area, setArea] = useState("");
   const [activities, setActivities] = useState([]);
+  const [stats, setStats] = useState({
+    totalHoras: 0,
+    horasAprobadas: 0,
+    horasPendientes: 0,
+    rechazados: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,8 +45,15 @@ export default function VolunteerDashboard() {
         setNombre(perfil?.profile?.nombre || "");
         setArea(perfil?.profile?.area?.nombre || "");
 
-        // 🔧 OBTENER ACTIVIDADES CON PAGINACIÓN
-        const result = await getHistoryActivities(); // devuelve { activities, total }
+        // ✅ Cargar estadísticas reales del servidor
+        const statsRes = await fetchConToken("/api/voluntario/estadisticas");
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (!cancelled) setStats(statsData.data);
+        }
+
+        // ✅ Cargar solo los 6 registros más recientes (para la lista)
+        const result = await getHistoryActivities({ limit: 6 });
         if (!cancelled) setActivities(result.activities || []);
       } catch (err) {
         if (!cancelled) {
@@ -57,29 +70,6 @@ export default function VolunteerDashboard() {
       cancelled = true;
     };
   }, []);
-
-  const totalHours = useMemo(
-    () => activities.reduce((total, a) => total + a.hours, 0),
-    [activities]
-  );
-  const approvedHours = useMemo(
-    () =>
-      activities
-        .filter((a) => a.status === "aprobado")
-        .reduce((total, a) => total + a.hours, 0),
-    [activities]
-  );
-  const pendingHours = useMemo(
-    () =>
-      activities
-        .filter((a) => a.status === "pendiente")
-        .reduce((total, a) => total + a.hours, 0),
-    [activities]
-  );
-  const rejectedCount = useMemo(
-    () => activities.filter((a) => a.status === "rechazado").length,
-    [activities]
-  );
 
   const recent = useMemo(() => activities.slice(0, 4), [activities]);
   const saludo = useMemo(() => getSaludo(), []);
@@ -103,14 +93,14 @@ export default function VolunteerDashboard() {
         </div>
       </section>
 
-      {/* Tarjetas KPI */}
+      {/* Tarjetas KPI con datos REALES del servidor */}
       <section className={styles.kpiGrid}>
         <article className={styles.kpiCard}>
           <div className={styles.kpiHead}>
             <span className={styles.kpiLabel}>Total Horas</span>
             <div className={`${styles.kpiIcon} ${styles.kpiIconTotal}`}>⏱️</div>
           </div>
-          <div className={styles.kpiValue}>{totalHours.toFixed(1)} h</div>
+          <div className={styles.kpiValue}>{stats.totalHoras.toFixed(1)} h</div>
           <span className={styles.kpiSubtext}>Registradas en la plataforma</span>
         </article>
 
@@ -119,7 +109,7 @@ export default function VolunteerDashboard() {
             <span className={styles.kpiLabel}>Aprobadas</span>
             <div className={`${styles.kpiIcon} ${styles.kpiIconApproved}`}>✅</div>
           </div>
-          <div className={styles.kpiValue}>{approvedHours.toFixed(1)} h</div>
+          <div className={styles.kpiValue}>{stats.horasAprobadas.toFixed(1)} h</div>
           <span className={styles.kpiSubtext}>Verificadas por el área</span>
         </article>
 
@@ -128,7 +118,7 @@ export default function VolunteerDashboard() {
             <span className={styles.kpiLabel}>Pendientes</span>
             <div className={`${styles.kpiIcon} ${styles.kpiIconPending}`}>⏳</div>
           </div>
-          <div className={styles.kpiValue}>{pendingHours.toFixed(1)} h</div>
+          <div className={styles.kpiValue}>{stats.horasPendientes.toFixed(1)} h</div>
           <span className={styles.kpiSubtext}>En revisión por coordinación</span>
         </article>
 
@@ -137,19 +127,17 @@ export default function VolunteerDashboard() {
             <span className={styles.kpiLabel}>Observadas</span>
             <div className={`${styles.kpiIcon} ${styles.kpiIconRejected}`}>⚠️</div>
           </div>
-          <div className={styles.kpiValue}>{rejectedCount}</div>
+          <div className={styles.kpiValue}>{stats.rechazados}</div>
           <span className={styles.kpiSubtext}>Requieren tu atención</span>
         </article>
       </section>
 
-      {/* Grid Principal */}
+      {/* Grid Principal (resto igual) */}
       <div className={styles.mainLayout}>
         {/* Columna Izquierda: Actividad Reciente */}
         <section className={styles.contentCard}>
           <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>
-              Actividad Reciente
-            </h2>
+            <h2 className={styles.cardTitle}>Actividad Reciente</h2>
             <Link href="/historial" className={styles.viewAllLink}>
               Ver historial completo ›
             </Link>
@@ -203,7 +191,7 @@ export default function VolunteerDashboard() {
           )}
         </section>
 
-        {/* Columna Derecha: GUÍA RÁPIDA (reemplaza Meta Mensual + Acciones Rápidas) */}
+        {/* Columna Derecha: GUÍA RÁPIDA */}
         <aside className={styles.sideWidgets}>
           <div className={styles.guideCard}>
             <h3 className={styles.guideTitle}>Guía Rápida</h3>
