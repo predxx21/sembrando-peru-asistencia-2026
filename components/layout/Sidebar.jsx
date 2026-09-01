@@ -66,14 +66,19 @@ export default function Sidebar() {
     }
   }
 
-  // Administración y Reportes son exclusivos de coordinadores (admin o coordinador_general).
+  // Panel e Historial son exclusivos de voluntarios.
+  // Administración y Auditoría son exclusivos de coordinadores (admin o coordinador_general).
   const navItems = [
-    { label: "▦　Panel", href: "/principal" },
-    { label: "◴　Historial", href: "/historial" },
+    ...(rol === "voluntario"
+      ? [
+          { label: "▦　Panel", href: "/principal" },
+          { label: "◴　Historial", href: "/historial" },
+        ]
+      : []),
     ...(rol === "admin" || rol === "coordinador_general"
       ? [
           { label: "◉　Administración", href: "/administracion" },
-          { label: "◐　Reporte", href: "/administracion/auditoria" },
+          { label: "◱　Auditoría", href: "/administracion/auditoria" },
         ]
       : []),
   ];
