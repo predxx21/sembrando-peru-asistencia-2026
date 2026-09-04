@@ -4,6 +4,7 @@ import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, actualizarEstadoRegistro } from '@/lib/db/registro';
 import { getCached, setCached, invalidateCacheByPrefix } from '@/lib/cache';
 import { esEnteroPositivo } from '@/lib/utils/validar';
+import { prisma } from '@/lib/db/client'; // ✅ Import normal de prisma
 
 // Caché corta del detalle.
 const CACHE_TTL_MS = 60 * 1000;
@@ -123,10 +124,6 @@ export async function PATCH(request, context) {
   // ✅ Verificación de área para admin normal
   if (profile.rol === 'admin') {
     // Obtener el área del voluntario dueño del registro
-    // Nota: el registro tiene profileId, debemos obtener el área de ese perfil
-    // Usamos una consulta adicional o incluimos profile en la obtención del registro.
-    // Como obtenerRegistroPorId no trae el areaId del voluntario, hacemos una consulta extra.
-    const { prisma } = await import('@/lib/db/client');
     const voluntario = await prisma.profile.findUnique({
       where: { id: registroActual.profileId },
       select: { areaId: true },

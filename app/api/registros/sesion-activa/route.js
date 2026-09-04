@@ -50,7 +50,11 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Ya tienes una sesión activa.' }, { status: 409 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return NextResponse.json({ error: 'Formato JSON inválido.' }, { status: 400 });
+  }
+
   const { descripcion } = body;
 
   if (!descripcion?.trim()) {

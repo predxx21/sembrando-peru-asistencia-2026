@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db/client';
 import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId, upsertPerfil, actualizarPerfil } from '@/lib/db/perfil';
-import { supabaseAdmin } from '@/lib/supabase/server'; // ← si no existe, crea el cliente admin
+import { supabaseAdmin } from '@/lib/supabase/server';
 
-// 🔒 Dominio permitido (cámbialo por el tuyo si es diferente)
 const DOMINIO_PERMITIDO = '@sembrandoperu.org';
 
-// Crea (o confirma) el perfil del usuario AUTENTICADO en Postgres vía Prisma.
-// Se llama desde el cliente justo después de un signUp/login exitoso contra
-// Supabase Auth.
+// Crea (o confirma) el perfil del usuario AUTENTICADO.
+// - Si el perfil ya existe → devuelve el existente sin validar área.
+// - Si NO existe → exige `areaId` para crearlo.
 export async function POST(request) {
   const user = await getUserFromRequest(request);
 
@@ -33,10 +33,20 @@ export async function POST(request) {
   const apellido = body?.apellido;
   const areaId = body?.areaId;
 
-  // ✅ Validar que el área sea obligatoria
+  // ✅ Verificar si el perfil ya existe
+  const perfilExistente = await prisma.profile.findUnique({
+    where: { id: user.id },
+  });
+
+  // Si el perfil ya existe → devolverlo sin validar área (importante para coordinadores)
+  if (perfilExistente) {
+    return NextResponse.json({ profile: perfilExistente });
+  }
+
+  // 🔴 Si NO existe → el área es obligatoria para CREAR el perfil
   if (!areaId) {
     return NextResponse.json(
-      { error: 'El área de voluntariado es obligatoria.' },
+      { error: 'El área de voluntariado es obligatoria para nuevos registros.' },
       { status: 400 }
     );
   }
@@ -68,7 +78,7 @@ export async function POST(request) {
   return NextResponse.json({ profile });
 }
 
-// Obtiene el perfil (nombre, apellido, rol) del usuario AUTENTICADO.
+// Obtiene el perfil del usuario AUTENTICADO.
 export async function GET(request) {
   const user = await getUserFromRequest(request);
 
@@ -85,8 +95,7 @@ export async function GET(request) {
   return NextResponse.json({ profile });
 }
 
-// PATCH: actualiza nombre/apellido/avatar del perfil del usuario autenticado.
-// El área NO se puede modificar (se asigna una única vez al registrarse).
+// PATCH: actualiza nombre/apellido/avatar (el área NO se modifica)
 export async function PATCH(request) {
   const user = await getUserFromRequest(request);
 
@@ -104,7 +113,7 @@ export async function PATCH(request) {
     nombre: body.nombre.trim(),
     apellido: body.apellido.trim(),
     avatarUrl: body.avatarUrl || null,
-    // ⚠️ areaId NO se incluye → nunca se actualiza
+    // areaId NO se incluye → nunca se actualiza
   });
 
   if (error) {

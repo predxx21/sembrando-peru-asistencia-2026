@@ -3,7 +3,7 @@ import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { getPerfilByUserId } from '@/lib/db/perfil';
 import { obtenerRegistroPorId, corregirRegistro } from '@/lib/db/registro';
 import { invalidateCacheByPrefix } from '@/lib/cache';
-import { esEnteroPositivo, esFechaValida, esUUIDValido } from '@/lib/utils/validar';
+import { esEnteroPositivo, esFechaValida } from '@/lib/utils/validar';
 
 // PATCH: reenvía a revisión un registro RECHAZADO con datos corregidos.
 // Ahora solo permite editar fecha y descripción (las horas vienen del cronómetro).

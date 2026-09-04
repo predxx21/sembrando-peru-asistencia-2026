@@ -24,53 +24,55 @@ con validación de coordinadores y reportes administrativos.
 
 ```
 app/
-├── (portal)/           # Rutas protegidas por CheckProfile (portal autenticado)
-│   ├── principal/       # Dashboard voluntario (PanelVoluntario)
-│   ├── formulario-horas/ # Cronómetro (RegistrarHoras + Cronometro)
-│   ├── historial/       # Historial + detalle + edición
-│   ├── administracion/  # Panel admin (AdminDashboard + auditoría)
-│   ├── reportes/        # Reportes consolidados
-│   └── editar-perfil/   # Edición de perfil
-├── api/                 # Route Handlers (Backend API)
-│   ├── auth/            # me, perfil
-│   ├── registros/       # CRUD registros + sesion-activa + [id]/corregir
-│   ├── admin/           # usuarios, estadisticas, reportes, auditoria
-│   └── areas/           # Lista de áreas (dinámica desde BD)
-├── registro/            # Página de registro (signUp)
-├── login/               # Login
-└── layout.jsx           # Layout raíz
+├── (portal)/             # Rutas protegidas por CheckProfile (portal autenticado)
+│   ├── principal/         # Dashboard voluntario (PanelVoluntario)
+│   ├── formulario-horas/  # Cronómetro (RegistrarHoras + Cronometro)
+│   ├── historial/         # Historial + detalle ([id]) + edición (registro-editar/[id])
+│   ├── administracion/    # Panel admin (AdminDashboard + auditoría)
+│   ├── reportes/          # Reportes consolidados
+│   ├── editar-perfil/     # Edición de perfil
+│   └── layout.jsx         # Layout del portal (sidebar/topbar)
+├── api/                   # Route Handlers (Backend API)
+│   ├── auth/              # me, perfil
+│   ├── registros/         # CRUD registros + sesion-activa + [id]/corregir
+│   ├── admin/             # estadisticas, reportes, auditoria (+ auditoria/reporte)
+│   └── areas/             # Lista de áreas (dinámica desde BD)
+├── page.jsx               # Login (raíz)
+├── registro/              # Registro (signUp)
+├── olvide-contrasena/     # Recuperar contraseña
+├── restablecer-contrasena/# Restablecer contraseña
+└── layout.jsx             # Layout raíz + globals.css
 
 components/
 ├── auth/                # Login, Register, Recuperar, Restablecer
 ├── layout/              # Sidebar, Topbar, CheckProfile, PortalAuthProvider
 ├── volunteer/           # PanelVoluntario, RegistrarHoras, Cronometro, EditarPerfil
-├── admin/               # AdminDashboard, AuditLog, WeeklyVolumeChart
+├── admin/               # AdminDashboard, AuditLog, WeeklyVolumeChart, HistorialAuditoria, ExportModalAuditoria
 ├── history/             # ListadoHistorial, VerDetalle, CorregirActividad, Loaders
-├── reports/             # Reportes, Pagination, SummaryCard, WeeklyHoursChart, ExportarReporte
-└── reports/             # Pagination reutilizable
+└── reports/             # Reportes, Pagination, SummaryCard, WeeklyHoursChart, ExportarReporte
 
 lib/
-├── api/                 # Cliente fetch con token
-├── auth/                # Helpers de sesión (login, register, sesion)
+├── api/                 # Cliente fetch con token (fetchConToken)
+├── auth/                # Helpers de sesión (login, register, sesion, recuperar, restablecer)
 ├── cache.js             # Caché en memoria con TTL
-├── constantes.js        # AREAS (fallback), UMBRALES
+├── constantes.js        # UMBRALES (áreas ya no están hardcodeadas)
 ├── db/
 │   ├── client.js        # Singleton PrismaClient
 │   ├── perfil.js         # CRUD perfil + caché
 │   ├── registro.js       # CRUD registros + sesión activa
 │   ├── areas.js          # CRUD áreas (tabla dinámica)
-│   ├── estadisticas.js   # Agregaciones para dashboard
-│   ├── reportes.js       # Reportes consolidados ($queryRaw)
-│   └── usuarios.js       # Gestión de usuarios (admin)
+│   ├── agregaciones.js   # Resumen global consolidado ($queryRaw con FILTER)
+│   ├── estadisticas.js   # Estadísticas + tendencia para dashboard
+│   └── reportes.js       # Reportes consolidados ($queryRaw)
 ├── supabase/
 │   ├── client.js         # Cliente browser (supabase-js)
+│   ├── server.js         # Cliente admin (service role, solo server)
 │   └── authServer.js     # getUserFromRequest (verifica JWT)
-└── utils/               # horas, fecha, validar, exportar, estado, reportesFormato
+└── utils/               # horas, fecha, validar, exportar, estado, reportesFormato + tests
 
 prisma/
 ├── schema.prisma        # Esquema de BD
-├── migrations/          # Migraciones SQL
-└── scripts/             # Scripts de migración de datos (no usar en prod)
+└── migrations/          # Migraciones SQL
 ```
 
 ---
@@ -123,7 +125,7 @@ prisma/
 id            UUID (PK, del usuario Supabase)
 nombre        TEXT
 apellido      TEXT
-rol           ENUM ('voluntario', 'admin')
+rol           ENUM ('voluntario', 'admin', 'coordinador_general')
 areaId        UUID? (FK → areas.id, nullable)
 area          Relation → Area
 fechaCreacion TIMESTAMP
@@ -161,9 +163,6 @@ fechaRevision     TIMESTAMP?
 
 ### Índices (CRÍTICOS para rendimiento)
 ```sql
--- Búsqueda de sesión activa (HOT PATH en cada carga de formulario)
-CREATE INDEX ON registroasistencia(profileId, sesionActiva);
-
 -- Auditoría por revisor
 CREATE INDEX ON registroasistencia(revisorId);
 
@@ -181,13 +180,15 @@ CREATE INDEX ON registroasistencia(fechaRevision);
 CREATE INDEX ON registroasistencia(estado, fecha);
 ```
 
+**Nota:** El índice compuesto `(profileId, sesionActiva)` fue eliminado — la sesión activa única se garantiza mediante transacción atómica en `iniciarSesionCronometro()`.
+
 ---
 
 ## ⚡ OPTIMIZACIONES DE RENDIMIENTO
 
 ### Caché en memoria (`lib/cache.js`)
 - **TTL corto** (30-60s) por endpoint
-- **Invalidación explícita** en escrituras (`invalidateCache()`)
+- **Invalidación granular** por prefijo (`invalidateCacheByPrefix('admin:')`)
 - **Vive en `globalThis`** → sobrevive hot-reload en dev
 - **Límite de 500 entradas** → evita memory leak en serverless
 
@@ -234,8 +235,11 @@ FROM registroasistencia;
 | Registrar horas (cronómetro) | Autenticado + `profile.areaId` asignado |
 | Ver historial propio | Autenticado (solo `scope=mine`) |
 | Aprobar/rechazar registros | `rol = admin` |
-| Ver reportes/estadísticas | `rol = admin` |
+| Ver reportes/estadísticas | `rol = admin` o `rol = coordinador_general` |
+| Ver auditoría completa | `rol = admin` o `rol = coordinador_general` |
 | Crear áreas | `rol = admin` (pendiente) |
+
+**Diferencia clave:** `coordinador_general` ve **todas las áreas** (sin filtro `areaId`); `admin` normal solo ve su área asignada.
 
 ### Protección IDOR
 - **`/api/auth/perfil`** ignora `?id=` (siempre usa `user.id` del token)

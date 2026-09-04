@@ -64,11 +64,12 @@ pnpm build     # Build de producción
 ## Roles y acceso
 
 - **voluntario**: ve `Panel`, `Historial` y registra horas. No ve Administración/Reportes.
-- **admin** (coordinador): además ve `Administración` y `Reportes`, y aprueba/rechaza registros.
+- **admin** (coordinador de área): además ve `Administración` y `Reportes`, y aprueba/rechaza registros **solo de su área**.
+- **coordinador_general**: ve `Administración` y `Reportes` de **todas las áreas** (acceso global).
 
 El `rol` vive en `public.profiles` (`Profile.rol`). El login redirige por rol
-(admin → `/administracion`, resto → `/principal`). Las rutas del portal exigen
-sesión; las rutas de admin además exigen `rol=admin` (la UI oculta esas
+(admin/coordinador_general → `/administracion`, resto → `/principal`). Las rutas del portal exigen
+sesión; las rutas de admin además exigen `rol=admin` o `rol=coordinador_general` (la UI oculta esas
 secciones y redirige a quienes no son admin; los endpoints de API también lo
 validan y responden `403`).
 
