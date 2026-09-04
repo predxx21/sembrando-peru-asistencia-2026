@@ -1,6 +1,6 @@
 # Sistemas de Asistencia - Sembrando Perú
 
-Aplicación web para registro de asistencia/horas de voluntariado mediante cronómetro,
+Aplicación web para registro de asistencia/horas de voluntariado mediante **cronómetro**,
 validación de coordinadores y reportes. Next.js (App Router) + Prisma/PostgreSQL + Supabase Auth.
 
 📚 **[Documentación de Arquitectura](docs/ARQUITECTURA.md)** — Guía completa del sistema:
@@ -60,6 +60,8 @@ pnpm build     # Build de producción
 - El proyecto usa **Next.js 16**, cuyas APIs pueden diferir de la documentación
   clásica; revisa `node_modules/next/dist/docs/` si algo no se comporta como
   esperas.
+- **Sistema basado en cronómetro**: no hay subida de evidencias (fotos/PDFs).
+  El registro captura: fecha, hora inicio/fin (desde cronómetro), descripción y área.
 
 ## Roles y acceso
 
@@ -95,12 +97,12 @@ WHERE email = 'correo@sembrandoperu.org';  -- o WHERE id = '<uuid>'
 
 ```text
 app/                Rutas (App Router), layout y estilos globales
-app/api/            Route Handlers (auth, registros, admin/reportes, ...)
+app/api/            Route Handlers (auth, registros, admin/reportes, areas, ...)
 components/         UI: auth, layout (sidebar/topbar), volunteer, admin, history, reports
 lib/auth/           Helpers de sesión y registro/login
-lib/db/             Capa de datos con Prisma (perfil, registro, estadisticas, reportes)
-lib/supabase/       Clientes de Supabase (browser, servidor)
-lib/utils/          Funciones puras (horas, fechas, exportación, formatos) + tests
+lib/db/             Capa de datos con Prisma (perfil, registro, areas, estadisticas, reportes)
+lib/supabase/       Clientes Supabase (browser, server, authServer)
+lib/utils/          Funciones puras (horas, fechas, exportación, formatos, validación) + tests
 prisma/             Schema para Postgres
 ```
 
@@ -110,3 +112,5 @@ prisma/             Schema para Postgres
   endpoint; la UI añade protección/ocultación por rol (guard del portal).
 - **Exportación**: CSV y Excel-compatible (SpreadsheetML) sin dependencias
   externas (`lib/utils/exportar.js`).
+- **Áreas dinámicas**: se cargan desde la tabla `areas` vía `GET /api/areas`.
+  Para agregar áreas: INSERT directo en BD o futuro endpoint admin `POST /api/areas`.

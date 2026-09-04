@@ -36,7 +36,7 @@ app/
 │   ├── auth/              # me, perfil
 │   ├── registros/         # CRUD registros + sesion-activa + [id]/corregir
 │   ├── admin/             # estadisticas, reportes, auditoria (+ auditoria/reporte)
-│   └── areas/             # Lista de áreas (dinámica desde BD)
+│   └── areas/             # Lista de áreas (dinámica desde BD, solo GET)
 ├── page.jsx               # Login (raíz)
 ├── registro/              # Registro (signUp)
 ├── olvide-contrasena/     # Recuperar contraseña
@@ -128,10 +128,11 @@ apellido      TEXT
 rol           ENUM ('voluntario', 'admin', 'coordinador_general')
 areaId        UUID? (FK → areas.id, nullable)
 area          Relation → Area
+avatarUrl     TEXT?
 fechaCreacion TIMESTAMP
 ```
 
-### Tabla `areas` (NUEVA — Dinámica)
+### Tabla `areas` (Dinámica)
 ```sql
 id            UUID (PK)
 nombre        TEXT (UNIQUE)
@@ -140,8 +141,8 @@ activa        BOOLEAN (default true)
 orden         INT (para ordenar en selects)
 fechaCreacion TIMESTAMP
 ```
-**Para agregar una nueva área:** Solo INSERT en `areas` (vía SQL o endpoint admin).
-No requiere cambios de código. El frontend la carga automáticamente.
+**Para agregar una nueva área:** Solo INSERT en `areas` (vía SQL en Supabase).
+No requiere cambios de código. El frontend la carga automáticamente vía `GET /api/areas`.
 
 ### Tabla `registroasistencia`
 ```sql
@@ -237,7 +238,7 @@ FROM registroasistencia;
 | Aprobar/rechazar registros | `rol = admin` |
 | Ver reportes/estadísticas | `rol = admin` o `rol = coordinador_general` |
 | Ver auditoría completa | `rol = admin` o `rol = coordinador_general` |
-| Crear áreas | `rol = admin` (pendiente) |
+| Crear áreas | `rol = admin` (pendiente - solo SQL directo) |
 
 **Diferencia clave:** `coordinador_general` ve **todas las áreas** (sin filtro `areaId`); `admin` normal solo ve su área asignada.
 
@@ -249,7 +250,7 @@ FROM registroasistencia;
 ### Sesión activa única
 - Backend **rechaza 2ª sesión activa** (POST `/api/registros/sesion-activa`)
 - Mensaje claro: "Ya tienes una sesión activa"
-- Mejora UX: botón "Terminar sesión remota" desde dispositivo actual
+- Roadmap: botón "Terminar sesión remota" desde dispositivo actual
 
 ---
 
@@ -286,7 +287,7 @@ FROM registroasistencia;
 | # | Problema | Impacto | Solución |
 |---|----------|---------|----------|
 | 5 | Corrección simultánea | Datos inconsistentes | **Descartado** (no hay concurrencia real en este scale) |
-| 6 | Múltiples dispositivos | 2ª sesión rechazada sin explicación | Mensaje claro + botón "Terminar remota" |
+| 6 | Múltiples dispositivos | 2ª sesión rechazada sin explicación | Mensaje claro + botón "Terminar remota" (roadmap) |
 | 7 | Caché no invalidada | Datos obsoletos 30s | `invalidateCache()` en sesion-activa POST/PATCH |
 | 8 | Corrección sin validar estado | Corregir aprobado | Backend valida `estado === 'rechazado'` |
 | 9 | Comentario oculto | Voluntario no sabe por qué rechazado | Mostrado en Historial + Detalle |
@@ -314,6 +315,7 @@ DATABASE_URL="postgresql://..."          # Prisma (Supabase)
 DIRECT_URL="postgresql://...:6543/..."  # Prisma (pooler)
 NEXT_PUBLIC_SUPABASE_URL="https://..."
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="eyJ..."
+SUPABASE_SERVICE_ROLE_KEY="eyJ..."
 NEXT_PUBLIC_APP_URL="https://tu-app.vercel.app"
 ```
 
@@ -337,3 +339,6 @@ NEXT_PUBLIC_APP_URL="https://tu-app.vercel.app"
 - [ ] Notificaciones push al aprobar/rechazar
 - [ ] Exportación de reportes con filtros aplicados
 - [ ] Dashboard de métricas en tiempo real (WebSocket)
+- [ ] Rate limiting en autenticación
+- [ ] Validación de longitud de campos (descripción, etc.)
+- [ ] Validación de fechas futuras en backend

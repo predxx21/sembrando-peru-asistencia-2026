@@ -204,11 +204,11 @@ export default function RegisterScreen() {
             )}
           </select>
 
-          <label className={styles['terms']}>
+          {/* <label className={styles['terms']}>
             <input type="checkbox" required />
             Acepto los <a href="#terms">Términos y condiciones</a> y la{' '}
             <a href="#privacy">Política de privacidad</a> de Sembrando Perú.
-          </label>
+          </label> */}
 
           <button className={styles['create-account']} type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
