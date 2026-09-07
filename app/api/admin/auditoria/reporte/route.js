@@ -3,9 +3,24 @@ import { getUserFromRequest } from "@/lib/supabase/authServer";
 import { getPerfilByUserId } from "@/lib/db/perfil";
 import { prisma } from "@/lib/db/client";
 import { getCached, setCached } from "@/lib/cache";
+import { buildExcelXLSX } from "@/lib/utils/excelServer";
 
 const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const CACHE_TTL_MS = 60 * 1000;
+
+// Columnas del Excel generado en el servidor (coinciden con el modal de exportación).
+const COLUMNAS = [
+  { key: "Voluntario", label: "Voluntario" },
+  { key: "Area", label: "Área" },
+  { key: "FechaRegistro", label: "Fecha de Registro" },
+  { key: "FechaAprobacion", label: "Fecha de Aprobación" },
+  { key: "Dia", label: "Día" },
+  { key: "HoraInicio", label: "Hora de inicio" },
+  { key: "HoraFin", label: "Hora de fin" },
+  { key: "Horas", label: "Horas realizadas" },
+];
+
+const MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 // Obtener número de semana ISO
 function getWeekNumber(date) {
@@ -56,6 +71,7 @@ export async function GET(request) {
   const hasta = searchParams.get("hasta");
   const estado = searchParams.get("estado") || undefined;
   const agruparPor = searchParams.get("agruparPor") || "semana";
+  const formato = searchParams.get("formato") || "json";
 
   // ✅ Clave de caché incluye profile.id para aislar por usuario
   const cacheKey = `admin:auditoria:reporte:${profile.id}:${searchParams.toString()}`;
@@ -102,6 +118,12 @@ export async function GET(request) {
   });
 
   if (registros.length === 0) {
+    if (formato === "xlsx") {
+      return NextResponse.json(
+        { error: "No hay datos en el rango seleccionado." },
+        { status: 404 }
+      );
+    }
     const emptyData = [];
     setCached(cacheKey, emptyData, CACHE_TTL_MS);
     return NextResponse.json({ data: emptyData });
@@ -226,7 +248,22 @@ export async function GET(request) {
     filas.push({});
   }
 
-  // Guardar en caché
+  // Si se pide un Excel .xlsx, el servidor lo genera con exceljs y lo devuelve
+  // como adjunto descargable (el navegador nunca recibe exceljs).
+  if (formato === "xlsx") {
+    const buffer = await buildExcelXLSX(filas, COLUMNAS);
+    const fechaActual = new Date().toISOString().split("T")[0];
+    return new NextResponse(buffer, {
+      status: 200,
+      headers: {
+        "Content-Type": MIME_XLSX,
+        "Content-Disposition": `attachment; filename="auditoria_reporte_${fechaActual}.xlsx"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  // Guardar en caché (solo JSON: la descarga .xlsx siempre genera datos frescos)
   setCached(cacheKey, filas, CACHE_TTL_MS);
 
   return NextResponse.json({ data: filas });

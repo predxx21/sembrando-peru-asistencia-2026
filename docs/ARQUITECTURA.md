@@ -142,7 +142,8 @@ orden         INT (para ordenar en selects)
 fechaCreacion TIMESTAMP
 ```
 **Para agregar una nueva área:** Solo INSERT en `areas` (vía SQL en Supabase).
-No requiere cambios de código. El frontend la carga automáticamente vía `GET /api/areas`.
+No requiere cambios de código. El frontend autenticado la carga vía `GET /api/areas`
+(exige sesión); la pantalla de registro usa el catálogo público `GET /api/areas/publico`.
 
 ### Tabla `registroasistencia`
 ```sql

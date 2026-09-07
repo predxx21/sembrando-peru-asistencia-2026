@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getUserFromRequest } from '@/lib/supabase/authServer';
 import { prisma } from '@/lib/db/client';
 
-export async function GET() {
+// Lista de áreas activas. Requiere sesión. El REGISTRO de voluntarios usa el
+// catálogo público `/api/areas/publico` (aún no hay sesión en ese momento).
+export async function GET(request) {
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: 'No autenticado.' }, { status: 401 });
+  }
+
   try {
     const areas = await prisma.area.findMany({
       where: { activa: true },

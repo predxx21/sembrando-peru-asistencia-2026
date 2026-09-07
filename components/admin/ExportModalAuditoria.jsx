@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { buildCsv, buildExcelXLSX, descargar, descargarExcel } from "@/lib/utils/exportar";
+// El .xlsx lo genera el servidor (exceljs solo en la API); aquí solo CSV y descarga.
+import { buildCsv, descargar, descargarExcel } from "@/lib/utils/exportar";
 import { supabase } from "@/lib/supabase/client";
 import styles from "./ExportModalAuditoria.module.css";
 
@@ -82,20 +83,6 @@ export default function ExportModal({
       // Si está activo, no pasamos estado → devuelve todos (pendientes, aprobados, rechazados)
 
       const url = `/api/admin/auditoria/reporte${params.toString() ? `?${params.toString()}` : ""}`;
-      const res = await fetch(url, {
-        cache: "no-store",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Error al obtener los datos");
-      const body = await res.json();
-      const data = body.data || [];
-
-      if (data.length === 0) {
-        alert("No hay datos en el rango seleccionado.");
-        setLoading(false);
-        return;
-      }
-
       const fechaActual = new Date().toISOString().split("T")[0];
       const columnas = [
         { key: "Voluntario", label: "Voluntario" },
@@ -109,10 +96,39 @@ export default function ExportModal({
       ];
 
       if (formato === "csv") {
+        // CSV se arma en el cliente (buildCsv es puro, sin dependencias pesadas).
+        const res = await fetch(url, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error("Error al obtener los datos");
+        const body = await res.json();
+        const data = body.data || [];
+
+        if (data.length === 0) {
+          alert("No hay datos en el rango seleccionado.");
+          setLoading(false);
+          return;
+        }
+
         const contenido = buildCsv(data, columnas);
         descargar(`auditoria_reporte_${fechaActual}.csv`, contenido, "text/csv");
       } else {
-        const buffer = await buildExcelXLSX(data, columnas);
+        // El .xlsx lo genera el servidor con exceljs; el cliente solo lo descarga.
+        const xurl = `${url}${url.includes("?") ? "&" : "?"}formato=xlsx`;
+        const xres = await fetch(xurl, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (xres.status === 404) {
+          alert("No hay datos en el rango seleccionado.");
+          setLoading(false);
+          return;
+        }
+        if (!xres.ok) throw new Error("Error al generar el Excel");
+
+        const buffer = await xres.arrayBuffer();
         descargarExcel(`auditoria_reporte_${fechaActual}.xlsx`, buffer);
       }
 
