@@ -110,7 +110,10 @@ prisma/             Schema para Postgres
 
 - **Ui vs API**: la capa API valida sesión y rol con token Bearer en cada
   endpoint; la UI añade protección/ocultación por rol (guard del portal).
-- **Exportación**: CSV y Excel-compatible (SpreadsheetML) sin dependencias
-  externas (`lib/utils/exportar.js`).
-- **Áreas dinámicas**: se cargan desde la tabla `areas` vía `GET /api/areas`.
+- **Exportación**: el CSV y el Excel-compatible (SpreadsheetML) se arman en el
+  cliente sin dependencias (`lib/utils/exportar.js`); el `.xlsx` de auditoría se
+  genera en el servidor con exceljs (`/api/admin/auditoria/reporte?formato=xlsx`).
+- **Áreas dinámicas**: se cargan desde la tabla `areas` vía `GET /api/areas`
+  (exige sesión). El registro de voluntarios usa el catálogo público
+  `GET /api/areas/publico` (aún no hay sesión en ese momento).
   Para agregar áreas: INSERT directo en BD o futuro endpoint admin `POST /api/areas`.

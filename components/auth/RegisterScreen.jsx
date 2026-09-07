@@ -19,7 +19,7 @@ export default function RegisterScreen() {
   useEffect(() => {
     async function cargarAreas() {
       try {
-        const res = await fetch('/api/areas');
+        const res = await fetch('/api/areas/publico');
         if (!res.ok) throw new Error('Error al cargar áreas');
         const data = await res.json();
         setAreas(data.areas || []);
