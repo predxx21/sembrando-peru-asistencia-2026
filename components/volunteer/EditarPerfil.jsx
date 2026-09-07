@@ -141,8 +141,9 @@ export default function EditarPerfil() {
         throw new Error(body.error || "No se pudo actualizar el perfil.");
       }
 
+      // ✅ Solo mensaje, sin redirección
       setMensaje("Perfil actualizado correctamente.");
-      setTimeout(() => router.push("/formulario-horas"), 1500);
+
     } catch (err) {
       setMensaje("" + (err.message || "No se pudo actualizar el perfil."));
     } finally {
@@ -166,9 +167,7 @@ export default function EditarPerfil() {
         <p>Actualiza tu información personal y área de voluntariado.</p>
       </header>
 
-      {/* ✅ FORMULARIO – ahora contiene la foto dentro */}
       <form className={styles.form} onSubmit={handleSubmit}>
-        {/* 👇 SECCIÓN FOTO (dentro del formulario) */}
         <div className={styles.photoSection}>
           <div className={styles.photoPreview}>
             {fotoPreview ? (
@@ -194,7 +193,6 @@ export default function EditarPerfil() {
           </div>
         </div>
 
-        {/* 👇 CAMPOS */}
         <div className={styles.field}>
           <label htmlFor="nombre">Nombres *</label>
           <input

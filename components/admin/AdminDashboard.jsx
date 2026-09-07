@@ -7,13 +7,13 @@ import AuditLog from "./AuditLog";
 import WeeklyVolumeChart from "./WeeklyVolumeChart";
 import { UMBRALES } from '@/lib/constantes';
 import { fetchConToken } from "@/lib/api/client";
-import { useRol } from "@/components/layout/PortalAuthProvider"; // ← TUYA
+import { useRol } from "@/components/layout/PortalAuthProvider";
 import styles from "./AdminDashboard.module.css";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function AdminDashboard() {
-  const rol = useRol(); // ← TUYA
+  const rol = useRol();
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState("");
@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   const [weeklyVolume, setWeeklyVolume] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [reviewingId, setReviewingId] = useState(null);
-  const [selectedAvatar, setSelectedAvatar] = useState(null); // ← DE TU AMIGO
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   const isFirstRender = useRef(true);
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
@@ -69,27 +69,27 @@ export default function AdminDashboard() {
 
   // Cargar tendencias
   async function cargarTendencias() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  if (!token) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
 
-  try {
-    const res = await fetch('/api/admin/estadisticas', {
-      cache: 'no-store',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      console.error('Error al cargar tendencias:', errorData.error || res.status);
-      return;
+    try {
+      const res = await fetch('/api/admin/estadisticas', {
+        cache: 'no-store',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Error al cargar tendencias:', errorData.error || res.status);
+        return;
+      }
+      const body = await res.json();
+      setWeeklyVolume(body.data?.tendencia ?? []);
+      setAuditLog(body.data?.auditoria ?? []);
+    } catch (err) {
+      console.error('Error en cargarTendencias:', err);
     }
-    const body = await res.json();
-    setWeeklyVolume(body.data?.tendencia ?? []);
-    setAuditLog(body.data?.auditoria ?? []);
-  } catch (err) {
-    console.error('Error en cargarTendencias:', err);
   }
-}
 
   // Cargar inicial (siempre pendientes)
   async function cargarInicial() {
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
     }
   }, [page]);
 
-  // 👇 EFECTO PARA MODAL (DE TU AMIGO)
+  // Efecto para modal de foto
   useEffect(() => {
     if (!selectedAvatar) return;
 
@@ -184,7 +184,7 @@ export default function AdminDashboard() {
     };
   }, [selectedAvatar]);
 
-  // ===== ICONOS ===== (todos los que ya tenías, los dejo igual)
+  // ===== ICONOS =====
   function CheckIcon({ size = 14, className }) {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -294,7 +294,6 @@ export default function AdminDashboard() {
         </span>
       );
     }
-    // Eliminada advertencia de < 15 minutos
     return null;
   };
 
@@ -391,21 +390,23 @@ export default function AdminDashboard() {
             />
           </div>
 
-          <div className={styles.filterGroup}>
-            <label htmlFor="areaFilter" className={styles.filterLabel}>Área</label>
-            <select
-              id="areaFilter"
-              value={areaFilter}
-              onChange={(e) => setAreaFilter(e.target.value)}
-              className={styles.filterInput}
-              disabled={rol === 'admin'} // ← TU FUNCIONALIDAD
-            >
-              <option value="">Todas las áreas</option>
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>{area.nombre}</option>
-              ))}
-            </select>
-          </div>
+          {/* ✅ Filtro de área - SOLO visible para coordinador_general */}
+          {rol === 'coordinador_general' && (
+            <div className={styles.filterGroup}>
+              <label htmlFor="areaFilter" className={styles.filterLabel}>Área</label>
+              <select
+                id="areaFilter"
+                value={areaFilter}
+                onChange={(e) => setAreaFilter(e.target.value)}
+                className={styles.filterInput}
+              >
+                <option value="">Todas las áreas</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {hasActiveFilters && (
             <div className={styles.filterGroup} style={{ flex: '0 0 auto', justifyContent: 'flex-end' }}>
@@ -490,14 +491,12 @@ export default function AdminDashboard() {
               ) : (
                 submissions.map((s) => {
                   const esPropio = esRegistroPropio(s.profileId);
-                  // Robustez: buscar tanto avatarUrl como avatar_url
                   const avatar = s.avatarUrl || s.avatar_url;
-                  
+
                   return (
                     <tr key={s.id}>
                       <td>
                         <div className={styles.userCell}>
-                          {/* 👇 AVATAR CON FOTO O INICIALES */}
                           {avatar ? (
                             <button
                               type="button"
@@ -711,7 +710,7 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* 👇 MODAL DE FOTO */}
+      {/* MODAL DE FOTO */}
       {selectedAvatar && (
         <div
           className={styles.avatarModalOverlay}
