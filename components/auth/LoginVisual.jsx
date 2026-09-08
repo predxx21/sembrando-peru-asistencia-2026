@@ -10,7 +10,7 @@ export default function LoginVisual() {
       {/* Texto de Marca y Propósito */}
       <div className={styles['brand-copy']}>
         
-        <h1>Sistemas de Asistencia - Sembrando Perú</h1>
+        <h1>Sistema de Asistencia - Sembrando Perú</h1>
         <p>Transparencia, gestión de horas y trazabilidad para comunidades con propósito ambiental.</p>
       </div>
 
@@ -19,7 +19,7 @@ export default function LoginVisual() {
         <div className={styles['impact-icon']}>🌱</div>
         <div>
           <strong>Compromiso con el Perú</strong>
-          <span>Digitalizando el voluntariado e impacto ambiental en cada región.</span>
+          <span>Digitalizando el voluntariado e impacto ambiental.</span>
         </div>
       </div>
     </aside>
